@@ -20,6 +20,11 @@ const API = (() => {
     PRICE_INVALID: 'اكتب سعر الحصة.',
     GROUPS_LIMIT: 'وصلت لأقصى عدد مجموعات في باقتك. كلّمنا عشان تزوّد.',
     NOT_FOUND: 'الحاجة دي مش موجودة أو اتقفلت.',
+    GENDER_REQUIRED: 'اختار ولد ولا بنت.',
+    PARENT_PHONE_INVALID: 'رقم ولي الأمر لازم 11 رقم.',
+    GROUP_INVALID: 'المجموعة مش من نفس الصف.',
+    GROUP_FULL: 'المجموعة دي اتملت. اختار مجموعة تانية أو زوّد العدد من المجموعات.',
+    PHONE_TAKEN: 'الرقم ده متسجل لحد تاني في الفريق.',
     NET: 'مفيش اتصال بالنت. اتأكد من النت وجرب تاني.'
   };
 
@@ -59,6 +64,12 @@ const API = (() => {
     groups: () => rpc('tp_groups_list', t()),
     saveGroup: p => rpc('tp_group_save', { ...t(), p }),
     archiveGroup: id => rpc('tp_group_archive', { ...t(), p_id: id }),
+    students: p => rpc('tp_students_page', { ...t(), p: p || {} }),
+    student: id => rpc('tp_student_get', { ...t(), p_id: id }),
+    saveStudent: p => rpc('tp_student_save', { ...t(), p }),
+    archiveStudent: id => rpc('tp_student_archive', { ...t(), p_id: id }),
+    staff: () => rpc('tp_staff_list', t()),
+    saveStaff: p => rpc('tp_staff_save', { ...t(), p }),
     log: (before, minImp, limit) => rpc('tp_log_list', { ...t(), p_before: before || null, p_min_imp: minImp || 1, p_limit: limit || 50 })
   };
 })();

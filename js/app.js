@@ -129,7 +129,9 @@ const App = (() => {
   const can = p => isTeacher() || !!(S.me.staff.perms || {})[p];
   const ROUTES = {
     home: { name: 'الرئيسية', icon: 'home', show: () => true, draw: home },
+    students: { name: 'الطلاب', icon: 'student', show: () => true, draw: students },
     groups: { name: 'المجموعات', icon: 'groups', show: () => true, draw: groups },
+    team: { name: 'الفريق', icon: 'team', show: isTeacher, draw: team },
     settings: { name: 'الإعدادات', icon: 'settings', show: isTeacher, draw: settings }
   };
 
@@ -171,8 +173,9 @@ const App = (() => {
     S.groups = g;
     const c = S.me.config;
     let h = '<div class="head"><h1>أهلاً ' + esc(S.me.staff.name) + '</h1></div>' +
-      '<div class="stats"><div class="stat"><span class="muted">المجموعات</span><b>' + num(g.groups.length) + '</b>' +
-      (g.groups_max ? '<span class="tiny">من ' + num(g.groups_max) + ' في باقتك</span>' : '') + '</div></div>';
+      '<div class="stats"><a class="stat" href="#students"><span class="muted">الطلاب</span><b>' + num(g.students_total) + '</b></a>' +
+      '<a class="stat" href="#groups"><span class="muted">المجموعات</span><b>' + num(g.groups.length) + '</b>' +
+      (g.groups_max ? '<span class="tiny">من ' + num(g.groups_max) + ' في باقتك</span>' : '') + '</a></div>';
     if (feed) {
       h += '<section class="sec"><div class="head"><h2>اللي حصل</h2><div class="chips">' +
         '<button class="chip ' + (S.feedMin === 1 ? 'on' : '') + '" data-act="feedMin" data-v="1">الكل</button>' +
@@ -203,8 +206,8 @@ const App = (() => {
       const rows = g.groups.filter(x => x.grade_id === gr.id);
       if (!rows.length) return;
       h += '<h2 class="grade-h">' + esc(gr.name) + '</h2><ul class="list">' + rows.map(x =>
-        '<li><div class="grow"><b>' + esc(x.name) + '</b><div class="tiny">' + esc(x.schedule || 'من غير ميعاد') +
-        (x.capacity ? ' · أقصى عدد ' + num(x.capacity) : '') + '</div></div>' +
+        '<li><div class="grow"><a class="plain" href="#students" data-act="openGroupStudents" data-id="' + x.id + '"><b>' + esc(x.name) + '</b></a><div class="tiny">' + esc(x.schedule || 'من غير ميعاد') +
+        ' · ' + num(x.students) + (x.capacity ? ' / ' + num(x.capacity) : '') + ' طالب</div></div>' +
         '<span class="price">' + num(x.price) + ' ج</span>' +
         (can('groups') ? '<button class="btn btn-ghost btn-sm" data-act="groupEdit" data-id="' + x.id + '" aria-label="تعديل ' + esc(x.name) + '">' + icon('pen') + '</button>' : '') +
         '</li>').join('') + '</ul>';
@@ -243,6 +246,158 @@ const App = (() => {
     if (!confirm('تقفل مجموعة «' + x.name + '»؟ مش هتظهر في القوايم تاني.')) return;
     await busy(b, async () => { await API.archiveGroup(x.id); close(); toast('اتقفلت المجموعة'); groups(); });
   }
+
+  // ───── الطلاب ─────
+  const ST = { q: '', group_id: null, rows: [], total: 0, timer: null };
+  const initials = n => esc(String(n || '').trim().charAt(0));   // حرف واحد: الحروف العربية بتتلزق في بعض
+  const phoneLink = p => '<a class="num" dir="ltr" href="tel:' + esc(p) + '">' + esc(p) + '</a>';
+  actions.openGroupStudents = b => { ST.group_id = +b.dataset.id; ST.q = ''; location.hash = '#students'; };
+
+  async function students() {
+    if (!S.groups) S.groups = await API.groups();
+    if (!S.grades) S.grades = await API.grades();
+    const opts = S.grades.map(gr => {
+      const gs = S.groups.groups.filter(g => g.grade_id === gr.id);
+      return gs.length ? '<optgroup label="' + esc(gr.name) + '">' + gs.map(g => '<option value="' + g.id + '"' + (g.id === ST.group_id ? ' selected' : '') + '>' + esc(g.name) + '</option>').join('') + '</optgroup>' : '';
+    }).join('');
+    $('#main').innerHTML = '<div class="head"><h1>الطلاب</h1>' +
+      (can('students') ? '<button class="btn btn-ink" data-act="studentNew">' + icon('plus') + 'طالب جديد</button>' : '') + '</div>' +
+      '<div class="filters"><div class="search">' + icon('search') + '<input class="inp" id="sq" type="search" placeholder="اسم، كود، أو رقم موبايل" value="' + esc(ST.q) + '" aria-label="دوّر على طالب"></div>' +
+      '<select class="inp" id="sg" aria-label="المجموعة"><option value="">كل المجموعات</option>' + opts + '</select></div>' +
+      '<p class="limit" id="scount"></p><ul class="list" id="slist"></ul><div id="smore"></div>' + credit();
+    $('#sq').oninput = () => { clearTimeout(ST.timer); ST.timer = setTimeout(() => { ST.q = $('#sq').value.trim(); loadStudents(); }, 250); };
+    $('#sg').onchange = () => { ST.group_id = $('#sg').value ? +$('#sg').value : null; loadStudents(); };
+    await loadStudents();
+  }
+
+  async function loadStudents(more) {
+    const off = more ? ST.rows.length : 0;
+    const r = await API.students({ q: ST.q, group_id: ST.group_id, offset: off, limit: 50 });
+    ST.rows = more ? ST.rows.concat(r.rows) : r.rows; ST.total = r.total;
+    if (!$('#slist')) return;
+    $('#scount').innerHTML = '<b>' + num(ST.total) + '</b> طالب' + (ST.q ? ' في البحث' : '');
+    $('#slist').innerHTML = ST.rows.length ? ST.rows.map(s =>
+      '<li class="tap" data-act="studentOpen" data-id="' + s.id + '"><span class="av ' + s.gender + '">' + initials(s.name) + '</span>' +
+      '<div class="grow"><b>' + esc(s.name) + '</b><div class="tiny">' + s.code + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div>' +
+      '<span class="tiny num" dir="ltr">' + esc(s.phone) + '</span></li>').join('')
+      : '<li class="empty">' + (ST.q ? 'مفيش طالب بالاسم أو الرقم ده.' : 'لسه مفيش طلاب.') + '</li>';
+    $('#smore').innerHTML = ST.rows.length < ST.total ? '<button class="btn btn-line btn-block" data-act="studentsMore" style="margin-top:var(--s3)">اعرض أكتر (' + num(ST.total - ST.rows.length) + ')</button>' : '';
+  }
+  actions.studentsMore = b => busy(b, () => loadStudents(true));
+
+  actions.studentOpen = async b => {
+    const s = await API.student(+b.dataset.id).catch(e => toast(e.message, 'err'));
+    if (!s) return;
+    sheet('<div class="profile"><span class="av lg ' + s.gender + '">' + initials(s.name) + '</span><div><h2>' + esc(s.name) + '</h2>' +
+      '<div class="muted">' + esc(s.grade) + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div></div>' +
+      '<dl class="facts"><div><dt>الكود</dt><dd class="num">' + s.code + '</dd></div>' +
+      '<div><dt>الرقم السري للبوابة</dt><dd class="num">' + esc(s.pin) + '</dd></div>' +
+      '<div><dt>موبايل الطالب</dt><dd>' + phoneLink(s.phone) + '</dd></div>' +
+      '<div><dt>موبايل ولي الأمر</dt><dd>' + phoneLink(s.parent_phone) + '</dd></div>' +
+      (s.notes ? '<div class="wide"><dt>ملاحظات</dt><dd>' + esc(s.notes) + '</dd></div>' : '') + '</dl>' +
+      (can('students') ? '<div class="actions"><button class="btn btn-red" data-act="studentArchive">' + icon('archive') + 'شيله من القوايم</button>' +
+        '<button class="btn btn-ink" data-act="studentEdit">' + icon('pen') + 'عدّل البيانات</button></div>' : ''), box => {
+      box.onclick = e => {
+        const a = e.target.closest('[data-act]'); if (!a) return;
+        if (a.dataset.act === 'studentEdit') studentForm(s);
+        if (a.dataset.act === 'studentArchive') {
+          if (!confirm('تشيل «' + s.name + '» من القوايم؟')) return;
+          busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); S.groups = null; loadStudents(); });
+        }
+      };
+    });
+  };
+
+  function studentForm(s) {
+    const isNew = !s;
+    const cur = S.groups.groups.find(g => g.id === ST.group_id);
+    s = s || { name: '', gender: '', grade_id: cur ? cur.grade_id : S.grades[0].id, group_id: cur ? cur.id : null, phone: '', parent_phone: '', notes: '' };
+    const groupOpts = grade => '<option value="">من غير مجموعة</option>' + S.groups.groups.filter(g => g.grade_id === grade).map(g =>
+      '<option value="' + g.id + '"' + (g.id === s.group_id ? ' selected' : '') + '>' + esc(g.name) + ' (' + g.students + (g.capacity ? '/' + g.capacity : '') + ')</option>').join('');
+    sheet('<h2>' + (isNew ? 'طالب جديد' : 'تعديل بيانات الطالب') + '</h2><form id="sf" novalidate>' +
+      '<div class="field"><label for="s_name">الاسم</label><input class="inp" id="s_name" value="' + esc(s.name) + '" autocomplete="off"></div>' +
+      '<div class="field"><span class="lbl">النوع</span><div class="chips" role="radiogroup">' +
+      '<button type="button" class="chip ' + (s.gender === 'm' ? 'on' : '') + '" data-g="m" role="radio" aria-checked="' + (s.gender === 'm') + '">ولد</button>' +
+      '<button type="button" class="chip ' + (s.gender === 'f' ? 'on' : '') + '" data-g="f" role="radio" aria-checked="' + (s.gender === 'f') + '">بنت</button></div></div>' +
+      '<div class="row2"><div class="field"><label for="s_grade">الصف</label><select class="inp" id="s_grade">' +
+      S.grades.map(gr => '<option value="' + gr.id + '"' + (gr.id === s.grade_id ? ' selected' : '') + '>' + esc(gr.name) + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label for="s_group">المجموعة</label><select class="inp" id="s_group">' + groupOpts(s.grade_id) + '</select></div></div>' +
+      '<div class="row2"><div class="field"><label for="s_phone">موبايل الطالب</label><input class="inp" id="s_phone" type="tel" inputmode="numeric" dir="ltr" value="' + esc(s.phone) + '"></div>' +
+      '<div class="field"><label for="s_pphone">موبايل ولي الأمر</label><input class="inp" id="s_pphone" type="tel" inputmode="numeric" dir="ltr" value="' + esc(s.parent_phone) + '"></div></div>' +
+      '<div class="field"><label for="s_notes">ملاحظات (اختياري)</label><input class="inp" id="s_notes" value="' + esc(s.notes || '') + '"></div>' +
+      '<p class="err" id="serr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'سجّل الطالب' : 'احفظ التعديل') + '</button></div></form>', box => {
+      let gender = s.gender;
+      box.onclick = e => { const c = e.target.closest('[data-g]'); if (!c) return; gender = c.dataset.g; $$('[data-g]', box).forEach(x => { x.classList.toggle('on', x === c); x.setAttribute('aria-checked', x === c); }); };
+      $('#s_grade', box).onchange = () => { $('#s_group', box).innerHTML = groupOpts(+$('#s_grade', box).value); };
+      $('#sf', box).onsubmit = async e => {
+        e.preventDefault();
+        const p = { id: s.id || null, name: $('#s_name').value.trim(), gender, grade_id: +$('#s_grade').value,
+          group_id: $('#s_group').value ? +$('#s_group').value : null, phone: $('#s_phone').value, parent_phone: $('#s_pphone').value, notes: $('#s_notes').value };
+        const er = m => { $('#serr').textContent = m; };
+        if (!p.name) return er('اكتب اسم الطالب.');
+        if (!gender) return er('اختار ولد ولا بنت.');
+        if (p.phone.replace(/\D/g, '').length !== 11) return er('موبايل الطالب لازم 11 رقم.');
+        if (p.parent_phone.replace(/\D/g, '').length !== 11) return er('موبايل ولي الأمر لازم 11 رقم.');
+        await busy($('#sf button[type=submit]'), async () => {
+          const r = await API.saveStudent(p); close(); S.groups = await API.groups();
+          toast(isNew ? 'اتسجل ' + r.name + ' بكود ' + r.code : 'اتحفظ التعديل');
+          if ($('#slist')) loadStudents();
+        });
+      };
+    });
+  }
+  actions.studentNew = () => studentForm();
+
+  // ───── الفريق: الأسيستنتس وصلاحياتهم ─────
+  const PERMS = [
+    ['door', 'الباب', 'تسجّل الحضور على الباب'],
+    ['students', 'الطلاب', 'تسجّل طلاب جداد وتعدّل بياناتهم'],
+    ['groups', 'المجموعات', 'تضيف وتعدّل المجموعات'],
+    ['money', 'الفلوس', 'تقبض كاش وتوافق على طلبات الشحن'],
+    ['messages', 'الرسايل', 'تبعت رسايل للطلاب وأولياء الأمور'],
+    ['notify_settings', 'إعدادات الإشعارات', 'تحدد إيه يتبعت أوتوماتيك وإيه بزرار'],
+    ['reports', 'التقارير', 'تشوف التقارير اليومي والأسبوعي والشهري'],
+    ['log', 'اللي حصل', 'تشوف كل العمليات اللي اتعملت']
+  ];
+  async function team() {
+    S.staff = await API.staff();
+    $('#main').innerHTML = '<div class="head"><h1>الفريق</h1><button class="btn btn-ink" data-act="staffNew">' + icon('plus') + 'أسيستنت جديدة</button></div>' +
+      '<ul class="list">' + S.staff.map(m =>
+        '<li' + (m.role === 'assistant' ? ' class="tap" data-act="staffEdit" data-id="' + m.id + '"' : '') + '>' +
+        '<span class="av">' + initials(m.name) + '</span><div class="grow"><b>' + esc(m.name) + '</b>' +
+        '<div class="tiny">' + (m.role === 'teacher' ? 'المستر · كل الصلاحيات' : (m.active ? PERMS.filter(p => m.perms[p[0]]).map(p => p[1]).join('، ') || 'من غير صلاحيات' : 'الحساب مقفول')) + '</div></div>' +
+        '<span class="tiny num" dir="ltr">' + esc(m.phone) + '</span></li>').join('') + '</ul>' +
+      (S.staff.length === 1 ? '<p class="muted">ضيف الأسيستنتس واختار لكل واحدة الصلاحيات اللي تقدر تعملها.</p>' : '') + credit();
+  }
+  const genPw = () => String(Math.floor(100000 + Math.random() * 900000));
+  function staffForm(m) {
+    const isNew = !m;
+    m = m || { name: '', phone: '', perms: { door: true, students: true }, active: true };
+    sheet('<h2>' + (isNew ? 'أسيستنت جديدة' : 'تعديل ' + esc(m.name)) + '</h2><form id="tf" novalidate>' +
+      '<div class="field"><label for="t_name">الاسم</label><input class="inp" id="t_name" value="' + esc(m.name) + '"></div>' +
+      '<div class="field"><label for="t_phone">الموبايل (هتدخل بيه)</label><input class="inp" id="t_phone" type="tel" inputmode="numeric" dir="ltr" value="' + esc(m.phone) + '"></div>' +
+      '<div class="field"><label for="t_pw">' + (isNew ? 'الباسورد' : 'باسورد جديد (سيبه فاضي لو مش هتغيّره)') + '</label>' +
+      '<div class="inline-form"><input class="inp" id="t_pw" dir="ltr" autocomplete="new-password" value="' + (isNew ? genPw() : '') + '"><button type="button" class="btn btn-line" data-act="genPw">باسورد جديد</button></div>' +
+      '<span class="hint">ابعته للأسيستنت. لو اتغيّر، بتخرج من كل الأجهزة.</span></div>' +
+      '<fieldset class="perms"><legend>الصلاحيات</legend>' + PERMS.map(p =>
+        '<label class="perm"><input type="checkbox" value="' + p[0] + '"' + (m.perms[p[0]] ? ' checked' : '') + '><span><b>' + p[1] + '</b><span class="tiny">' + p[2] + '</span></span></label>').join('') + '</fieldset>' +
+      (isNew ? '' : '<label class="perm"><input type="checkbox" id="t_active"' + (m.active ? ' checked' : '') + '><span><b>الحساب شغال</b><span class="tiny">لو شلت العلامة، الأسيستنت مش هتقدر تدخل</span></span></label>') +
+      '<p class="err" id="terr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'ضيف الأسيستنت' : 'احفظ') + '</button></div></form>', box => {
+      box.onclick = e => { if (e.target.closest('[data-act=genPw]')) $('#t_pw', box).value = genPw(); };
+      $('#tf', box).onsubmit = async e => {
+        e.preventDefault();
+        const perms = {}; $$('.perms input', box).forEach(i => { perms[i.value] = i.checked; });
+        const p = { id: m.id || null, name: $('#t_name').value.trim(), phone: $('#t_phone').value, password: $('#t_pw').value.trim(), perms,
+          active: isNew ? true : $('#t_active').checked };
+        if (!p.name) return ($('#terr').textContent = 'اكتب الاسم.');
+        if (p.phone.replace(/\D/g, '').length !== 11) return ($('#terr').textContent = 'الموبايل لازم 11 رقم.');
+        if ((isNew || p.password) && p.password.length < 6) return ($('#terr').textContent = 'الباسورد لازم 6 حروف أو أرقام على الأقل.');
+        await busy($('#tf button[type=submit]'), async () => { S.staff = await API.saveStaff(p); close(); toast(isNew ? 'اتضافت الأسيستنت' : 'اتحفظ'); team(); });
+      };
+    });
+  }
+  actions.staffNew = () => staffForm();
+  actions.staffEdit = b => staffForm(S.staff.find(m => m.id === +b.dataset.id));
 
   // ───── الإعدادات: المستويات جوه الباقة ─────
   async function settings() {
