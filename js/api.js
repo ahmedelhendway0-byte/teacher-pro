@@ -24,6 +24,11 @@ const API = (() => {
     PARENT_PHONE_INVALID: 'رقم ولي الأمر لازم 11 رقم.',
     GROUP_INVALID: 'المجموعة مش من نفس الصف.',
     GROUP_FULL: 'المجموعة دي اتملت. اختار مجموعة تانية أو زوّد العدد من المجموعات.',
+    CLASS_CLOSED: 'الحصة دي مش النهارده. افتح حصة جديدة.',
+    ALREADY: 'الطالب اتسجل حضوره قبل كده.',
+    PLAN_LOCKED: 'الميزة دي مش في باقتك.',
+    SESSIONS_INVALID: 'اختار عدد حصص من 1 لـ 100.',
+    NO_GROUP: 'الطالب ده مالوش مجموعة. حطه في مجموعة الأول.',
     PHONE_TAKEN: 'الرقم ده متسجل لحد تاني في الفريق.',
     NET: 'مفيش اتصال بالنت. اتأكد من النت وجرب تاني.'
   };
@@ -68,6 +73,15 @@ const API = (() => {
     student: id => rpc('tp_student_get', { ...t(), p_id: id }),
     saveStudent: p => rpc('tp_student_save', { ...t(), p }),
     archiveStudent: id => rpc('tp_student_archive', { ...t(), p_id: id }),
+    classesToday: () => rpc('tp_classes_today', t()),
+    openClass: gid => rpc('tp_class_open', { ...t(), p_group: gid }),
+    classState: cid => rpc('tp_class_state', { ...t(), p_class: cid }),
+    scan: (cid, p) => rpc('tp_door_scan', { ...t(), p_class: cid, p }),
+    doorCash: (cid, sid, method) => rpc('tp_door_cash', { ...t(), p_class: cid, p_student: sid, p_method: method || 'search' }),
+    doorHw: (aid, done) => rpc('tp_door_hw', { ...t(), p_attendance: aid, p_done: done }),
+    doorUndo: aid => rpc('tp_door_undo', { ...t(), p_attendance: aid }),
+    buySessions: (sid, n) => rpc('tp_buy_sessions', { ...t(), p_student: sid, p_n: n }),
+    ledger: sid => rpc('tp_student_ledger', { ...t(), p_student: sid }),
     staff: () => rpc('tp_staff_list', t()),
     saveStaff: p => rpc('tp_staff_save', { ...t(), p }),
     log: (before, minImp, limit) => rpc('tp_log_list', { ...t(), p_before: before || null, p_min_imp: minImp || 1, p_limit: limit || 50 })

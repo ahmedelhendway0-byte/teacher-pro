@@ -129,6 +129,7 @@ const App = (() => {
   const can = p => isTeacher() || !!(S.me.staff.perms || {})[p];
   const ROUTES = {
     home: { name: 'الرئيسية', icon: 'home', show: () => true, draw: home },
+    door: { name: 'الباب', icon: 'door', show: () => can('door'), draw: () => Door.draw({ me: S.me, can, level: k => +(S.me.levels || {})[k] || 0 }) },
     students: { name: 'الطلاب', icon: 'student', show: () => true, draw: students },
     groups: { name: 'المجموعات', icon: 'groups', show: () => true, draw: groups },
     team: { name: 'الفريق', icon: 'team', show: isTeacher, draw: team },
@@ -150,8 +151,11 @@ const App = (() => {
   }
 
   function route() {
-    let r = (location.hash || '#home').slice(1);
+    // الأسيستنت اللي شغلها الباب بتفتح عليه على طول
+    let r = (location.hash || (!isTeacher() && can('door') ? '#door' : '#home')).slice(1);
     if (!ROUTES[r] || !ROUTES[r].show()) r = 'home';
+    Door.leave();
+    $('#main').onclick = null;
     $('#nav').innerHTML = Object.entries(ROUTES).filter(([, v]) => v.show())
       .map(([k, v]) => '<a href="#' + k + '" class="' + (k === r ? 'on' : '') + '"' + (k === r ? ' aria-current="page"' : '') + '>' + icon(v.icon) + v.name + '</a>').join('');
     $('#main').innerHTML = '<div class="loading">بيحمّل…</div>';
@@ -290,6 +294,9 @@ const App = (() => {
     if (!s) return;
     sheet('<div class="profile"><span class="av lg ' + s.gender + '">' + initials(s.name) + '</span><div><h2>' + esc(s.name) + '</h2>' +
       '<div class="muted">' + esc(s.grade) + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div></div>' +
+      (lvl('pay') >= 2 ? '<div class="balance"><div><span class="muted">رصيده</span><div><span class="big mark">' + num(s.credits) + '</span> حصص</div></div>' +
+        '<div class="balance-btns">' + (can('money') ? '<button class="btn btn-ink" data-act="buy">' + icon('ticket') + 'اشترك في حصص</button>' : '') +
+        (can('money') || can('students') ? '<button class="btn btn-line" data-act="ledger">كشف الحساب</button>' : '') + '</div></div>' : '') +
       '<dl class="facts"><div><dt>الكود</dt><dd class="num">' + s.code + '</dd></div>' +
       '<div><dt>الرقم السري للبوابة</dt><dd class="num">' + esc(s.pin) + '</dd></div>' +
       '<div><dt>موبايل الطالب</dt><dd>' + phoneLink(s.phone) + '</dd></div>' +
@@ -300,6 +307,8 @@ const App = (() => {
       box.onclick = e => {
         const a = e.target.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'studentEdit') studentForm(s);
+        if (a.dataset.act === 'buy') buyForm(s);
+        if (a.dataset.act === 'ledger') ledgerView(s);
         if (a.dataset.act === 'studentArchive') {
           if (!confirm('تشيل «' + s.name + '» من القوايم؟')) return;
           busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); S.groups = null; loadStudents(); });
@@ -307,6 +316,42 @@ const App = (() => {
       };
     });
   };
+
+  const lvl = k => +(S.me.levels || {})[k] || 0;
+
+  // اشتراك بعدد حصص (كاش عند الأسيستنت) — المبلغ بيتحسب لوحده، مفيش مبلغ حر
+  function buyForm(s) {
+    if (!s.price) return toast('الطالب ده مالوش مجموعة. حطه في مجموعة الأول.', 'err');
+    let n = 4;
+    const total = () => num(n * s.price);
+    sheet('<h2>اشتراك «' + esc(s.name) + '»</h2><p class="muted" style="margin-top:0">سعر الحصة في مجموعته ' + num(s.price) + ' ج. فاضله دلوقتي ' + num(s.credits) + ' حصص.</p>' +
+      '<div class="stepper"><button type="button" data-n="-1" aria-label="أقل">−</button><output id="bn">' + n + '<small>حصص</small></output><button type="button" data-n="1" aria-label="أكتر">+</button></div>' +
+      '<div class="chips center">' + [4, 8, 12].map(x => '<button type="button" class="chip' + (x === n ? ' on' : '') + '" data-set="' + x + '">' + x + '</button>').join('') + '</div>' +
+      '<div class="total"><span class="muted">قبضت كاش</span><b id="bt">' + total() + ' ج</b></div>' +
+      '<div class="actions"><button class="btn btn-ink btn-lg" id="bgo">' + icon('cash') + 'قبضت ' + total() + ' ج — سجّل</button></div>', box => {
+      const upd = () => { $('#bn').innerHTML = n + '<small>حصص</small>'; $('#bt').textContent = total() + ' ج'; $('#bgo').innerHTML = icon('cash') + 'قبضت ' + total() + ' ج — سجّل';
+        $$('[data-set]', box).forEach(c => c.classList.toggle('on', +c.dataset.set === n)); };
+      box.onclick = e => {
+        const d = e.target.closest('[data-n]'), c = e.target.closest('[data-set]');
+        if (d) { n = Math.min(100, Math.max(1, n + +d.dataset.n)); upd(); }
+        if (c) { n = +c.dataset.set; upd(); }
+      };
+      $('#bgo').onclick = e => busy(e.currentTarget, async () => {
+        const r = await API.buySessions(s.id, n); close(); toast('اتسجل · رصيد ' + r.name + ' بقى ' + r.credits + ' حصص');
+      });
+    });
+  }
+
+  const KIND = { buy: 'اشترك', use: 'حضر من الاشتراك', door_cash: 'دفع كاش على الباب', undo: 'إلغاء حضور', refund: 'استرداد', adjust: 'تعديل' };
+  async function ledgerView(s) {
+    const L = await API.ledger(s.id).catch(e => toast(e.message, 'err')); if (!L) return;
+    sheet('<h2>كشف حساب «' + esc(s.name) + '»</h2><p class="muted" style="margin-top:0">رصيده دلوقتي <b>' + num(L.credits) + '</b> حصص.</p>' +
+      (L.rows.length ? '<ul class="feed">' + L.rows.map(r => '<li><div class="grow"><b>' + KIND[r.kind] + '</b>' +
+        (r.sessions ? ' <span class="num">' + (r.sessions > 0 ? '+' : '') + r.sessions + ' حصة</span>' : '') + (r.amount ? ' · <span class="num">' + num(r.amount) + ' ج</span>' : '') +
+        '<div class="tiny">' + esc(r.group_name || '') + (r.staff_name ? (r.group_name ? ' · ' : '') + esc(r.staff_name) : '') + '</div></div>' +
+        '<span class="t">' + new Date(r.at).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short' }) + '</span></li>').join('') + '</ul>'
+        : '<div class="empty">لسه مفيش حركات.</div>'));
+  }
 
   function studentForm(s) {
     const isNew = !s;

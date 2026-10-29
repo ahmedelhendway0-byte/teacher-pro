@@ -51,7 +51,7 @@ const U = (() => {
     if (s < 60) return 'دلوقتي';
     if (s < 3600) return 'من ' + Math.floor(s / 60) + ' دقيقة';
     if (s < 86400) return 'من ' + Math.floor(s / 3600) + ' ساعة';
-    return new Date(iso).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+    return new Date(iso).toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'short' });
   };
 
   return { esc, icon, $, $$, num, toast, sheet, close, busy, credit, ago };
