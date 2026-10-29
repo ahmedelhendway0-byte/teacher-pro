@@ -1,0 +1,74 @@
+/* هوية teacher-pro — «الحبر والقلم الأحمر والهايلايتر» — فاتح بس */
+@import url("https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap");
+
+:root {
+  color-scheme: light;
+
+  /* الورق */
+  --desk: #EEF2F7;        /* خلفية الصفحة */
+  --paper: #FFFFFF;       /* الأسطح */
+  --rule: #DCE3ED;        /* خطوط الكشكول والفواصل */
+  --rule-soft: #EBF0F6;
+
+  /* الحبر */
+  --ink: #14284B;         /* النص الأساسي والزرار الأساسي */
+  --ink-2: #4B5D7A;       /* نص ثانوي */
+  --ink-3: #8795AC;       /* تلميحات */
+  --ink-press: #0C1C38;
+
+  /* الأقلام */
+  --pen-red: #CF3A2E;     /* غلط / مرفوض / مفيش رصيد */
+  --pen-red-wash: #FCEBE8;
+  --pen-green: #17855A;   /* صح / مدفوع / حاضر */
+  --pen-green-wash: #E3F3EB;
+  --pen-amber: #A86A0B;   /* مستني مراجعة */
+  --pen-amber-wash: #FBF0DC;
+
+  /* الهايلايتر — للحاجة المهمة الواحدة في الشاشة */
+  --marker: #FFE45A;
+
+  /* الخط */
+  --font: "Readex Pro", "Noto Kufi Arabic", system-ui, sans-serif;
+  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 20px; --fs-xl: 26px; --fs-2xl: 36px; --fs-3xl: 52px;
+
+  /* المسافات والحواف */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 18px;
+  --lift: 0 1px 0 var(--rule), 0 8px 24px -16px rgba(20, 40, 75, .35);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--desk); color: var(--ink);
+  font-family: var(--font); font-size: var(--fs-md); line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+
+/* الهايلايتر: خط مايل ورا الرقم المهم */
+.mark { position: relative; z-index: 0; padding: 0 .15em; white-space: nowrap; }
+.mark::before {
+  content: ""; position: absolute; z-index: -1; inset: 38% -.1em 6% -.1em;
+  background: var(--marker); border-radius: 3px 10px 4px 12px; transform: rotate(-1.5deg);
+}
+
+/* الزراير */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 46px; padding: 0 var(--s5); border-radius: var(--r-md);
+  font: 600 var(--fs-md)/1 var(--font); border: 1.5px solid transparent; cursor: pointer;
+  transition: transform .08s, background .15s;
+}
+.btn:active { transform: translateY(1px); }
+.btn svg { width: 20px; height: 20px; }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-ink:hover { background: var(--ink-press); }
+.btn-line { background: var(--paper); color: var(--ink); border-color: var(--rule); }
+.btn-line:hover { border-color: var(--ink-3); }
+.btn-green { background: var(--pen-green); color: #fff; }
+.btn-red { background: var(--paper); color: var(--pen-red); border-color: currentColor; }
+.btn-ghost { background: none; color: var(--ink-2); padding: 0 var(--s3); }
+.btn-lg { min-height: 58px; font-size: var(--fs-lg); border-radius: var(--r-lg); }
+.btn-block { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

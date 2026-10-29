@@ -1,0 +1,351 @@
+﻿<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الهوية والموك أب — مرحلة 0</title>
+<link rel="stylesheet" href="../css/tokens.css">
+<style>
+  .wrap { max-width: 1180px; margin: 0 auto; padding: var(--s6) var(--s4) var(--s7); }
+  h1 { font-size: var(--fs-2xl); font-weight: 700; margin: 0 0 var(--s2); line-height: 1.25; }
+  h2 { font-size: var(--fs-xl); font-weight: 600; margin: var(--s7) 0 var(--s2); }
+  .lead { color: var(--ink-2); max-width: 64ch; margin: 0; }
+  .note { color: var(--ink-3); font-size: var(--fs-sm); margin: var(--s1) 0 var(--s5); max-width: 70ch; }
+
+  /* لوحة الألوان على شكل أقلام */
+  .pens { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s3); }
+  .pen { background: var(--paper); border-radius: var(--r-md); padding: var(--s3); box-shadow: var(--lift); }
+  .pen i { display: block; height: 52px; border-radius: var(--r-sm); margin-bottom: var(--s2); }
+  .pen b { display: block; font-weight: 600; }
+  .pen small { color: var(--ink-3); font-size: var(--fs-xs); direction: ltr; display: inline-block; }
+
+  .type { background: var(--paper); border-radius: var(--r-lg); padding: var(--s5); box-shadow: var(--lift); }
+  .type p { margin: 0 0 var(--s3); }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+  .icons { display: flex; flex-wrap: wrap; gap: var(--s2); }
+  .icons span { display: grid; place-items: center; width: 52px; height: 52px; background: var(--paper); border-radius: var(--r-md); box-shadow: var(--lift); }
+  .icons svg { width: 24px; height: 24px; }
+
+  /* الموبايلات */
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: var(--s5); align-items: start; }
+  .phone { background: var(--paper); border-radius: 30px; border: 8px solid #DDE3EC; overflow: hidden; max-width: 380px; width: 100%; margin: 0 auto; }
+  .phone-cap { text-align: center; color: var(--ink-2); font-size: var(--fs-sm); margin-top: var(--s2); }
+  .scr { background: var(--desk); min-height: 640px; display: flex; flex-direction: column; }
+  .bar { background: var(--paper); padding: var(--s3) var(--s4); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--rule); }
+  .bar b { font-weight: 600; }
+  .bar small { color: var(--ink-3); font-size: var(--fs-xs); display: block; }
+  .body { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); flex: 1; }
+  .sheet { background: var(--paper); border-radius: var(--r-lg); padding: var(--s4); }
+  .muted { color: var(--ink-2); font-size: var(--fs-sm); }
+  .tiny { color: var(--ink-3); font-size: var(--fs-xs); }
+
+  /* الباب */
+  .count { font-size: var(--fs-sm); color: var(--ink-2); text-align: left; }
+  .count b { color: var(--ink); font-size: var(--fs-lg); }
+  .tap { border: 2px dashed var(--rule); border-radius: var(--r-lg); padding: var(--s4); display: flex; align-items: center; gap: var(--s3); color: var(--ink-2); background: var(--paper); }
+  .tap svg { width: 34px; height: 34px; color: var(--ink); flex: none; }
+  .tap .pulse { margin-inline-start: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--pen-green); box-shadow: 0 0 0 6px var(--pen-green-wash); }
+  .who { display: flex; gap: var(--s3); align-items: center; }
+  .face { width: 64px; height: 64px; border-radius: 16px; background: #D8E1EE; display: grid; place-items: center; font-weight: 700; font-size: var(--fs-lg); color: var(--ink); flex: none; }
+  .who h3 { margin: 0; font-size: var(--fs-lg); font-weight: 600; line-height: 1.3; }
+  /* صورة الطالب الحقيقية — كبيرة على الباب عشان الأسيستنت تقارن بالوش */
+  .photo { width: 64px; height: 76px; border-radius: 12px; flex: none; overflow: hidden; background: #D8E1EE; }
+  .photo svg { width: 100%; height: 100%; display: block; }
+  .nophoto { width: 96px; height: 116px; border-radius: 14px; flex: none; border: 2px dashed var(--pen-amber); background: var(--pen-amber-wash); color: var(--pen-amber); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font: 600 var(--fs-xs) var(--font); cursor: pointer; }
+  .nophoto svg { width: 26px; height: 26px; }
+  .mini { width: 36px; height: 36px; border-radius: 10px; overflow: hidden; flex: none; background: #D8E1EE; }
+  .mini svg { width: 100%; height: 100%; display: block; }
+  .msg { margin: var(--s3) 0; padding: var(--s3); background: var(--desk); border-radius: var(--r-md); font-size: var(--fs-sm); line-height: 1.8; }
+  .switch-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .switch { width: 46px; height: 28px; border-radius: 999px; background: var(--rule); position: relative; flex: none; }
+  .switch::after { content: ""; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: right .15s; }
+  .switch.on { background: var(--pen-green); }
+  .switch.on::after { right: 21px; }
+  .initials { display: grid; place-items: center; font-weight: 600; font-size: var(--fs-xs); color: var(--ink-2); }
+  .verdict { margin-top: var(--s3); border-radius: var(--r-md); padding: var(--s3) var(--s4); display: flex; align-items: center; gap: var(--s3); font-weight: 600; }
+  .verdict svg { width: 30px; height: 30px; flex: none; }
+  .ok { background: var(--pen-green-wash); color: var(--pen-green); }
+  .no { background: var(--pen-red-wash); color: var(--pen-red); }
+  .verdict .big { font-size: var(--fs-xl); color: var(--ink); }
+  .hw { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin-top: var(--s3); }
+  .hw button { min-height: 52px; border-radius: var(--r-md); border: 1.5px solid var(--rule); background: var(--paper); font: 600 var(--fs-md) var(--font); display: flex; align-items: center; justify-content: center; gap: var(--s2); color: var(--ink-2); cursor: pointer; }
+  .hw svg { width: 20px; height: 20px; }
+  .hw .on-yes { border-color: var(--pen-green); color: var(--pen-green); background: var(--pen-green-wash); }
+  .hw .on-no { border-color: var(--pen-red); color: var(--pen-red); background: var(--pen-red-wash); }
+  .log { list-style: none; margin: 0; padding: 0; background: var(--paper); border-radius: var(--r-lg); }
+  .log li { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--rule-soft); font-size: var(--fs-sm); }
+  .log li:last-child { border: 0; }
+  .log .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .log .t { color: var(--ink-3); margin-inline-start: auto; font-size: var(--fs-xs); }
+  .cash { min-height: 36px; padding: 0 var(--s3); font-size: var(--fs-sm); }
+
+  /* الاشتراك */
+  .stepper { display: flex; align-items: center; justify-content: space-between; margin: var(--s3) 0; }
+  .stepper button { width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid var(--rule); background: var(--paper); font: 600 26px var(--font); color: var(--ink); cursor: pointer; }
+  .stepper output { font-size: var(--fs-3xl); font-weight: 700; line-height: 1; text-align: center; }
+  .stepper output small { display: block; font-size: var(--fs-sm); font-weight: 400; color: var(--ink-2); margin-top: var(--s1); }
+  .chips { display: flex; gap: var(--s2); justify-content: center; }
+  .chips button { border: 1.5px solid var(--rule); background: var(--paper); border-radius: 999px; padding: 6px 16px; font: 500 var(--fs-sm) var(--font); color: var(--ink-2); cursor: pointer; }
+  .chips .sel { border-color: var(--ink); color: var(--ink); }
+  .prod { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) 0; border-top: 1px solid var(--rule-soft); }
+  .prod input { width: 22px; height: 22px; accent-color: var(--ink); }
+  .prod span { margin-inline-start: auto; font-weight: 600; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid var(--ink); padding-top: var(--s3); margin-top: var(--s2); }
+  .total b { font-size: var(--fs-2xl); font-weight: 700; }
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  .steps li { counter-increment: s; display: flex; gap: var(--s3); padding: var(--s2) 0; font-size: var(--fs-sm); }
+  .steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; font-weight: 600; font-size: var(--fs-xs); }
+  .num { direction: ltr; display: inline-block; font-weight: 600; letter-spacing: .5px; }
+
+  /* بوابة الطالب */
+  .hello { font-size: var(--fs-xl); font-weight: 600; margin: 0; line-height: 1.3; }
+  .bal { display: flex; align-items: center; justify-content: space-between; }
+  .bal .n { font-size: var(--fs-3xl); font-weight: 700; line-height: 1; }
+  .todo { display: flex; align-items: center; gap: var(--s3); }
+  .todo svg { width: 26px; height: 26px; flex: none; color: var(--ink-2); }
+  .quiz { display: flex; align-items: center; gap: var(--s4); }
+  .grade { font-size: var(--fs-2xl); font-weight: 700; line-height: 1; direction: ltr; unicode-bidi: isolate; }
+  .grade small { font-size: var(--fs-md); color: var(--ink-3); font-weight: 400; }
+  .wrong { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
+  .wrong span { font-size: var(--fs-sm); padding: 2px 12px; border: 1.5px solid var(--pen-red); color: var(--pen-red); border-radius: 999px 999px 999px 4px; }
+  .dq p { margin: var(--s2) 0; font-weight: 500; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+  .opts button { min-height: 44px; border-radius: var(--r-sm); border: 1.5px solid var(--rule); background: var(--paper); font: 500 var(--fs-sm) var(--font); color: var(--ink); cursor: pointer; }
+  .rank { display: flex; align-items: center; justify-content: space-between; }
+  .tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--paper); border-top: 1px solid var(--rule); }
+  .tabs a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--s2) 0; font-size: var(--fs-xs); color: var(--ink-3); text-decoration: none; }
+  .tabs a svg { width: 22px; height: 22px; }
+  .tabs .cur { color: var(--ink); font-weight: 600; }
+
+  .credit { text-align: center; padding: var(--s4); font-size: var(--fs-xs); color: var(--ink-3); }
+  .credit a { color: var(--ink); font-weight: 700; text-decoration: none; }
+  .credit .row { justify-content: center; margin-top: var(--s2); gap: var(--s2); }
+  .credit .btn { min-height: 34px; padding: 0 var(--s3); font-size: var(--fs-xs); }
+  footer.credit { margin-top: var(--s7); border-top: 1px solid var(--rule); padding-top: var(--s5); font-size: var(--fs-sm); }
+
+  .q { background: var(--paper); border-radius: var(--r-lg); padding: var(--s4) var(--s5); box-shadow: var(--lift); }
+  .q li { margin-bottom: var(--s2); }
+</style>
+</head>
+<body>
+
+<!-- أيقونات خطية موحدة (24 × 24، سُمك 2) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="12" height="16" rx="2"/><path d="M18 8a6 6 0 010 8M20.5 5.5a10 10 0 010 13"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 8a2 2 0 002-2h14a2 2 0 002 2v2a2 2 0 000 4v2a2 2 0 00-2 2H5a2 2 0 00-2-2v-2a2 2 0 000-4z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 21V5M8 7h7"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M15 4l5 5L9 20H4v-5z"/><path d="M13 6l5 5"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M7 4h10v5a5 5 0 01-10 0z"/><path d="M7 6H4a3 3 0 003 4M17 6h3a3 3 0 01-3 4M12 14v4M8 21h8"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></symbol>
+    <symbol id="i-cash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+    <symbol id="i-wa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M4 20l1.3-3.9A8 8 0 1112 20a8 8 0 01-4.1-1.1z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1-.5-1.5-1-2-2l1-1-1-2z"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <!-- صورة تجريبية مكان صورة الطالب الحقيقية -->
+    <symbol id="ph-a" viewBox="0 0 96 116"><rect width="96" height="116" fill="#C9D6E8"/><circle cx="48" cy="46" r="20" fill="#9AABC4"/><path d="M14 116c2-26 16-38 34-38s32 12 34 38z" fill="#9AABC4"/></symbol>
+    <symbol id="ph-b" viewBox="0 0 96 116"><rect width="96" height="116" fill="#D7DEEA"/><circle cx="48" cy="46" r="20" fill="#A9B6CA"/><path d="M26 40c0-18 44-18 44 0v30c-6 6-38 6-44 0z" fill="#A9B6CA" opacity=".55"/><path d="M14 116c2-26 16-38 34-38s32 12 34 38z" fill="#A9B6CA"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M17 21h4v-4M14 21v-3"/></symbol>
+  </defs>
+</svg>
+
+<main class="wrap">
+  <h1>الهوية: الحبر والقلم الأحمر والهايلايتر</h1>
+  <p class="lead">الفكرة جاية من كشكول الطالب المتصحّح: حبر كحلي للمحتوى، قلم أحمر للغلط، أخضر للصح، وهايلايتر أصفر على الحاجة الوحيدة المهمة في كل شاشة (الحصص الفاضلة، الترتيب). فاتح بس، وهادي ومنظم زي ما اتفقنا.</p>
+
+  <h2>الألوان</h2>
+  <p class="note">كل لون ليه وظيفة واحدة، فالطالب والأسيستنت يفهموا الحالة من اللون من غير ما يقروا.</p>
+  <div class="pens">
+    <div class="pen"><i style="background:var(--ink)"></i><b>حبر</b><small>#14284B</small><div class="tiny">النص والزرار الأساسي</div></div>
+    <div class="pen"><i style="background:var(--pen-green)"></i><b>أخضر</b><small>#17855A</small><div class="tiny">مدفوع · حاضر · صح</div></div>
+    <div class="pen"><i style="background:var(--pen-red)"></i><b>قلم أحمر</b><small>#CF3A2E</small><div class="tiny">مفيش رصيد · غلط</div></div>
+    <div class="pen"><i style="background:var(--pen-amber)"></i><b>كهرماني</b><small>#A86A0B</small><div class="tiny">مستني مراجعة</div></div>
+    <div class="pen"><i style="background:var(--marker)"></i><b>هايلايتر</b><small>#FFE45A</small><div class="tiny">الرقم المهم بس</div></div>
+    <div class="pen"><i style="background:var(--desk);border:1px solid var(--rule)"></i><b>الورق</b><small>#EEF2F7</small><div class="tiny">الخلفية</div></div>
+  </div>
+
+  <h2>الخط والزراير والأيقونات</h2>
+  <p class="note">خط واحد: Readex Pro. الأرقام ثابتة العرض عشان الأعمدة والعدادات ماتتهزش.</p>
+  <div class="type">
+    <p style="font-size:var(--fs-2xl);font-weight:700;line-height:1.2">فاضل <span class="mark">4</span> حصص في اشتراكك</p>
+    <p style="font-size:var(--fs-lg);font-weight:600">عنوان قسم — مجموعة السبت ٤ العصر</p>
+    <p>نص عادي للشرح والتعليمات، مقروء على أصغر موبايل.</p>
+    <p class="muted" style="margin-bottom:var(--s5)">نص ثانوي للتفاصيل والتواريخ.</p>
+    <div class="row">
+      <button class="btn btn-ink"><svg><use href="#i-ticket"/></svg>اشترك في 5 حصص</button>
+      <button class="btn btn-green"><svg><use href="#i-cash"/></svg>دفع كاش 100 ج</button>
+      <button class="btn btn-line">تعديل</button>
+      <button class="btn btn-red"><svg><use href="#i-x"/></svg>رفض الطلب</button>
+      <button class="btn btn-ghost">إلغاء</button>
+    </div>
+    <div class="icons" style="margin-top:var(--s5)">
+      <span title="كارت NFC"><svg><use href="#i-nfc"/></svg></span>
+      <span title="QR"><svg><use href="#i-qr"/></svg></span>
+      <span title="حصص"><svg><use href="#i-ticket"/></svg></span>
+      <span title="كاش"><svg><use href="#i-cash"/></svg></span>
+      <span title="إيصال"><svg><use href="#i-receipt"/></svg></span>
+      <span title="واجب"><svg><use href="#i-book"/></svg></span>
+      <span title="كويز"><svg><use href="#i-pen"/></svg></span>
+      <span title="ترتيب"><svg><use href="#i-trophy"/></svg></span>
+      <span title="تحدي"><svg><use href="#i-bolt"/></svg></span>
+      <span title="مقفول في الباقة"><svg><use href="#i-lock"/></svg></span>
+      <span title="بحث"><svg><use href="#i-search"/></svg></span>
+      <span title="الرئيسية"><svg><use href="#i-home"/></svg></span>
+    </div>
+  </div>
+
+  <h2>الشاشات الأساسية (موك أب — داتا ديمو)</h2>
+  <p class="note">لسه شكل بس من غير برمجة. الأسامي والأرقام تجريبية.</p>
+
+  <div class="phones">
+
+    <!-- 1. الباب -->
+    <div>
+      <div class="phone"><div class="scr">
+        <div class="bar">
+          <div><b>الباب</b><small>مجموعة السبت ٤ العصر · ٣ ثانوي</small></div>
+          <div class="count"><b>132</b> / 180<br><span class="tiny">دخلوا</span></div>
+        </div>
+        <div class="body">
+          <div class="tap"><svg><use href="#i-nfc"/></svg><b style="color:var(--ink)">قرّب الكارت</b><span class="pulse" aria-label="جاهز"></span></div>
+
+          <div class="sheet">
+            <div class="who">
+              <div class="photo"><svg><use href="#ph-a"/></svg></div>
+              <div><h3>يوسف محمود</h3><div class="tiny">كود 20417</div></div>
+            </div>
+            <div class="verdict ok"><svg><use href="#i-check"/></svg><div>اتخصمت حصة · فاضل <span class="big mark">4</span></div></div>
+            <div class="hw">
+              <button class="on-yes"><svg><use href="#i-check"/></svg>عمل الواجب</button>
+              <button><svg><use href="#i-x"/></svg>ماعملش</button>
+            </div>
+          </div>
+
+          <div class="tiny">آخر اللي دخلوا</div>
+          <ul class="log">
+            <li><span class="mini"><svg><use href="#ph-b"/></svg></span><div><b>مريم السيد</b><div class="tiny" style="color:var(--pen-red)">مفيش رصيد</div></div><button class="btn btn-green cash">دفع كاش 100 ج</button></li>
+            <li><span class="mini initials">سع</span><div>سلمى عادل<div class="tiny">فاضل 7</div></div><span class="t">٤:٠٢</span></li>
+          </ul>
+        </div>
+        <div class="credit">POWERED BY <a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">HINDAWY</a></div>
+      </div></div>
+      <p class="phone-cap">الأسيستنت على الباب — نتيجة واضحة من أول نظرة</p>
+    </div>
+
+    <!-- 2. الاشتراك -->
+    <div>
+      <div class="phone"><div class="scr">
+        <div class="bar"><div><b>اشترك في حصص</b><small>سعر الحصة 100 ج</small></div><svg width="22" height="22"><use href="#i-ticket"/></svg></div>
+        <div class="body">
+          <div class="sheet">
+            <div class="muted">عدد الحصص</div>
+            <div class="stepper">
+              <button aria-label="أقل">−</button>
+              <output>4<small>حصص = 400 ج</small></output>
+              <button aria-label="أكتر">+</button>
+            </div>
+            <div class="prod" style="margin-top:var(--s4)"><input type="checkbox" checked id="p1"><label for="p1">مذكرة الفصل الثالث</label><span>50 ج</span></div>
+            <div class="total"><span class="muted">المطلوب بالظبط</span><b>450 ج</b></div>
+          </div>
+
+          <div class="sheet">
+            <ol class="steps">
+              <li><span>حوّل <b>450 ج بالظبط</b> فودافون كاش على <span class="num">010 1234 5678</span></span></li>
+              <li><span>ارفع صورة الإيصال</span></li>
+            </ol>
+          </div>
+          <button class="btn btn-ink btn-lg btn-block"><svg><use href="#i-receipt"/></svg>حوّلت 450 ج — أكّد</button>
+        </div>
+        <div class="credit">POWERED BY <a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">HINDAWY</a></div>
+      </div></div>
+      <p class="phone-cap">الطالب أو ولي الأمر — المبلغ بيتحسب لوحده</p>
+    </div>
+
+    <!-- 3. بوابة الطالب -->
+    <div>
+      <div class="phone"><div class="scr">
+        <div class="bar"><div><b>أهلاً يوسف</b><small>مجموعة السبت ٤ العصر</small></div><span class="mini" style="width:40px;height:40px"><svg><use href="#ph-a"/></svg></span></div>
+        <div class="body">
+          <div class="sheet bal">
+            <div><div class="muted">فاضلك</div><span class="n mark">4</span> <span class="muted">حصص</span></div>
+            <button class="btn btn-line">اشترك تاني</button>
+          </div>
+
+          <div class="sheet todo">
+            <svg><use href="#i-book"/></svg>
+            <div style="flex:1"><b>واجب حصة السبت</b><div class="tiny">مسائل الفصل الثالث ص ٤٥</div></div>
+            <button class="btn btn-ink" style="min-height:40px;padding:0 var(--s3);font-size:var(--fs-sm)">عملته</button>
+          </div>
+
+          <div class="sheet">
+            <div class="quiz">
+              <div class="grade">17<small> / 20</small></div>
+              <div><b>كويز الفصل التالت</b><div class="tiny">راجع قوانين الدوائر</div></div>
+            </div>
+            <div class="wrong"><span>قانون أوم</span><span>توصيل التوازي</span></div>
+            <a href="#" class="btn btn-ghost" style="padding:0;margin-top:var(--s2);min-height:36px">حل أسئلة على أخطائي</a>
+          </div>
+
+          <a href="#" class="sheet todo" style="text-decoration:none;color:inherit">
+            <svg><use href="#i-bolt"/></svg>
+            <div style="flex:1"><b>سؤال اليوم</b><div class="tiny">سلسلة 6 أيام · ترتيبك #7</div></div>
+          </a>
+        </div>
+        <nav class="tabs">
+          <a href="#" class="cur"><svg><use href="#i-home"/></svg>الرئيسية</a>
+          <a href="#"><svg><use href="#i-pen"/></svg>درجاتي</a>
+          <a href="#"><svg><use href="#i-bolt"/></svg>تحدّي</a>
+          <a href="#"><svg><use href="#i-user"/></svg>حسابي</a>
+        </nav>
+      </div></div>
+      <p class="phone-cap">بوابة الطالب — كل اللي يهمه في شاشة واحدة</p>
+    </div>
+
+    <!-- 4. واتساب -->
+    <div>
+      <div class="phone"><div class="scr">
+        <div class="bar"><div><b>رسايل واتساب</b><small>مجموعة السبت ٤ العصر</small></div><svg width="22" height="22"><use href="#i-wa"/></svg></div>
+        <div class="body">
+          <div class="chips" style="justify-content:flex-start;flex-wrap:wrap">
+            <button class="sel">الغايبين · 12</button><button>ماعملش الواجب · 9</button><button>الكويز</button><button>الرصيد خلص</button>
+          </div>
+          <div class="sheet">
+            <div class="row" style="justify-content:space-between"><b>تتبعت لـ</b>
+              <div class="chips"><button>الطالب</button><button class="sel">ولي الأمر</button><button>الاتنين</button></div>
+            </div>
+            <div class="msg">ولي أمر الطالب <b>{الاسم}</b>، ابنكم غاب النهارده عن حصة السبت ٤ العصر. فاضل في اشتراكه {الحصص} حصص. للتواصل: {رقم السنتر}</div>
+            <label class="switch-row"><span><b>إرسال أوتوماتيك</b><span class="tiny" style="display:block">بعد قفل الحصة</span></span><span class="switch on" role="switch" aria-checked="true"></span></label>
+          </div>
+          <ul class="log">
+            <li><span class="mini initials">مس</span><div>مريم السيد<div class="tiny">ولي الأمر · 0100 •••• 221</div></div><button class="btn btn-line cash"><svg style="width:16px;height:16px"><use href="#i-wa"/></svg>ابعت</button></li>
+            <li style="opacity:.55"><span class="mini initials">كم</span><div>كريم مصطفى<div class="tiny" style="color:var(--pen-green)">اتبعتت</div></div><svg style="width:18px;height:18px;margin-inline-start:auto;color:var(--pen-green)"><use href="#i-check"/></svg></li>
+          </ul>
+        </div>
+        <div class="credit">POWERED BY <a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">HINDAWY</a></div>
+      </div></div>
+      <p class="phone-cap">الأسيستنت — رسالة مفصلة جاهزة، يدوي أو أوتوماتيك</p>
+    </div>
+  </div>
+
+  <h2>محتاج رأيك في</h2>
+  <ol class="q">
+    <li>الألوان والإحساس العام: تمام ولا عايز تغيير؟</li>
+    <li>اسم السيستم نفسه (اللي هيظهر للطلاب فوق) — عندك اسم؟</li>
+  </ol>
+
+  <footer class="credit">
+    POWERED BY <a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">HINDAWY</a>
+    <div class="row">
+      <a class="btn btn-line" href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">اعرف أكتر</a>
+      <a class="btn btn-line" href="https://ahmedelhendway0-byte.github.io/portfolio/#team" target="_blank" rel="noopener">اعرف أكتر عن المؤسسين</a>
+    </div>
+  </footer>
+</main>
+</body>
+</html>
