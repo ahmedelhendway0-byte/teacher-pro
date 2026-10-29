@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14284B">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>سيستم المدرس — العرض</title>
+<link rel="stylesheet" href="../css/tokens.css?v=0.7.0">
+<link rel="stylesheet" href="pres.css?v=0.7.0">
+</head>
+<body>
+<nav class="pnav" aria-label="أقسام العرض">
+  <a href="#door">الباب</a><a href="#pay">الدفع المسبق</a><a href="#money">الحسابات</a><a href="#grades">الدرجات</a><a href="#engage">التفاعل</a><a href="#msgs">الرسايل</a><a href="#eye">عين المستر</a><a href="#plans">الباقات</a><a href="#try" class="try">جرّب</a>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">سيستم المدرس — بنسخة لكل مستر باسمه</p>
+    <h1>500 طالب في اليوم يدخلوا من غير طابور</h1>
+    <p class="lead">الطالب يقرّب كارته من موبايل الأسيستنت ⇒ الحصة تتخصم من اشتراكه اللي دافعه قبل كده ⇒ الأسيستنت تدوس «عمل الواجب» ⇒ اللي بعده. وولي الأمر بيشحن ويتابع من موبايله.</p>
+    <div class="cta"><a class="btn btn-lg cta-1" href="../demo/">جرّب سيستم المستر والأسيستنت</a><a class="btn btn-lg cta-2" href="../demo/family/">جرّب بوابة الطالب وولي الأمر</a></div>
+    <ul class="facts">
+      <li><b>2,000</b><span>طالب في الديمو</span></li><li><b>أقل من ثانية</b><span>للطالب على الباب</span></li><li><b>3</b><span>طرق دخول: كارت · QR · كود</span></li><li><b>0</b><span>مبلغ بيتكتب بالإيد</span></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+<!-- الباب -->
+<section id="door" class="sec">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">1 · الباب</p>
+      <h2>الطالب يقرّب الكارت… وخلاص</h2>
+      <ol class="flow">
+        <li><b>الأسيستنت تفتح «الباب»</b> — السيستم بيفتح لوحده على المجموعة الشغالة دلوقتي حسب ميعادها (تقدر تغيّرها بضغطة).</li>
+        <li><b>الطالب يتقري بأي طريقة:</b> كارت NFC يتقرّب من ضهر موبايل أندرويد، أو QR من الكارت أو من موبايله يتمسح بالكاميرا أو سكانر، أو الكود/الاسم.</li>
+        <li><b>النتيجة بلون وصوت:</b> أخضر «اتخصمت حصة · فاضل 4» · أحمر «مفيش رصيد» ومعاه زرار «دفع كاش» · أصفر «اتسجل قبل كده» (مفيش خصم مرتين).</li>
+        <li><b>الواجب:</b> الطالب يوري الكشكول ⇒ «عمل الواجب / ماعملش». ولو أكّد من البوابة إنه عمله، بيظهر للأسيستنت.</li>
+        <li><b>آخر الحصة:</b> «قفل الحصة» ⇒ اللي ماجاش بيتسجل غايب ويتبعت لولي أمره.</li>
+      </ol>
+    </div>
+    <div class="stage" aria-label="الكارت بيقرّب من الموبايل">
+      <div class="phone">
+        <div class="ph-bar"><b>الباب</b><span>132 / 180</span></div>
+        <div class="ph-res"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551 · السبت 4 العصر</small></div></div>
+        <div class="ph-ok">✓ اتخصمت حصة · فاضل <mark>4</mark></div>
+        <div class="ph-hw"><span class="y">✓ عمل الواجب</span><span>✕ ماعملش</span></div>
+        <div class="nfc-waves"><i></i><i></i><i></i></div>
+      </div>
+      <div class="card3d"><div class="c-top">مستر محمد <span>تالتة ثانوي</span></div><div class="c-body"><span class="qr"></span><div><b>يوسف محمود</b><em>2551</em></div></div></div>
+      <p class="cap">كارت بـ QR + NFC: نفس الكارت بيتقري بالتقريب أو بالكاميرا</p>
+    </div>
+  </div>
+</section>
+
+<!-- الدفع المسبق -->
+<section id="pay" class="sec alt">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">2 · الدفع المسبق</p>
+      <h2>اشتراك بعدد حصص، والمبلغ بيتحسب لوحده</h2>
+      <p>الطالب أو ولي الأمر بيختار «4 حصص» ⇒ السيستم يقول له «حوّل 400 ج بالظبط على الرقم ده». مفيش 250 ولا كسور ولا مبالغ تتكتب بالإيد. ومعاها المذكرات والامتحانات بسعر ثابت.</p>
+      <div class="pipe" aria-label="تأكيد التحويل أوتوماتيك">
+        <div><b>ولي الأمر يحوّل</b><small>فودافون كاش / انستاباي</small></div><span>←</span>
+        <div><b>موبايل الاستلام</b><small>رسالة «تم استلام 400 ج من 010…»</small></div><span>←</span>
+        <div><b>السيستم يطابق</b><small>نفس المبلغ + الرقم + الوقت</small></div><span>←</span>
+        <div class="ok"><b>الرصيد اتشحن</b><small>وإشعار لولي الأمر</small></div>
+      </div>
+      <p class="small">الرسايل اللي جاية من أرقام عادية بتترفض (حماية من الرسايل المزيفة). ولو ماتطابقتش، الطلب بيروح للأسيستنت تراجعه بضغطة مع صورة الإيصال.</p>
+    </div>
+    <div class="mini-phone">
+      <p class="mp-h">اشحن حصص</p>
+      <div class="mp-step"><span>−</span><b>4<small>حصص</small></b><span>+</span></div>
+      <div class="mp-total"><span>المطلوب بالظبط</span><b>400 ج</b></div>
+      <ol class="mp-list"><li>حوّل <b>400 ج بالظبط</b> فودافون كاش على 01012345678</li><li>اكتب الرقم اللي حوّلت منه</li><li>دوس «حوّلت»</li></ol>
+      <span class="mp-btn">حوّلت 400 ج — أكّد</span>
+    </div>
+  </div>
+</section>
+
+<!-- الحسابات -->
+<section id="money" class="sec">
+  <div class="wrap">
+    <p class="num-k">3 · الحسابات</p>
+    <h2>فلوس الاشتراك أمانة… والإيراد بيتحسب لما الحصة تتخصم</h2>
+    <div class="grid3">
+      <div class="tile"><b>أمانات الطلاب</b><p>اللي دفعوه مقدم ولسه ماحضروهوش — في تقرير لوحده، ومش بيدخل في الإيراد.</p></div>
+      <div class="tile"><b>الإيراد</b><p>حصة اتخصمت + كاش على الباب + منتجات. يومي وأسبوعي وشهري ولأي فترة.</p></div>
+      <div class="tile"><b>كل حضور متسجل</b><p>طريقة الدخول (كارت / QR / يدوي) وطريقة الدفع (اشتراك / كاش)، ومين من الأسيستنتس قبض كام.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- الدرجات -->
+<section id="grades" class="sec alt">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">4 · الدرجات و«أخطائي»</p>
+      <h2>مش بس الدرجة… الطالب يعرف غلط في إيه</h2>
+      <p>الأسيستنت بتكتب الدرجة وتختار الأجزاء اللي غلط فيها (قانون أوم، التوازي…) من شاشة واحدة لكل المجموعة. الطالب وولي الأمر بيوصلهم إشعار، وعند الطالب زرار «حل أسئلة على أخطائي» بيجيب له أسئلة على نفس الأجزاء من بنك الأسئلة.</p>
+    </div>
+    <div class="quiz-card"><div class="qc-top"><span class="g">13<small> / 20</small></span><b>كويز التيار الكهربي</b></div><div class="qc-wrong"><span>قانون أوم</span><span>التوازي</span></div><span class="qc-btn">⚡ حل أسئلة على أخطائي</span></div>
+  </div>
+</section>
+
+<!-- التفاعل -->
+<section id="engage" class="sec">
+  <div class="wrap">
+    <p class="num-k">5 · التفاعل</p>
+    <h2>الطالب بيذاكر عشان يكسب</h2>
+    <div class="grid3">
+      <div class="tile"><b>بنك الأسئلة</b><p>المستر بيحط أسئلة لكل وحدة، والطالب يحل براحته. كل إجابة صح = نقط ومستوى.</p></div>
+      <div class="tile"><b>سؤال اليوم</b><p>سؤال جديد كل يوم بيتختار لوحده، وسلسلة أيام 🔥 للي بيحل كل يوم.</p></div>
+      <div class="tile"><b>ترتيب المجموعة</b><p>الطالب يشوف ترتيبه وأوائل مجموعته — والمستر يقدر يقفلها.</p></div>
+      <div class="tile"><b>مسابقات المجموعات</b><p>مجموعة ضد مجموعة بمتوسط نقط الطلاب في فترة.</p></div>
+      <div class="tile"><b>تحدي 1 ضد 1</b><p>5 أسئلة، كل واحد يحل في وقته خلال 24 ساعة. ولد لولد وبنت لبنت، نفس الصف، من غير شات.</p></div>
+      <div class="tile"><b>صورة الأوائل</b><p>صورة جاهزة بهوية المستر تتنزل أو تتشارك على فيسبوك بضغطة.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- الرسايل -->
+<section id="msgs" class="sec alt">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">6 · الرسايل والإشعارات</p>
+      <h2>كل حاجة بتحصل بتوصل… أوتوماتيك أو بزرار</h2>
+      <p>درجة الكويز، فاضل حصة واحدة، الرصيد خلص، الشحن اتأكد، غياب، ماعملش الواجب، رسالة من المستر. لكل نوع: أوتوماتيك / بزرار / مقفول، ونص الرسالة يتعدّل، ولمين (الطالب / ولي الأمر / الاتنين). والمستر يقدر يدي إعدادات الرسايل لأسيستنت معينة.</p>
+      <p class="small">الإشعار بيظهر في البوابة دايماً. واتساب: رسالة جاهزة بزرار لكل طالب (ببلاش)، أو إرسال أوتوماتيك في الباقة الأعلى.</p>
+    </div>
+    <div class="msgs">
+      <div class="m"><b>ولي أمر يوسف</b><p>فاضل لـ يوسف حصة واحدة في الاشتراك. اشحن من البوابة عشان مايقفش على الباب.</p><span>أوتوماتيك</span></div>
+      <div class="m"><b>ولي أمر مريم</b><p>درجة مريم في كويز التيار الكهربي 17 من 20 · راجع: التوازي</p><span class="wa">ابعت واتساب</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- عين المستر -->
+<section id="eye" class="sec">
+  <div class="wrap">
+    <p class="num-k">7 · عين المستر والفريق</p>
+    <h2>كل حاجة بتحصل بتظهر عند المستر، المهم الأول</h2>
+    <div class="grid3">
+      <div class="tile"><b>اللي حصل</b><p>مين سجّل، مين قبض كام، مين لغى حضور، مين بعت رسايل — بالوقت والاسم، وفلتر «المهم بس».</p></div>
+      <div class="tile"><b>صلاحيات لكل أسيستنت</b><p>الباب، الطلاب، المجموعات، الفلوس، الرسايل، إعدادات الإشعارات، التقارير، اللي حصل.</p></div>
+      <div class="tile"><b>كروت الطلاب</b><p>كل طالب ليه كود و QR، وكروت المجموعة كلها تتطبع مرة واحدة (10 في الورقة).</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- الباقات -->
+<section id="plans" class="sec alt">
+  <div class="wrap">
+    <p class="num-k">8 · الباقات</p>
+    <h2>كل مستر بيتسلّم السيستم على مقاس باقته</h2>
+    <p>المستوى الأقل شغال كويس وموفّر وقت — والمستر يقدر ينزل لمستوى أقل جوه باقته في أي وقت.</p>
+    <div class="table-wrap"><table class="plans">
+      <thead><tr><th>الميزة</th><th>مستوى 1</th><th>مستوى 2</th><th>مستوى 3</th></tr></thead>
+      <tbody>
+        <tr><td>الدفع</td><td>كاش على الباب بضغطة</td><td>اشتراك بالحصص + شحن بالتحويل بمراجعة</td><td>+ تأكيد التحويل أوتوماتيك</td></tr>
+        <tr><td>الحضور</td><td>بحث بالاسم أو الكود</td><td>QR بالكاميرا أو السكانر</td><td>كارت NFC</td></tr>
+        <tr><td>التفاعل</td><td>—</td><td>بنك أسئلة + سؤال اليوم + ترتيب</td><td>+ مسابقات وتحديات</td></tr>
+        <tr><td>واتساب</td><td>البوابة والإشعارات</td><td>رسالة جاهزة بزرار</td><td>إرسال أوتوماتيك</td></tr>
+        <tr><td>فيسبوك</td><td>—</td><td>صورة الأوائل + مشاركة</td><td>نشر أوتوماتيك</td></tr>
+        <tr><td>المجموعات</td><td>عدد محدود</td><td>أكتر</td><td>مفتوح</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- جرّب -->
+<section id="try" class="sec try">
+  <div class="wrap">
+    <h2>جرّب بنفسك — الديمو فيه 2,000 طالب</h2>
+    <div class="grid4">
+      <a class="go" href="../demo/"><b>المستر</b><span>«ادخل الديمو كمستر»: كل الشاشات</span></a>
+      <a class="go" href="../demo/"><b>الأسيستنت</b><span>«ادخل الديمو كأسيستنت»: بتفتح على الباب</span></a>
+      <a class="go" href="../demo/family/"><b>الطالب</b><span>الرصيد، الواجب، أخطائي، سؤال اليوم، التحديات</span></a>
+      <a class="go" href="../demo/family/"><b>ولي الأمر</b><span>الرصيد والشحن والحضور والدرجات والإشعارات</span></a>
+    </div>
+    <p class="small">في الديمو على الكمبيوتر: في شاشة الباب دوس «جرّب تقريب كارت (محاكاة)» عشان تشوف الكارت بيتقري إزاي.</p>
+  </div>
+</section>
+</main>
+
+<footer class="byline">
+  <small>POWERED BY</small>
+  <a class="hw" href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener"><strong>HINDAWY</strong></a>
+  <em>Take it easy. We’ve got the rest.</em>
+  <span class="hw-btns"><a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">اعرف أكتر</a><a href="https://ahmedelhendway0-byte.github.io/portfolio/#team" target="_blank" rel="noopener">اعرف أكتر عن المؤسسين</a></span>
+</footer>
+</body>
+</html>

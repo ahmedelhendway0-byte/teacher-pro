@@ -1,4 +1,4 @@
-// التطبيق: الإعداد أول مرة ← الدخول ← الشاشات (الرئيسية، المجموعات، الإعدادات)
+﻿// التطبيق: الإعداد أول مرة ← الدخول ← الشاشات (الرئيسية، المجموعات، الإعدادات)
 // مفيش onclick جوه الـ HTML (الـ CSP بيمنعه) — كل الأزرار بـ data-act
 const App = (() => {
   const { esc, icon, $, $$, num, toast, sheet, close, busy, credit, ago } = U;
@@ -33,16 +33,18 @@ const App = (() => {
   // ───── الإعداد أول مرة (3 خطوات) ─────
   const DEFAULT_GRADES = ['أولى ثانوي', 'تانية ثانوي', 'تالتة ثانوي'];
   function setup(st) {
-    if (!st.has_plan) {
-      root().innerHTML = '<div class="gate"><div class="gate-card"><h1>الباقة لسه ماتفعّلتش</h1><p class="sub">كلّم HINDAWY عشان يفعّلوا باقتك، وبعدها افتح الصفحة دي تاني.</p></div>' + credit() + '</div>';
+    if (!st.has_plan || !st.ready) {
+      root().innerHTML = '<div class="gate"><div class="gate-card"><h1>السيستم لسه ماتفعّلش</h1><p class="sub">بنجهّز السيستم لكل مستر باسمه وباقته. كلّم HINDAWY ياخدوا بياناتك ويدّوك كود التفعيل.</p>' +
+        '<a class="btn btn-ink btn-block" href="' + CFG.PORTFOLIO + '#contact" target="_blank" rel="noopener">كلّم HINDAWY</a></div>' + credit() + '</div>';
       return;
     }
-    const d = { teacher_name: st.teacher_name || '', phone: '', grades: DEFAULT_GRADES.slice(), password: '' };
+    const d = { teacher_name: st.teacher_name || '', phone: '', grades: DEFAULT_GRADES.slice(), password: '', code: '' };
     let step = 1;
     const draw = () => {
       let body = '';
       if (step === 1) body =
         '<h1>أهلاً بيك</h1><p class="sub">تقدر تغيّر الاسم بعدين من الإعدادات.</p>' +
+        fld('code', 'كود التفعيل', 'الكود اللي خدته من HINDAWY', d.code, 'text', 'ltr') +
         fld('teacher_name', 'الاسم اللي هيظهر للطلاب', '', d.teacher_name) +
         fld('phone', 'رقم موبايلك', 'هتدخل بيه السيستم', d.phone, 'tel', 'ltr');
       if (step === 2) body =
@@ -75,6 +77,7 @@ const App = (() => {
       if (a === 'next') {
         read();
         if (step === 1) {
+          if (!d.code) return err('اكتب كود التفعيل.');
           if (!d.teacher_name) return err('اكتب الاسم.');
           if ((d.phone.replace(/\D/g, '')).length !== 11) return err('رقم الموبايل لازم 11 رقم.');
           step = 2; return draw();
@@ -83,7 +86,9 @@ const App = (() => {
         if (d.password.length < 6) return err('الباسورد لازم 6 حروف أو أرقام على الأقل.');
         if (d.password !== d.password2) return err('الباسورد مش زي بعض.');
         await busy(b, async () => {
-          await API.setup({ teacher_name: d.teacher_name, phone: d.phone, grades: d.grades, password: d.password });
+          await API.setup({ code: d.code, teacher_name: d.teacher_name, phone: d.phone, grades: d.grades, password: d.password }).catch(x => {
+            if (x.code === 'SETUP_CODE') { step = 1; draw(); err('كود التفعيل غلط.'); } throw x;
+          });
           S.me = await API.me(); document.title = S.me.config.system_name; shell();
           toast('السيستم جاهز');
         });
@@ -131,12 +136,18 @@ const App = (() => {
   const can = p => isTeacher() || !!(S.me.staff.perms || {})[p];
   const ROUTES = {
     home: { name: 'الرئيسية', icon: 'home', show: () => true, draw: home },
-    door: { name: 'الباب', icon: 'door', show: () => can('door'), draw: () => Door.draw({ me: S.me, can, level: k => +(S.me.levels || {})[k] || 0 }) },
+    door: { name: 'الباب', icon: 'door', show: () => can('door'), draw: () => Door.draw({ me: S.me, can, level: k => +(S.me.levels || {})[k] || 0, openStudent: id => openStudent(id) }) },
     students: { name: 'الطلاب', icon: 'student', show: () => true, draw: students },
+    exams: { name: 'الدرجات', icon: 'pen', show: () => true, draw: () => Screens.exams(sctx()) },
+    money: { name: 'الفلوس', icon: 'cash', show: () => can('money'), draw: () => Screens.money(sctx()) },
+    messages: { name: 'الرسايل', icon: 'send', show: () => can('messages') || can('notify_settings'), draw: () => Screens.messages(sctx()) },
     groups: { name: 'المجموعات', icon: 'groups', show: () => true, draw: groups },
+    engage: { name: 'التفاعل', icon: 'trophy', show: () => isTeacher() || can('students'), draw: () => Screens.engage(sctx()) },
+    reports: { name: 'التقارير', icon: 'chart', show: () => can('reports'), draw: () => Screens.reports(sctx()) },
     team: { name: 'الفريق', icon: 'team', show: isTeacher, draw: team },
     settings: { name: 'الإعدادات', icon: 'settings', show: isTeacher, draw: settings }
   };
+  const sctx = () => ({ me: S.me, can, lvl, isTeacher, openStudent: id => openStudent(id) });
 
   function shell() {
     const c = S.me.config;
@@ -158,11 +169,16 @@ const App = (() => {
     if (!ROUTES[r] || !ROUTES[r].show()) r = 'home';
     Door.leave();
     $('#main').onclick = null;
-    $('#nav').innerHTML = Object.entries(ROUTES).filter(([, v]) => v.show())
-      .map(([k, v]) => '<a href="#' + k + '" class="' + (k === r ? 'on' : '') + '"' + (k === r ? ' aria-current="page"' : '') + '>' + icon(v.icon) + v.name + '</a>').join('');
-    $('#main').innerHTML = '<div class="loading">بيحمّل…</div>';
+    // على الموبايل: أول 4 صفحات تحت + «المزيد» للباقي. على الكمبيوتر: كله على الجنب
+    const items = Object.entries(ROUTES).filter(([, v]) => v.show());
+    const link = ([k, v]) => '<a href="#' + k + '" class="' + (k === r ? 'on' : '') + '"' + (k === r ? ' aria-current="page"' : '') + '>' + icon(v.icon) + v.name + '</a>';
+    const extra = items.slice(4), inExtra = extra.some(([k]) => k === r);
+    $('#nav').innerHTML = items.slice(0, 4).map(link).join('') +
+      (extra.length ? '<button class="more-btn' + (inExtra ? ' on' : '') + '" data-act="more">' + icon('more') + 'المزيد</button><div class="nav-extra">' + extra.map(link).join('') + '</div>' : '');
+    // الصفحة مابتطلعش لفوق ولا بتفضى غير لما تنقل لصفحة تانية (عشان مفيش نط)
+    const changed = S.route !== r; S.route = r;
+    if (changed) { $('#main').innerHTML = '<div class="loading">بيحمّل…</div>'; window.scrollTo(0, 0); }
     ROUTES[r].draw().catch(e => { $('#main').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
-    window.scrollTo(0, 0);
   }
 
   const actions = {};
@@ -171,6 +187,8 @@ const App = (() => {
     const fn = actions[b.dataset.act]; if (fn) { e.preventDefault(); fn(b); }
   }
   actions.reload = () => location.reload();
+  actions.more = () => sheet('<h2>المزيد</h2><nav class="more-list">' + Object.entries(ROUTES).filter(([, v]) => v.show()).slice(4)
+    .map(([k, v]) => '<a href="#' + k + '" data-close>' + icon(v.icon) + v.name + '</a>').join('') + '</nav>');
   actions.logout = async () => { await API.logout(); location.hash = ''; location.reload(); };
 
   // ───── الرئيسية: عين المستر ─────
@@ -215,12 +233,15 @@ const App = (() => {
         '<li><div class="grow"><a class="plain" href="#students" data-act="openGroupStudents" data-id="' + x.id + '"><b>' + esc(x.name) + '</b></a><div class="tiny">' + esc(x.schedule || 'من غير ميعاد') +
         ' · ' + num(x.students) + (x.capacity ? ' / ' + num(x.capacity) : '') + ' طالب</div></div>' +
         '<span class="price">' + num(x.price) + ' ج</span>' +
+        '<button class="btn btn-ghost btn-sm" data-act="homework" data-id="' + x.id + '" aria-label="واجب ' + esc(x.name) + '">' + icon('book') + '</button>' +
+        '<a class="btn btn-ghost btn-sm" href="' + 'print.html?group=' + x.id + '" target="_blank" rel="noopener" aria-label="اطبع كروت ' + esc(x.name) + '">' + icon('print') + '</a>' +
         (can('groups') ? '<button class="btn btn-ghost btn-sm" data-act="groupEdit" data-id="' + x.id + '" aria-label="تعديل ' + esc(x.name) + '">' + icon('pen') + '</button>' : '') +
         '</li>').join('') + '</ul>';
     });
     $('#main').innerHTML = h + credit();
   }
 
+  const DAYS = [[6, 'السبت'], [0, 'الأحد'], [1, 'الاتنين'], [2, 'التلات'], [3, 'الأربع'], [4, 'الخميس'], [5, 'الجمعة']];
   function groupForm(x) {
     x = x || { grade_id: S.grades[0] && S.grades[0].id, name: '', schedule: '', price: '', capacity: '' };
     const spg = S.groups.students_per_group;
@@ -228,17 +249,26 @@ const App = (() => {
       '<div class="field"><label for="g_grade">الصف</label><select class="inp" id="g_grade">' +
       S.grades.map(gr => '<option value="' + gr.id + '"' + (gr.id === x.grade_id ? ' selected' : '') + '>' + esc(gr.name) + '</option>').join('') + '</select></div>' +
       '<div class="field"><label for="g_name">اسم المجموعة</label><input class="inp" id="g_name" value="' + esc(x.name) + '" placeholder="مثلاً: السبت ٤ العصر"></div>' +
-      '<div class="field"><label for="g_sch">الميعاد</label><input class="inp" id="g_sch" value="' + esc(x.schedule || '') + '" placeholder="مثلاً: السبت والتلات ٤ العصر"></div>' +
+      '<div class="field"><span class="lbl">أيام الحصة</span><div class="chips" id="g_days">' + DAYS.map(([d, n]) =>
+        '<button type="button" class="chip' + ((x.days || []).includes(d) ? ' on' : '') + '" data-day="' + d + '" aria-pressed="' + (x.days || []).includes(d) + '">' + n + '</button>').join('') + '</div></div>' +
+      '<div class="row2"><div class="field"><label for="g_start">الساعة</label><input class="inp" id="g_start" type="time" value="' + esc(x.start || '') + '"></div>' +
+      '<div class="field"><label for="g_min">مدة الحصة</label><select class="inp" id="g_min">' + [60, 90, 120, 150, 180].map(m =>
+        '<option value="' + m + '"' + ((x.minutes || 120) === m ? ' selected' : '') + '>' + (m === 60 ? 'ساعة' : m === 90 ? 'ساعة ونص' : m === 120 ? 'ساعتين' : m === 150 ? 'ساعتين ونص' : '3 ساعات') + '</option>').join('') + '</select></div></div>' +
+      '<p class="hint" style="margin-top:-8px">الباب بيفتح على المجموعة دي لوحده في ميعادها.</p>' +
       '<div class="row2"><div class="field"><label for="g_price">سعر الحصة (ج)</label><input class="inp" id="g_price" type="number" min="0" inputmode="numeric" value="' + esc(x.price) + '"></div>' +
       '<div class="field"><label for="g_cap">أقصى عدد</label><input class="inp" id="g_cap" type="number" min="1" inputmode="numeric" value="' + esc(x.capacity || '') + '" placeholder="' + (spg ? 'لحد ' + spg : 'مفتوح') + '"></div></div>' +
       '<p class="err" id="gerr"></p>' +
       '<div class="actions">' + (x.id ? '<button type="button" class="btn btn-red" data-act="groupArchive" data-id="' + x.id + '">' + icon('archive') + 'قفل المجموعة</button>' : '') +
       '<button class="btn btn-ink" type="submit">' + (x.id ? 'احفظ التعديل' : 'ضيف المجموعة') + '</button></div></form>', box => {
-        box.onclick = e => { const b = e.target.closest('[data-act=groupArchive]'); if (b) archiveGroup(b, x); };
+        box.onclick = e => {
+          const b = e.target.closest('[data-act=groupArchive]'); if (b) archiveGroup(b, x);
+          const d = e.target.closest('[data-day]'); if (d) { d.classList.toggle('on'); d.setAttribute('aria-pressed', d.classList.contains('on')); }
+        };
         $('#gf', box).onsubmit = async e => {
           e.preventDefault();
           const btn = $('#gf button[type=submit]');
-          const p = { id: x.id || null, grade_id: +$('#g_grade').value, name: $('#g_name').value.trim(), schedule: $('#g_sch').value.trim(),
+          const p = { id: x.id || null, grade_id: +$('#g_grade').value, name: $('#g_name').value.trim(),
+            days: $$('#g_days .on').map(c => +c.dataset.day), start: $('#g_start').value, minutes: +$('#g_min').value,
             price: $('#g_price').value === '' ? null : +$('#g_price').value, capacity: $('#g_cap').value === '' ? null : +$('#g_cap').value };
           if (!p.name) return ($('#gerr').textContent = 'اكتب اسم المجموعة.');
           if (p.price == null || p.price < 0) return ($('#gerr').textContent = 'اكتب سعر الحصة.');
@@ -266,8 +296,9 @@ const App = (() => {
       const gs = S.groups.groups.filter(g => g.grade_id === gr.id);
       return gs.length ? '<optgroup label="' + esc(gr.name) + '">' + gs.map(g => '<option value="' + g.id + '"' + (g.id === ST.group_id ? ' selected' : '') + '>' + esc(g.name) + '</option>').join('') + '</optgroup>' : '';
     }).join('');
-    $('#main').innerHTML = '<div class="head"><h1>الطلاب</h1>' +
-      (can('students') ? '<button class="btn btn-ink" data-act="studentNew">' + icon('plus') + 'طالب جديد</button>' : '') + '</div>' +
+    $('#main').innerHTML = '<div class="head"><h1>الطلاب</h1><div class="head-btns">' +
+      (navigator.mediaDevices ? '<button class="btn btn-line" data-act="scanProfile">' + icon('qr') + 'امسح QR</button>' : '') +
+      (can('students') ? '<button class="btn btn-ink" data-act="studentNew">' + icon('plus') + 'طالب جديد</button>' : '') + '</div></div>' +
       '<div class="filters"><div class="search">' + icon('search') + '<input class="inp" id="sq" type="search" placeholder="اسم، كود، أو رقم موبايل" value="' + esc(ST.q) + '" aria-label="دوّر على طالب"></div>' +
       '<select class="inp" id="sg" aria-label="المجموعة"><option value="">كل المجموعات</option>' + opts + '</select></div>' +
       '<p class="limit" id="scount"></p><ul class="list" id="slist"></ul><div id="smore"></div>' + credit();
@@ -291,11 +322,19 @@ const App = (() => {
   }
   actions.studentsMore = b => busy(b, () => loadStudents(true));
 
-  actions.studentOpen = async b => {
-    const s = await API.student(+b.dataset.id).catch(e => toast(e.message, 'err'));
+  // الـ QR برة الباب ⇒ يفتح ملف الطالب
+  actions.scanProfile = () => Scanner.open(async code => {
+    try { const s = await API.studentByCode(code); openStudent(s.id, s); return true; }
+    catch (e) { toast('الكود ' + code + ' مش متسجل', 'err'); return false; }
+  }, 'امسح QR الطالب عشان تفتح ملفه');
+
+  actions.studentOpen = b => openStudent(+b.dataset.id);
+  async function openStudent(id, pre) {
+    const s = pre || await API.student(id).catch(e => toast(e.message, 'err'));
     if (!s) return;
     sheet('<div class="profile"><span class="av lg ' + s.gender + '">' + initials(s.name) + '</span><div><h2>' + esc(s.name) + '</h2>' +
-      '<div class="muted">' + esc(s.grade) + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div></div>' +
+      '<div class="muted">' + esc(s.grade) + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div>' +
+      '<button class="qr-mini" data-act="card" aria-label="كارت الطالب">' + Scanner.qrSvg(s.code, 3) + '</button></div>' +
       (lvl('pay') >= 2 ? '<div class="balance"><div><span class="muted">رصيده</span><div><span class="big mark">' + num(s.credits) + '</span> حصص</div></div>' +
         '<div class="balance-btns">' + (can('money') ? '<button class="btn btn-ink" data-act="buy">' + icon('ticket') + 'اشترك في حصص</button>' : '') +
         (can('money') || can('students') ? '<button class="btn btn-line" data-act="ledger">كشف الحساب</button>' : '') + '</div></div>' : '') +
@@ -311,15 +350,61 @@ const App = (() => {
         if (a.dataset.act === 'studentEdit') studentForm(s);
         if (a.dataset.act === 'buy') buyForm(s);
         if (a.dataset.act === 'ledger') ledgerView(s);
+        if (a.dataset.act === 'card') cardView(s);
         if (a.dataset.act === 'studentArchive') {
           if (!confirm('تشيل «' + s.name + '» من القوايم؟')) return;
-          busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); S.groups = null; loadStudents(); });
+          busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); S.groups = null; if ($('#slist')) loadStudents(); });
         }
       };
     });
-  };
+  }
+
+  // كارت الطالب: QR + الكود + طباعة + ربط كارت NFC
+  function cardView(s) {
+    const nfcOk = lvl('door') >= 3;
+    sheet('<h2>كارت «' + esc(s.name) + '»</h2>' +
+      '<div class="id-card"><div class="id-top"><b>' + esc(S.me.config.system_name) + '</b><span>' + esc(s.grade) + '</span></div>' +
+      '<div class="id-body"><div class="id-qr">' + Scanner.qrSvg(s.code, 5) + '</div><div><div class="id-name">' + esc(s.name) + '</div>' +
+      '<div class="id-code num">' + s.code + '</div><div class="tiny">' + esc(s.group || '') + '</div></div></div>' +
+      '<div class="id-foot">POWERED BY HINDAWY</div></div>' +
+      '<p class="muted">الطالب يقدر يوري الـ QR ده من موبايله أو من الكارت المطبوع. الكود نفسه بيشتغل مع سكانر الباركود.</p>' +
+      '<div class="actions"><a class="btn btn-ink" href="' + 'print.html?student=' + s.id + '" target="_blank" rel="noopener">' + icon('print') + 'اطبع الكارت</a></div>' +
+      (nfcOk ? '<div class="nfc-link"><b>كارت NFC</b><p class="tiny">' + (s.has_card ? 'فيه كارت مربوط بالطالب ده.' : 'لسه مفيش كارت مربوط.') +
+        ' الربط بيتعمل من موبايل أندرويد فيه NFC: دوس الزرار وقرّب الكارت الفاضي من ضهر الموبايل.</p>' +
+        ('NDEFReader' in window && can('students') ? '<button class="btn btn-line" data-act="nfcLink">' + icon('nfc') + (s.has_card ? 'غيّر الكارت' : 'اربط كارت') + '</button>' : '') +
+        (s.has_card && can('students') ? ' <button class="btn btn-ghost" data-act="nfcUnlink">فك الكارت</button>' : '') + '</div>' : ''), box => {
+      box.onclick = async e => {
+        const a = e.target.closest('[data-act]'); if (!a) return;
+        if (a.dataset.act === 'nfcUnlink') return busy(a, async () => { await API.studentCard(s.id, null); close(); toast('اتفك الكارت'); });
+        if (a.dataset.act === 'nfcLink') {
+          try {
+            const r = new NDEFReader(), ctl = new AbortController();
+            await r.scan({ signal: ctl.signal });
+            a.textContent = 'قرّب الكارت دلوقتي…';
+            r.onreading = async ev => {
+              ctl.abort();
+              try { await API.studentCard(s.id, ev.serialNumber); close(); toast('اتربط الكارت بـ ' + s.name); }
+              catch (x) { toast(x.message, 'err'); }
+            };
+          } catch (x) { toast('مش قادر يشغّل NFC. اتأكد إنه شغال من إعدادات الموبايل.', 'err'); }
+        }
+      };
+    });
+  }
 
   const lvl = k => +(S.me.levels || {})[k] || 0;
+
+  // الواجب: الأسيستنت/المستر بينزّله للمجموعة، والطالب بيأكد من البوابة إنه عمله، والأسيستنت بتتأكد على الباب
+  actions.homework = async b => {
+    const g = S.groups.groups.find(x => x.id === +b.dataset.id), list = await API.homework(g.id).catch(e => toast(e.message, 'err'));
+    if (!list) return;
+    sheet('<h2>واجب «' + esc(g.name) + '»</h2>' +
+      (can('students') ? '<form id="hf" class="inline-form"><input class="inp" id="h_t" placeholder="مثلاً: مسائل ص 45 من 1 لـ 10"><button class="btn btn-ink" type="submit">نزّل الواجب</button></form>' : '') +
+      '<ul class="feed" style="margin-top:var(--s4)">' + (list.length ? list.map(h => '<li><div class="grow"><b>' + esc(h.title) + '</b><div class="tiny">' + esc(h.by || '') + ' · ' + ago(h.at) + '</div></div>' +
+        '<span class="tiny">أكّد ' + num(h.done) + ' من ' + num(g.students) + '</span></li>').join('') : '<li class="empty">لسه مفيش واجبات.</li>') + '</ul>', box => {
+      const f = $('#hf', box); if (f) f.onsubmit = e => { e.preventDefault(); busy($('button', f), async () => { await API.saveHomework(g.id, $('#h_t').value); toast('نزل الواجب للطلاب'); close(); }); };
+    });
+  };
 
   // اشتراك بعدد حصص (كاش عند الأسيستنت) — المبلغ بيتحسب لوحده، مفيش مبلغ حر
   function buyForm(s) {
@@ -448,11 +533,13 @@ const App = (() => {
 
   // ───── الإعدادات: المستويات جوه الباقة ─────
   async function settings() {
-    const plan = S.me.plan || {}, lv = S.me.levels || {};
+    const plan = S.me.plan || {}, lv = S.me.levels || {}, st = await API.settings();
     let h = '<div class="head"><h1>الإعدادات</h1></div>' +
       '<section class="feat"><h3>الاسم اللي بيظهر</h3><form id="bf" class="inline-form">' +
       '<input class="inp" id="b_name" value="' + esc(S.me.config.system_name) + '" aria-label="الاسم اللي بيظهر">' +
       '<button class="btn btn-ink" type="submit">احفظ</button></form></section>' +
+      (lvl('engage') >= 2 ? '<section class="feat"><label class="perm"><input type="checkbox" id="s_lb"' + (st.leaderboard !== false ? ' checked' : '') + '><span><b>الطالب يشوف ترتيبه وأوائل مجموعته</b>' +
+        '<span class="tiny">لو قفلتها، الترتيب بيختفي من البوابة (المستر والأسيستنت بيشوفوه عادي).</span></span></label></section>' : '') +
       '<section><h2 class="grade-h">المميزات في باقتك</h2>' +
       '<p class="muted" style="margin-top:0">تقدر تشتغل بمستوى أقل من باقتك لو حابب. المقفول متاح في باقة أعلى.</p>';
     FEATURES.forEach(f => {
@@ -473,13 +560,14 @@ const App = (() => {
       e.preventDefault();
       busy($('#bf button'), async () => { S.me = await API.saveBrand({ name: $('#b_name').value }); toast('اتحفظ الاسم'); shell(); location.hash = '#settings'; });
     };
+    const lb = $('#s_lb'); if (lb) lb.onchange = async () => { await API.saveSettings({ leaderboard: lb.checked }).catch(e => toast(e.message, 'err')); toast(lb.checked ? 'الترتيب ظاهر للطلاب' : 'الترتيب مخفي عن الطلاب'); };
   }
   actions.setLevel = async b => {
     if (b.classList.contains('on')) return;
     await busy(b, async () => { S.me = await API.savePrefs({ [b.dataset.k]: +b.dataset.v }); toast('اتغيّر'); settings(); });
   };
 
-  return { boot };
+  return { boot, openStudent: id => openStudent(id) };
 })();
 
 App.boot();

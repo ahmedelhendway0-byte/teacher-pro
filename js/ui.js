@@ -23,6 +23,7 @@ const U = (() => {
     w.className = 'sheet-wrap';
     w.innerHTML = '<div class="sheet-bg" data-close></div><div class="sheet-box" role="dialog" aria-modal="true">' + html + '</div>';
     document.body.appendChild(w);
+    document.body.classList.add('locked');   // الصفحة اللي ورا ماتتحركش
     w.addEventListener('click', e => { if (e.target.closest('[data-close]')) close(); });
     document.addEventListener('keydown', escClose);
     const f = w.querySelector('input,select,textarea,button:not([data-close])');
@@ -30,7 +31,7 @@ const U = (() => {
     if (onReady) onReady(w.querySelector('.sheet-box'));
   }
   function escClose(e) { if (e.key === 'Escape') close(); }
-  function close() { const w = $('.sheet-wrap'); if (w) w.remove(); document.removeEventListener('keydown', escClose); }
+  function close() { const w = $('.sheet-wrap'); if (w) w.remove(); document.body.classList.remove('locked'); document.removeEventListener('keydown', escClose); }
 
   // زرار بيستنى السيرفر: يتقفل ويظهر إنه شغال
   async function busy(btn, fn) {

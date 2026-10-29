@@ -1,0 +1,13 @@
+/* صفحة طباعة الكروت */
+.print-page { background: var(--desk); }
+.print-bar { position: sticky; top: 0; display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); background: var(--paper); border-bottom: 1px solid var(--rule); }
+.print-bar b { flex: 1; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, 86mm); gap: 6mm; justify-content: center; padding: var(--s5) var(--s3); }
+.id-card.print { width: 86mm; height: 54mm; }
+@media print {
+  @page { size: A4; margin: 10mm; }
+  .print-bar { display: none; }
+  .print-page { background: #fff; }
+  .cards { padding: 0; gap: 4mm; grid-template-columns: repeat(2, 86mm); }
+  .id-card.print { break-inside: avoid; box-shadow: none; border: .3mm solid #C9D3E1; }
+}

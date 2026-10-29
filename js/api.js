@@ -1,6 +1,6 @@
 // الكلام مع السيرفر: كل حاجة دالة RPC بالتوكن
 const API = (() => {
-  const TK = 'tp_token';
+  const TK = 'token_' + (CFG.P || 'tp_');   // الديمو والحقيقي على نفس الدومين ⇒ كل واحد ليه مفتاح
   const token = () => { try { return localStorage.getItem(TK); } catch (e) { return null; } };
   const setToken = t => { try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
 
@@ -29,6 +29,19 @@ const API = (() => {
     PLAN_LOCKED: 'الميزة دي مش في باقتك.',
     SESSIONS_INVALID: 'اختار عدد حصص من 1 لـ 100.',
     NO_GROUP: 'الطالب ده مالوش مجموعة. حطه في مجموعة الأول.',
+    NOT_PENDING: 'الطلب ده اتراجع قبل كده.',
+    BODY_REQUIRED: 'اكتب الرسالة.',
+    MAX_INVALID: 'اكتب الدرجة النهائية.',
+    SCORE_INVALID: 'الدرجة لازم تكون بين صفر والدرجة النهائية.',
+    QUESTION_INVALID: 'اكتب السؤال واختيارين على الأقل وحدد الإجابة الصح.',
+    CONTEST_INVALID: 'اكتب اسم المسابقة واختار مجموعتين على الأقل.',
+    METHOD_INVALID: 'اختار طريقة التحويل.',
+    SENDER_REQUIRED: 'اكتب الرقم أو الاسم اللي حوّلت منه.',
+    TOO_MANY: 'عندك طلبات كتير مستنية. استنى لحد ما تتراجع.',
+    NO_QUESTIONS: 'لسه مفيش أسئلة كفاية في البنك.',
+    SETUP_CODE: 'كود التفعيل غلط.',
+    BAD_PIN: 'الكود أو الرقم السري غلط.',
+    CARD_TAKEN: 'الكارت ده مربوط بطالب تاني.',
     PHONE_TAKEN: 'الرقم ده متسجل لحد تاني في الفريق.',
     NET: 'مفيش اتصال بالنت. اتأكد من النت وجرب تاني.'
   };
@@ -36,7 +49,8 @@ const API = (() => {
   async function rpc(fn, args = {}) {
     let res;
     try {
-      res = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+      // السيستم الحقيقي والديمو نفس الكود بجداول منفصلة: tp_ (الديمو) / tr_ (الحقيقي)
+      res = await fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn.replace(/^tp_/, CFG.P || 'tp_'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY },
         body: JSON.stringify(args)
@@ -45,7 +59,7 @@ const API = (() => {
     const body = res.status === 204 ? null : await res.json().catch(() => null);
     if (!res.ok) {
       const code = (body && body.message) || 'ERR';
-      if (code === 'AUTH') { setToken(null); setTimeout(() => location.reload(), 1200); }
+      if (code === 'AUTH') { if (window.onAuthFail) window.onAuthFail(); else setToken(null); setTimeout(() => location.reload(), 1200); }
       const err = new Error(MSG[code] || 'حصلت مشكلة. جرب تاني.');
       err.code = code; throw err;
     }
@@ -56,7 +70,7 @@ const API = (() => {
   const t = () => ({ p_token: token() });
 
   return {
-    token, setToken,
+    rpc, token, setToken,
     status: () => rpc('tp_status'),
     setup: async p => { const r = await rpc('tp_setup', { p }); setToken(r.token); return r; },
     login: async (phone, pw) => { const r = await rpc('tp_login', { p_phone: phone, p_pw: pw }); setToken(r.token); return r; },
@@ -72,6 +86,8 @@ const API = (() => {
     students: p => rpc('tp_students_page', { ...t(), p: p || {} }),
     student: id => rpc('tp_student_get', { ...t(), p_id: id }),
     saveStudent: p => rpc('tp_student_save', { ...t(), p }),
+    studentByCode: code => rpc('tp_student_by_code', { ...t(), p_code: String(code) }),
+    studentCard: (id, uid) => rpc('tp_student_card', { ...t(), p_id: id, p_uid: uid }),
     archiveStudent: id => rpc('tp_student_archive', { ...t(), p_id: id }),
     classesToday: () => rpc('tp_classes_today', t()),
     openClass: gid => rpc('tp_class_open', { ...t(), p_group: gid }),
@@ -82,6 +98,30 @@ const API = (() => {
     doorUndo: aid => rpc('tp_door_undo', { ...t(), p_attendance: aid }),
     buySessions: (sid, n) => rpc('tp_buy_sessions', { ...t(), p_student: sid, p_n: n }),
     ledger: sid => rpc('tp_student_ledger', { ...t(), p_student: sid }),
+    closeClass: cid => rpc('tp_class_close', { ...t(), p_class: cid }),
+    settings: () => rpc('tp_settings_get', t()),
+    saveSettings: p => rpc('tp_settings_save', { ...t(), p }),
+    saveProduct: p => rpc('tp_product_save', { ...t(), p }),
+    smsSecret: () => rpc('tp_sms_secret', t()),
+    topups: status => rpc('tp_topups_list', { ...t(), p_status: status || 'pending' }),
+    receipt: id => rpc('tp_receipt', { ...t(), p_topup: id }),
+    reviewTopup: (id, ok, note) => rpc('tp_topup_review', { ...t(), p_id: id, p_ok: ok, p_note: note || null }),
+    report: (from, to) => rpc('tp_report', { ...t(), p_from: from, p_to: to }),
+    notifySettings: () => rpc('tp_notify_settings', t()),
+    waQueue: kind => rpc('tp_wa_queue', { ...t(), p_kind: kind || null }),
+    waMark: ids => rpc('tp_wa_mark', { ...t(), p_ids: ids }),
+    sendMessage: p => rpc('tp_message_send', { ...t(), p }),
+    homework: gid => rpc('tp_homework_list', { ...t(), p_group: gid }),
+    saveHomework: (gid, title) => rpc('tp_homework_save', { ...t(), p_group: gid, p_title: title }),
+    exams: () => rpc('tp_exams_list', t()),
+    saveExam: p => rpc('tp_exam_save', { ...t(), p }),
+    examSheet: id => rpc('tp_exam_sheet', { ...t(), p_exam: id }),
+    saveScore: (eid, sid, score, wrong, note) => rpc('tp_score_save', { ...t(), p_exam: eid, p_student: sid, p_score: score, p_wrong: wrong, p_note: note || null }),
+    questions: gid => rpc('tp_questions_list', { ...t(), p_grade: gid }),
+    saveQuestion: p => rpc('tp_question_save', { ...t(), p }),
+    contests: () => rpc('tp_contests_list', t()),
+    saveContest: p => rpc('tp_contest_save', { ...t(), p }),
+    leaderboard: (gid, by) => rpc('tp_leaderboard', { ...t(), p_group: gid || null, p_by: by || 'xp' }),
     staff: () => rpc('tp_staff_list', t()),
     saveStaff: p => rpc('tp_staff_save', { ...t(), p }),
     log: (before, minImp, limit) => rpc('tp_log_list', { ...t(), p_before: before || null, p_min_imp: minImp || 1, p_limit: limit || 50 })
