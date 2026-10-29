@@ -211,7 +211,9 @@ a.num { color: var(--ink); text-decoration: none; font-weight: 500; }
 /* الموبايل */
 @media (max-width: 520px) {
   .top { padding: var(--s2) var(--s3); }
-  .top .who { visibility: hidden; }
+  .top .who { font-size: var(--fs-xs); max-width: 38vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top .who br { display: none; }
+  .top .who .tiny::before { content: " · "; }
   .main { padding: var(--s4) var(--s3) 96px; }
   .head h1 { font-size: var(--fs-lg); }
   .gate { padding-top: var(--s4); }

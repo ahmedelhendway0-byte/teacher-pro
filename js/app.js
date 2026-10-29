@@ -110,9 +110,11 @@ const App = (() => {
       '<div class="field"><label for="pw">الباسورد</label><input class="inp" id="pw" type="password" dir="ltr" autocomplete="current-password" required></div>' +
       '<p class="err" id="err"></p><button class="btn btn-ink btn-lg btn-block" type="submit">ادخل</button></form>' +
       (st.demo ? '<div class="demo-box"><b>دي نسخة تجريبية</b><span class="tiny">ادخل وجرّب كل حاجة من غير تسجيل.</span>' +
-        '<button class="btn btn-line btn-block" id="demo">ادخل الديمو كمستر</button></div>' : '') +
+        '<button class="btn btn-line btn-block" data-demo="teacher">ادخل الديمو كمستر</button>' +
+        '<button class="btn btn-line btn-block" data-demo="assistant">ادخل الديمو كأسيستنت</button>' +
+        '<span class="tiny">الأسيستنت في الديمو معاها صلاحيات: الباب، الطلاب، الفلوس.</span></div>' : '') +
       '</div>' + credit() + '</div>';
-    if (st.demo) $('#demo').onclick = e => busy(e.currentTarget, async () => { await API.demoLogin(); S.me = await API.me(); shell(); });
+    $$('[data-demo]').forEach(b => { b.onclick = e => busy(e.currentTarget, async () => { await API.demoLogin(b.dataset.demo); location.hash = ''; S.me = await API.me(); shell(); }); });
     $('#ph').focus();
     $('#lf').onsubmit = async e => {
       e.preventDefault();

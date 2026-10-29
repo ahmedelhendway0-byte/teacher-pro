@@ -3,5 +3,5 @@ window.CFG = {
   SUPABASE_URL: "https://wxsfaqhketlmcamfuojt.supabase.co",
   SUPABASE_KEY: "sb_publishable_8sCLyZAfkPxhGKqcT3XYTQ_5orcwtCL",
   PORTFOLIO: "https://ahmedelhendway0-byte.github.io/portfolio/",
-  VERSION: "0.4.2"
+  VERSION: "0.4.4"
 };

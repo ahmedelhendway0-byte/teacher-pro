@@ -60,7 +60,7 @@ const API = (() => {
     status: () => rpc('tp_status'),
     setup: async p => { const r = await rpc('tp_setup', { p }); setToken(r.token); return r; },
     login: async (phone, pw) => { const r = await rpc('tp_login', { p_phone: phone, p_pw: pw }); setToken(r.token); return r; },
-    demoLogin: async () => { const r = await rpc('tp_demo_login'); setToken(r.token); return r; },
+    demoLogin: async role => { const r = await rpc('tp_demo_login', { p_role: role || 'teacher' }); setToken(r.token); return r; },
     saveBrand: p => rpc('tp_brand_save', { ...t(), p }),
     logout: async () => { const tk = token(); setToken(null); if (tk) await rpc('tp_logout', { p_token: tk }).catch(() => { }); },
     me: () => rpc('tp_me', t()),
