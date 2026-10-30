@@ -1,0 +1,27 @@
+{
+ "id": "./?app=teacher",
+ "name": "تطبيق المستر — ديمو",
+ "short_name": "المستر",
+ "lang": "ar",
+ "dir": "rtl",
+ "start_url": "./?as=teacher",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#EEF2F7",
+ "theme_color": "#14284B",
+ "icons": [
+  {
+   "src": "../../icons/teacher-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "../../icons/teacher-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

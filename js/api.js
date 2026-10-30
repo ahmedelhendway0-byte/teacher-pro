@@ -66,6 +66,8 @@ const API = (() => {
     const body = res.status === 204 ? null : await res.json().catch(() => null);
     if (!res.ok) {
       const code = (body && body.message) || 'ERR';
+      // أي رد مش متوقع (مش رسالة من رسايلنا المعروفة) بيتسجل عندنا عشان نصلّحه
+      if (res.status >= 500 || !MSG[code] && code !== 'AUTH' && code !== 'FORBIDDEN') report('server', fn + ' ' + res.status + ' ' + code, body && (body.details || body.hint));
       if (code === 'AUTH') { if (window.onAuthFail) window.onAuthFail(); else setToken(null); setTimeout(() => location.reload(), 1200); }
       const err = new Error(MSG[code] || 'حصلت مشكلة. جرب تاني.');
       err.code = code; throw err;
@@ -73,6 +75,20 @@ const API = (() => {
     if (body && body.error) { const err = new Error(MSG[body.error] || body.error); err.code = body.error; throw err; }
     return body;
   }
+
+  // تسجيل الأخطاء: كل غلط بيتبعت مرة واحدة بس في الجلسة، ومن غير ما يعطّل الصفحة
+  const sent = new Set();
+  function report(kind, msg, stack) {
+    try {
+      const key = kind + msg; if (sent.has(key) || sent.size > 20 || !CFG.SUPABASE_URL) return; sent.add(key);
+      fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/tp_report_error', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_KEY },
+        body: JSON.stringify({ p: { kind, msg: String(msg || ''), stack: String(stack || ''), page: location.pathname + location.hash + (CFG.P ? ' [' + CFG.P + ']' : ''), ua: navigator.userAgent, ver: CFG.VERSION } })
+      }).catch(() => { });
+    } catch (e) { }
+  }
+  window.addEventListener('error', e => report('js', e.message, e.error && e.error.stack || (e.filename + ':' + e.lineno)));
+  window.addEventListener('unhandledrejection', e => { const r = e.reason || {}; if (r.code) return; report('js', r.message || String(r), r.stack); });
 
   const t = () => ({ p_token: token() });
 

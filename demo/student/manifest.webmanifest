@@ -1,0 +1,27 @@
+{
+ "id": "./?app=student",
+ "name": "تطبيق الطالب — ديمو",
+ "short_name": "الطالب",
+ "lang": "ar",
+ "dir": "rtl",
+ "start_url": "./?as=student",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#EEF2F7",
+ "theme_color": "#FFD21F",
+ "icons": [
+  {
+   "src": "../../icons/student-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "../../icons/student-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

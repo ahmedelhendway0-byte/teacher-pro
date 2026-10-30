@@ -1,0 +1,27 @@
+{
+ "id": "./?app=parent",
+ "name": "تطبيق ولي الأمر — ديمو",
+ "short_name": "ولي الأمر",
+ "lang": "ar",
+ "dir": "rtl",
+ "start_url": "./?as=parent",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#EEF2F7",
+ "theme_color": "#C2412D",
+ "icons": [
+  {
+   "src": "../../icons/parent-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "../../icons/parent-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
