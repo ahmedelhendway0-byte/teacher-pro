@@ -429,3 +429,22 @@ textarea.inp { padding: var(--s3) var(--s4); min-height: auto; resize: vertical;
 .how-steps { margin: 0 0 var(--s2); padding-inline-start: 22px; font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.9; }
 .lock-hint { display: flex; gap: var(--s3); align-items: flex-start; }
 .sheet-list .mark[hidden], .kmore[hidden] { display: none; }
+
+/* الجولة 6: مستوى الطلاب لكل صف/مجموعة */
+.seg-by { min-width: 260px; }
+.lvl-sec { background: var(--paper); border-radius: var(--r-lg); padding: var(--s3) var(--s4); margin-bottom: var(--s3); }
+.lvl-h { display: flex; align-items: baseline; gap: var(--s2); margin-bottom: var(--s2); }
+.lvl-chips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.lvl-c { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: var(--r-md); border: 1.5px solid transparent; background: var(--desk); font: 500 var(--fs-xs) var(--font); color: var(--ink-2); cursor: pointer; }
+.lvl-c b { font-size: var(--fs-lg); color: var(--ink); }
+.lvl-c.g b { color: var(--pen-green); } .lvl-c.r b { color: var(--pen-red); } .lvl-c.a b { color: var(--pen-amber); }
+.lvl-c.on { border-color: var(--ink); background: var(--paper); }
+.lvl-c:disabled { opacity: .45; cursor: default; }
+.lvl-names:not(:empty) { margin-top: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+.lvl-names .btn { align-self: flex-start; }
+@media (max-width: 640px) { .lvl-chips { grid-template-columns: repeat(3, 1fr); } .seg-by { min-width: 0; width: 100%; } }
+details.key-box > summary { cursor: pointer; list-style: none; }
+details.key-box > summary::-webkit-details-marker { display: none; }
+details.key-box > summary::before { content: "＋ "; color: var(--ink-3); }
+details.key-box[open] > summary::before { content: "－ "; }
+details.key-box > summary .tiny { margin-top: 4px; }

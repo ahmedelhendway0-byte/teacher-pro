@@ -203,8 +203,9 @@ const App = (() => {
   async function home() {
     const today = new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
     const segOk = can('students') || can('grades') || can('messages');
+    S.segBy = S.segBy || 'grade';
     const [g, rep, seg] = await Promise.all([API.groups(), can('reports') ? API.report(today, today).catch(() => null) : null,
-      segOk ? API.segments(S.segScope || {}).catch(() => null) : null]);
+      segOk ? API.segmentsBy({ by: S.segBy }).catch(() => null) : null]);
     S.groups = g;
     let h = '<div class="head"><h1>أهلاً ' + esc(S.me.staff.name) + '</h1></div>';
     // النهارده
@@ -213,22 +214,23 @@ const App = (() => {
       '<a class="stat net" href="#reports"><span class="muted">صافي النهارده</span><b>' + num(rep.net) + ' ج</b><span class="tiny">بعد المصروفات ' + num(rep.expenses) + ' ج</span></a>' : '') +
       '<a class="stat" href="#students"><span class="muted">الطلاب</span><b>' + num(g.students_total) + '</b><span class="tiny">في ' + num(g.groups.length) + ' مجموعة' + (g.groups_max ? ' من ' + num(g.groups_max) : '') + '</span></a></div>';
     // مستوى الطلاب بالفئات
+    // مستوى الطلاب: كل صف (أو كل مجموعة) لوحده تحت بعض، وكل فئة بتفتح أساميها
     if (seg) {
-      const sc = S.segScope || {};
-      h += '<section class="sec"><div class="head"><h2>مستوى الطلاب</h2><select class="inp seg-scope" id="segs" aria-label="المجموعة"><option value="">كل المجموعات</option>' +
-        g.groups.map(x => '<option value="' + x.id + '"' + (sc.group_id === x.id ? ' selected' : '') + '>' + esc(x.name) + ' · ' + esc(x.grade) + '</option>').join('') + '</select></div>' +
-        '<div class="segs">' + SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2).map(([k, n, why, cl]) => { const d = seg[k];
-          return '<div class="segc ' + cl + '"><div class="segc-h"><b class="num">' + num(d.count) + '</b><div><b>' + n + '</b><div class="tiny">' + why + '</div></div></div>' +
-            (d.rows.length ? '<ul class="seg-names">' + d.rows.slice(0, 5).map(r => '<li><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '">' + esc(r.name.split(' ').slice(0, 2).join(' ')) + '</button>' +
-              '<span class="tiny num">' + (k === 'up' || k === 'down' ? r.prev + '% ← ' + r.last + '%' : r.avg != null ? r.avg + '%' : '') + '</span></li>').join('') + '</ul>' : '<p class="tiny">مفيش حد.</p>') +
-            (d.count && can('messages') ? '<button class="btn btn-line btn-sm" data-act="segMsg" data-seg="' + k + '">' + icon('send') + 'ابعتلهم رسالة</button>' : '') + '</div>'; }).join('') + '</div></section>';
+      S.segData = seg;
+      const segs = SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2);
+      h += '<section class="sec"><div class="head"><div><h2>مستوى الطلاب</h2><div class="tiny">دوس على أي رقم تشوف الأسامي</div></div><div class="seg seg-by">' +
+        [['grade', 'كل صف لوحده'], ['group', 'كل مجموعة لوحدها']].map(([v, n]) => '<button type="button" data-act="segBy" data-v="' + v + '" class="' + (S.segBy === v ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>' +
+        (seg.length ? seg.map((x, i) => '<div class="lvl-sec" data-si="' + i + '"><div class="lvl-h"><b>' + esc(x.name) + '</b><span class="tiny">' + esc(x.sub) + ' · ' + num(x.segs.total) + ' طالب</span></div>' +
+          '<div class="lvl-chips">' + segs.map(([k, n, why, cl]) => '<button class="lvl-c ' + cl + '" data-act="segOpen" data-si="' + i + '" data-seg="' + k + '" title="' + why + '"' + (x.segs[k].count ? '' : ' disabled') + '>' +
+            '<b class="num">' + num(x.segs[k].count) + '</b><span>' + n + '</span></button>').join('') + '</div><div class="lvl-names"></div></div>').join('')
+          : '<div class="surface empty">لسه مفيش طلاب.</div>') +
+        '<p class="tiny">الأوائل: متوسطهم 85% أو أكتر · بيزيد/بيقل: آخر درجة فرقت 10% أو أكتر عن اللي قبلها · ضعيف: متوسط أقل من 50%.</p></section>';
     }
     // اختصارات
     const quick = [['door', 'qr', 'سجّل حضور'], ['students', 'student', 'الطلاب'], ['exams', 'pen', 'الدرجات'], ['reports', 'chart', 'التقارير'], ['messages', 'send', 'الرسايل'], ['expenses', 'receipt', 'المصروفات']]
       .filter(([r]) => ROUTES[r].show());
     h += '<section class="sec"><div class="quick">' + quick.map(([r, ic, n]) => '<a class="qk" href="#' + r + '">' + icon(ic) + '<span>' + n + '</span></a>').join('') + '</div></section>';
     $('#main').innerHTML = h + '<div id="feedbox"></div>' + credit();
-    const ss = $('#segs'); if (ss) ss.onchange = () => { S.segScope = ss.value ? { group_id: +ss.value } : {}; home(); };
     // اللي حصل: آخر الصفحة
     if (can('log')) {
       const feed = await API.log(null, S.feedMin, 15).catch(() => null);
@@ -237,7 +239,19 @@ const App = (() => {
         '<button class="chip ' + (S.feedMin === 2 ? 'on' : '') + '" data-act="feedMin" data-v="2">المهم بس</button></div></div>' + feedHtml(feed) + '</section>';
     }
   }
-  actions.segMsg = b => { window.MSG_PRESET = { seg: b.dataset.seg, group_id: (S.segScope || {}).group_id || null }; location.hash = '#messages'; };
+  actions.segBy = b => { S.segBy = b.dataset.v; home(); };
+  // فتح أسامي فئة في صف/مجموعة (ونفس الزرار يقفلها)
+  actions.segOpen = b => {
+    const box = b.closest('.lvl-sec'), out = $('.lvl-names', box), x = S.segData[+b.dataset.si], k = b.dataset.seg, d = x.segs[k];
+    const was = b.classList.contains('on'); $$('.lvl-c', box).forEach(c => c.classList.remove('on'));
+    if (was) { out.innerHTML = ''; return; }
+    b.classList.add('on');
+    out.innerHTML = '<ul class="seg-names">' + d.rows.map(r => '<li><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '">' + esc(r.name) + '</button>' +
+      '<span class="tiny num">' + (x.kind === 'grade' && r.group ? esc(r.group) + ' · ' : '') + (k === 'up' || k === 'down' ? r.prev + '% ← ' + r.last + '%' : r.avg != null ? r.avg + '%' : '') + '</span></li>').join('') + '</ul>' +
+      (d.count > d.rows.length ? '<p class="tiny">ودول أول ' + d.rows.length + ' من ' + num(d.count) + '.</p>' : '') +
+      (can('messages') ? '<button class="btn btn-line btn-sm" data-act="segMsg" data-seg="' + k + '" data-kind="' + x.kind + '" data-id="' + x.id + '">' + icon('send') + 'ابعت رسالة للـ ' + num(d.count) + ' دول</button>' : '');
+  };
+  actions.segMsg = b => { window.MSG_PRESET = { seg: b.dataset.seg, target: b.dataset.kind || 'all', id: b.dataset.id ? +b.dataset.id : null }; location.hash = '#messages'; };
   function feedHtml(rows) {
     if (!rows.length) return '<div class="surface empty">' + icon('eye') + '<div>لسه مفيش حاجة حصلت.</div></div>';
     return '<ul class="feed">' + rows.map(r =>

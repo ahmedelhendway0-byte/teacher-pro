@@ -102,6 +102,7 @@ const Screens = (() => {
 
   // ═════════ المصروفات ═════════
   const X = { month: null };
+  const REP = { once: 'مرة واحدة', daily: 'كل يوم', weekly: 'كل أسبوع', monthly: 'كل شهر' };
   async function expenses(ctx) {
     const now = new Date(); X.month = X.month || iso(now).slice(0, 7);
     const [y, m] = X.month.split('-').map(Number), from = X.month + '-01', to = iso(new Date(y, m, 0, 12));
@@ -110,22 +111,36 @@ const Screens = (() => {
       '<form id="xf" class="surface" novalidate><div class="row2"><div class="field"><label for="x_c">البند</label><input class="inp" id="x_c" list="xcats" placeholder="مثلاً: إيجار القاعة، طباعة، مرتبات"><datalist id="xcats">' +
       d.cats.map(c => '<option value="' + esc(c) + '">').join('') + '</datalist></div>' +
       '<div class="field"><label for="x_a">المبلغ (ج)</label><input class="inp num" id="x_a" type="number" min="1" inputmode="numeric"></div></div>' +
-      '<div class="row2"><div class="field"><label for="x_d">اليوم</label><input class="inp" id="x_d" type="date" value="' + iso(now) + '"></div>' +
+      '<div class="field"><span class="lbl">بيتكرر؟</span><div class="seg" id="x_r">' + Object.entries(REP).map(([v, n]) => '<button type="button" data-rep="' + v + '" class="' + (v === 'once' ? 'on' : '') + '">' + n + '</button>').join('') + '</div>' +
+      '<span class="hint" id="x_rh">مصروف النهارده بس (أو اليوم اللي تختاره).</span></div>' +
+      '<div class="row2"><div class="field"><label for="x_d" id="x_dl">اليوم</label><input class="inp" id="x_d" type="date" value="' + iso(now) + '"></div>' +
       '<div class="field"><label for="x_n">ملاحظة (اختياري)</label><input class="inp" id="x_n"></div></div>' +
       '<button class="btn btn-ink" type="submit">' + icon('plus') + 'سجّل المصروف</button></form>' +
+      (d.recurring.length ? '<section class="sec"><h2>مصروفات ثابتة بتتحسب لوحدها</h2><ul class="list">' + d.recurring.map(r => '<li><div class="grow"><b>' + esc(r.category) + '</b>' +
+        '<div class="tiny">' + num(r.amount) + ' ج ' + REP[r.repeat] + ' · من ' + r.since + ' · حوالي ' + num(r.monthly) + ' ج في الشهر' + (r.note ? ' · ' + esc(r.note) : '') + '</div></div>' +
+        (ctx.isTeacher() ? '<button class="btn btn-ghost btn-sm" data-xstop="' + r.id + '">وقّفه</button>' : '') + '</li>').join('') + '</ul>' +
+        '<p class="tiny">بتدخل في الصافي والتقارير لوحدها كل ' + 'يوم/أسبوع/شهر. «وقّفه» بيوقفها من النهارده واللي فات بيفضل محسوب.</p></section>' : '') +
       '<div class="stats" style="margin-top:var(--s4)"><div class="stat"><span class="muted">مصروفات الشهر</span><b>' + num(d.total) + ' ج</b></div>' +
       d.by_cat.slice(0, 3).map(c => '<div class="stat"><span class="muted">' + esc(c.category) + '</span><b>' + num(c.total) + ' ج</b></div>').join('') + '</div>' +
-      (d.rows.length ? '<ul class="list" style="margin-top:var(--s4)">' + d.rows.map(r => '<li><div class="grow"><b>' + esc(r.category) + '</b><div class="tiny">' + r.day + (r.note ? ' · ' + esc(r.note) : '') + ' · ' + esc(r.by_name || '') + '</div></div>' +
-        '<b class="num">' + num(r.amount) + ' ج</b>' + (ctx.isTeacher() ? '<button class="btn btn-ghost btn-sm" data-xdel="' + r.id + '" aria-label="امسح">' + icon('x') + '</button>' : '') + '</li>').join('') + '</ul>'
+      (d.rows.length ? '<ul class="list" style="margin-top:var(--s4)">' + d.rows.map(r => '<li><div class="grow"><b>' + esc(r.category) + '</b>' + (r.repeat !== 'once' ? ' <span class="tag">' + REP[r.repeat] + '</span>' : '') +
+        '<div class="tiny">' + r.day + (r.note ? ' · ' + esc(r.note) : '') + ' · ' + esc(r.by_name || '') + '</div></div>' +
+        '<b class="num">' + num(r.amount) + ' ج</b>' + (ctx.isTeacher() && r.repeat === 'once' ? '<button class="btn btn-ghost btn-sm" data-xdel="' + r.id + '" aria-label="امسح">' + icon('x') + '</button>' : '') + '</li>').join('') + '</ul>'
         : '<div class="surface empty" style="margin-top:var(--s4)">مفيش مصروفات في الشهر ده.</div>') + credit();
+    let rep = 'once';
+    const RH = { once: ['اليوم', 'مصروف مرة واحدة بس (حاجة استثنائية).'], daily: ['من يوم', 'بيتحسب كل يوم لوحده لحد ما توقفه.'],
+      weekly: ['من يوم', 'بيتحسب كل أسبوع في نفس اليوم لحد ما توقفه.'], monthly: ['من يوم', 'بيتحسب كل شهر في نفس اليوم (زي الإيجار والمرتبات) لحد ما توقفه.'] };
+    $$('[data-rep]').forEach(b => { b.onclick = () => { rep = b.dataset.rep; $$('[data-rep]').forEach(x => x.classList.toggle('on', x === b)); $('#x_dl').textContent = RH[rep][0]; $('#x_rh').textContent = RH[rep][1]; }; });
     $('#xm').onchange = () => { X.month = $('#xm').value; expenses(ctx); };
     $('#xf').onsubmit = e => {
       e.preventDefault();
-      const p = { category: $('#x_c').value.trim(), amount: +$('#x_a').value, day: $('#x_d').value, note: $('#x_n').value };
+      const p = { category: $('#x_c').value.trim(), amount: +$('#x_a').value, day: $('#x_d').value, note: $('#x_n').value, repeat: rep };
       if (!p.category || !p.amount) return toast('اكتب البند والمبلغ', 'err');
-      busy($('#xf button'), async () => { await API.saveExpense(p); toast('اتسجل'); expenses(ctx); });
+      busy($('#xf button[type=submit]'), async () => { await API.saveExpense(p); toast(rep === 'once' ? 'اتسجل' : 'اتسجل — هيتحسب ' + REP[rep] + ' لوحده'); expenses(ctx); });
     };
-    main().onclick = e => { const b = e.target.closest('[data-xdel]'); if (b && confirm('تمسح المصروف ده؟')) busy(b, async () => { await API.saveExpense({ id: +b.dataset.xdel, remove: true }); expenses(ctx); }); };
+    main().onclick = e => {
+      const b = e.target.closest('[data-xdel]'); if (b && confirm('تمسح المصروف ده؟')) return busy(b, async () => { await API.saveExpense({ id: +b.dataset.xdel, remove: true }); expenses(ctx); });
+      const s = e.target.closest('[data-xstop]'); if (s && confirm('توقّف المصروف ده من النهارده؟')) busy(s, async () => { await API.saveExpense({ id: +s.dataset.xstop, stop: true }); toast('اتوقف'); expenses(ctx); });
+    };
   }
 
   // ═════════ تصدير إكسل (CSV بيتفتح في Excel بالعربي) ═════════
@@ -231,11 +246,11 @@ const Screens = (() => {
         '<div class="row2"><div class="field"><label for="e_g">لمين</label><select class="inp" id="e_g">' + g.groups.map(x => '<option value="' + x.id + '" data-grade="' + x.grade_id + '">' + esc(x.name) + ' · ' + esc(x.grade) + '</option>').join('') +
         grades.map(x => '<option value="grade:' + x.id + '">كل ' + esc(x.name) + '</option>').join('') + '</select></div>' : '<div class="row2">') +
       '<div class="field"><label for="e_m">الدرجة النهائية</label><input class="inp" id="e_m" type="number" min="1" inputmode="numeric" value="' + ex.max + '"></div></div>' +
-      '<div class="key-box"><h3>نموذج الإجابة</h3>' +
-      '<p class="tiny">اكتب عدد الأسئلة، ودوس على الإجابة الصح لكل سؤال (زي ورقة الإجابة بتاعة المستر). ولو عايز، دوس «الشرح» واكتب ليه دي الصح. ' +
-      'وانت بتصحح هتدوس بس على أرقام الأسئلة اللي الطالب غلط فيها، والدرجة بتتحسب لوحدها، والطالب بيشوف الإجابة الصح والشرح.</p>' +
+      '<details class="key-box"' + (K.length ? ' open' : '') + '><summary><b>نموذج الإجابة</b> <span class="tag">اختياري</span>' +
+      '<div class="tiny">من غيره بتسجّل الدرجة بس. معاه بتدوس على الأسئلة الغلط والطالب يعرف غلط في إيه والصح إيه.</div></summary>' +
+      '<p class="tiny">اكتب عدد الأسئلة، ودوس على الإجابة الصح لكل سؤال (زي ورقة الإجابة بتاعة المستر). ولو عايز، دوس «الشرح» واكتب ليه دي الصح.</p>' +
       '<div class="inline-form"><label for="e_n" class="lbl" style="margin:0">عدد الأسئلة</label><input class="inp num" id="e_n" type="number" min="0" max="100" inputmode="numeric" value="' + (K.length || '') + '" placeholder="مثلاً 10" style="max-width:110px"></div>' +
-      '<div id="key"></div></div>' +
+      '<div id="key"></div></details>' +
       '<div class="field"><label for="e_u">لينك فيديو الحل (اختياري)</label><input class="inp" id="e_u" dir="ltr" value="' + esc(ex.solution_url || '') + '" placeholder="https://youtube.com/…"></div>' +
       '<p class="err" id="eerr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'احفظ وابدأ التصحيح' : 'احفظ') + '</button></div></form>', box => {
       let kind = ex.kind;
@@ -306,7 +321,7 @@ const Screens = (() => {
       '<div class="head-btns"><button class="btn btn-line" data-sh="stats">' + icon('chart') + 'الإحصائية</button>' +
       (editable ? '<button class="btn btn-line" data-sh="paste">' + icon('sheet') + 'الدرجات من شيت</button>' : '') +
       (editable && scored.length ? '<button class="btn btn-ink" data-sh="publish">' + icon('send') + (ex.results_sent_at ? 'ابعت النتيجة تاني' : 'ابعت النتيجة والترتيب') + '</button>' : '') + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل النموذج</button>' : '') + '</div></div>' +
-      (qs.length ? '<ol class="how-steps"><li>دوس <b>«حدد الغلط»</b> جنب الطالب.</li><li>دوس أرقام الأسئلة اللي غلط فيها ⇒ الدرجة بتتحسب لوحدها وبيظهر الصح من النموذج.</li><li>اختياري: اختار هو جاوب إيه. كل حاجة بتتحفظ لوحدها.</li></ol>'
+      (qs.length ? '<ol class="how-steps"><li>دوس <b>«حدد الغلط»</b> جنب الطالب.</li><li>دوس أرقام الأسئلة اللي غلط فيها ⇒ الدرجة بتتحسب لوحدها وبيظهر الصح من النموذج.</li><li>اختياري: اختار هو جاوب إيه. كل حاجة بتتحفظ لوحدها، والطالب بيشوفها في التطبيق على طول.</li></ol>'
         : '<div class="surface lock-hint">' + icon('pen') + '<div><b>مفيش نموذج إجابة للكويز ده.</b><div class="tiny">تقدر تكتب الدرجة بس. عشان تحدد الطالب غلط في أنهي سؤال ويوصله الصح، دوس «عدّل النموذج» وحط عدد الأسئلة والإجابات.</div></div></div>') +
       '<div class="search" style="margin:var(--s3) 0">' + icon('search') + '<input class="inp" id="shq" placeholder="دوّر على طالب" aria-label="دوّر على طالب"></div>' +
       '<ul class="list sheet-list" id="shl">' + d.rows.map(rowHtml).join('') + '</ul>' + credit();
@@ -335,10 +350,13 @@ const Screens = (() => {
       if (e.target.closest('[data-sh=stats]')) { E.stats = true; return examStats(ctx, id); }
       if (e.target.closest('[data-sh=edit]')) return examForm(ctx, ex);
       const pb = e.target.closest('[data-sh=publish]');
-      if (pb) {
-        if (!confirm('هيوصل لكل طالب من الـ ' + scored.length + ' (وولي أمره) درجته وترتيبه ومتوسط الكل' + (ex.solution_url ? ' ولينك الحل' : '') + '. نبعت؟')) return;
-        return busy(pb, async () => { const r = await API.examPublish(ex.id); toast('اتبعتت النتيجة لـ ' + num(r.sent) + ' طالب'); ex.results_sent_at = new Date().toISOString(); });
-      }
+      if (pb) return sheet('<h2>ابعت النتيجة والترتيب</h2><p class="muted" style="margin-top:0">كل طالب من الـ ' + num(scored.length) + ' (وولي أمره) هيوصله: درجته، ترتيبه من كام، متوسط الكل' + (ex.solution_url ? '، ولينك الحل' : '') + '.</p>' +
+        '<p class="tiny">الدرجة نفسها ظاهرة في تطبيق الطالب من ساعة ما اتسجلت. الزرار ده بيبعت النتيجة كاملة بالترتيب.</p>' +
+        '<div class="actions"><button class="btn btn-line" data-pub="app">في التطبيق بس</button><button class="btn btn-green" data-pub="wa">' + icon('wa') + 'في التطبيق + واتساب</button></div>', box => {
+        box.onclick = e2 => { const b = e2.target.closest('[data-pub]'); if (!b) return;
+          busy(b, async () => { const r = await API.examPublish(ex.id, b.dataset.pub === 'wa'); close(); ex.results_sent_at = new Date().toISOString();
+            toast('اتبعتت النتيجة لـ ' + num(r.sent) + ' طالب' + (b.dataset.pub === 'wa' ? ' — الواتساب في طابور الرسايل' : '')); }); };
+      });
       if (e.target.closest('[data-sh=paste]')) return Importer.scores({ rows: d.rows, max: ex.max, onDone: () => examSheet(ctx, id),
         save: (r, score) => API.saveScore(ex.id, r.id, { score, wrong: r.wrong || [], wrong_q: r.wrong_q || [], picks: r.picks || {} }) });
       const li = e.target.closest('#shl > li'); if (!li) return;
@@ -452,9 +470,9 @@ const Screens = (() => {
     }
     if (W.tab === 'new') {
       const g = await API.groups(), grades = await API.grades();
-      const pv = pre ? (pre.group_id ? 'group:' + pre.group_id : 'all:') : 'all:';
+      const pv = pre && pre.id ? pre.target + ':' + pre.id : 'all:';
       h += '<form id="mf" class="surface" novalidate><div class="row2"><div class="field"><label for="m_t">من أنهي طلاب؟</label><select class="inp" id="m_t"><option value="all:">كل الطلاب</option>' +
-        grades.map(x => '<option value="grade:' + x.id + '">' + esc(x.name) + '</option>').join('') + g.groups.map(x => '<option value="group:' + x.id + '"' + ('group:' + x.id === pv ? ' selected' : '') + '>مجموعة ' + esc(x.name) + '</option>').join('') + '</select></div>' +
+        grades.map(x => '<option value="grade:' + x.id + '"' + ('grade:' + x.id === pv ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') + g.groups.map(x => '<option value="group:' + x.id + '"' + ('group:' + x.id === pv ? ' selected' : '') + '>مجموعة ' + esc(x.name) + '</option>').join('') + '</select></div>' +
         '<div class="field"><label for="m_s">مين بالظبط؟</label><select class="inp" id="m_s">' + Object.entries(SEGN).filter(([k]) => k !== 'no_balance' || ctx.lvl('pay') >= 2)
           .map(([k, n]) => '<option value="' + k + '"' + (pre && pre.seg === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div></div>' +
         '<div class="field"><span class="lbl">تتبعت لـ</span><div class="seg" id="m_w">' + [['both', 'الطالب وولي الأمر'], ['parent', 'ولي الأمر بس'], ['student', 'الطالب بس']]
