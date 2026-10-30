@@ -55,7 +55,7 @@ const App = (() => {
         '<div class="chips" id="gl">' + gradeChips() + '</div>' +
         '<div class="field" style="margin-top:var(--s4)"><label for="ng">صف تاني</label><div style="display:flex;gap:var(--s2)"><input class="inp" id="ng" placeholder="مثلاً: تالتة ثانوي أزهر"><button class="btn btn-line" data-act="addGrade">ضيف</button></div></div>';
       if (step === 3) body =
-        '<h1>مستوى الطلاب والرسايل</h1><p class="sub">اختار براحتك — تقدر تغيّرها بعدين من الإعدادات.</p><div id="autobox">' + autoHtml(d.levels, d.notify) + '</div>';
+        '<h1>الواجب والمستوى والرسايل</h1><p class="sub">اختار براحتك — تقدر تغيّرها بعدين من الإعدادات.</p><div id="autobox">' + autoHtml(d.levels, d.notify, d.hw_policy) + '</div>';
       if (step === 4) body =
         '<h1>الباسورد بتاعك</h1><p class="sub">هتدخل بيه انت بس. خليه 6 حروف أو أرقام على الأقل.</p>' +
         fld('password', 'الباسورد', '', '', 'password', 'ltr') +
@@ -96,7 +96,7 @@ const App = (() => {
           await API.setup({ code: d.code, teacher_name: d.teacher_name, phone: d.phone, grades: d.grades, password: d.password }).catch(x => {
             if (x.code === 'SETUP_CODE') { step = 1; draw(); err('كود التفعيل غلط.'); } throw x;
           });
-          if (d.levels) await API.saveSettings({ levels: d.levels, notify: d.notify }).catch(() => { });
+          if (d.levels) await API.saveSettings({ levels: d.levels, notify: d.notify, hw_policy: d.hw_policy }).catch(() => { });
           S.me = await API.me(); document.title = S.me.config.system_name; shell();
           toast('السيستم جاهز');
         });
@@ -107,13 +107,17 @@ const App = (() => {
   }
 
   // ───── حدود المستوى + الرسايل الأوتوماتيك (في الإعداد أول مرة وفي الإعدادات) ─────
+  const HW_POL = [['ask', 'الأسيستنت تختار كل مرة'], ['in', 'يدخل عادي'], ['out', 'يطلع (مايتسجلش ولا تتخصم الحصة)']];
   const AUTO_KINDS = [['grade', 'درجة الكويز والامتحان', 'both', 'button'], ['grade_drop', 'درجته نزلت عن اللي قبلها', 'parent', 'button'],
     ['grade_up', 'درجته طلعت عن اللي قبلها', 'both', 'button'], ['grade_low', 'درجته ضعيفة', 'parent', 'button'], ['absent', 'غاب عن الحصة', 'parent', 'button'],
-    ['hw_missing', 'ماعملش الواجب', 'parent', 'button'], ['balance_out', 'رصيده خلص', 'parent', 'auto']];
+    ['hw_missing', 'ماعملش الواجب', 'parent', 'button'], ['hw_out', 'اتطلع عشان ماعملش الواجب', 'parent', 'button'], ['balance_out', 'رصيده خلص', 'parent', 'auto']];
   const MODES = [['auto', 'أوتوماتيك'], ['button', 'بزرار'], ['off', 'مقفول']], TOS = [['parent', 'ولي الأمر'], ['student', 'الطالب'], ['both', 'الاتنين']];
-  function autoHtml(lv, notify) {
-    lv = lv || {}; notify = notify || {};
-    return '<div class="auto-lv"><b>إمتى نقول على الطالب…</b><div class="lv-in">' +
+  function autoHtml(lv, notify, hw) {
+    lv = lv || {}; notify = notify || {}; hw = hw || 'ask';
+    return '<div class="auto-lv"><b>اللي ماعملش الواجب…</b><div class="seg3 hw-pol" style="margin-top:var(--s2)">' +
+      HW_POL.map(([v, n]) => '<button type="button" data-hp="' + v + '" class="' + (hw === v ? 'on' : '') + '">' + n + '</button>').join('') + '</div>' +
+      '<p class="tiny" style="margin:6px 0 0">لو طلع: حضوره مابيتسجلش، والحصة مابتتخصمش (أو الكاش بيرجع)، وولي أمره بيوصله.</p></div>' +
+      '<div class="auto-lv"><b>إمتى نقول على الطالب…</b><div class="lv-in">' +
       '<label>ضعيف لو متوسطه أقل من <input class="inp num" type="number" min="10" max="90" data-lv="low" value="' + (lv.low || 50) + '">%</label>' +
       '<label>من الممتازين لو متوسطه <input class="inp num" type="number" min="50" max="100" data-lv="top" value="' + (lv.top || 85) + '">% أو أكتر</label>' +
       '<label>درجته نزلت أو طلعت لو فرقت <input class="inp num" type="number" min="5" max="50" data-lv="change" value="' + (lv.change || 10) + '">% عن اللي قبلها</label></div></div>' +
@@ -123,14 +127,15 @@ const App = (() => {
           '<div class="seg3">' + TOS.map(([v, x]) => '<button type="button" data-at="' + v + '" class="' + (t === v ? 'on' : '') + '">' + x + '</button>').join('') + '</div></div>'; }).join('') + '</div>';
   }
   function autoBind(box) {
-    box.addEventListener('click', e => { const b = e.target.closest('[data-am],[data-at]'); if (!b) return;
-      $$(b.dataset.am ? '[data-am]' : '[data-at]', b.parentNode).forEach(x => x.classList.toggle('on', x === b)); });
+    box.addEventListener('click', e => { const b = e.target.closest('[data-am],[data-at],[data-hp]'); if (!b) return;
+      $$(b.dataset.am ? '[data-am]' : b.dataset.at ? '[data-at]' : '[data-hp]', b.parentNode).forEach(x => x.classList.toggle('on', x === b)); });
   }
   function autoRead(box, cur) {
     const levels = {}; $$('[data-lv]', box).forEach(i => { levels[i.dataset.lv] = +i.value; });
     const notify = { ...(cur || {}) };
     $$('.ak-row', box).forEach(r => { const k = r.dataset.k; notify[k] = { ...(notify[k] || {}), mode: $('[data-am].on', r).dataset.am, to: $('[data-at].on', r).dataset.at }; });
-    return { levels, notify };
+    const hp = $('[data-hp].on', box);
+    return { levels, notify, hw_policy: hp ? hp.dataset.hp : 'ask' };
   }
 
   function fld(name, label, hint, val, type = 'text', dir = '') {
@@ -792,7 +797,7 @@ const App = (() => {
       '<button class="btn btn-ink" type="submit">احفظ</button></form></section>' +
       (lvl('engage') >= 2 ? '<section class="feat"><label class="perm"><input type="checkbox" id="s_lb"' + (st.leaderboard !== false ? ' checked' : '') + '><span><b>الطالب يشوف ترتيبه وأوائل مجموعته</b>' +
         '<span class="tiny">لو قفلتها، الترتيب بيختفي من البوابة (المستر والأسيستنت بيشوفوه عادي).</span></span></label></section>' : '') +
-      '<section class="feat" id="autoset"><h3>مستوى الطلاب والرسايل الأوتوماتيك</h3>' + autoHtml(st.levels, st.notify) +
+      '<section class="feat" id="autoset"><h3>الواجب ومستوى الطلاب والرسايل الأوتوماتيك</h3>' + autoHtml(st.levels, st.notify, st.hw_policy) +
       '<div class="actions" style="justify-content:flex-start"><button class="btn btn-ink" data-act="saveAuto">احفظ</button></div>' +
       '<p class="tiny">نص كل رسالة بتعدّله من الرسايل ← الإشعارات الأوتوماتيك.</p></section>' +
       '<section><h2 class="grade-h">المميزات في باقتك</h2>' +

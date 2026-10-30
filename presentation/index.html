@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#14284B">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>سيستم المستر — إزاي هيريّحك</title>
-<link rel="stylesheet" href="../css/tokens.css?v=0.9.8">
-<link rel="stylesheet" href="pres.css?v=0.9.8">
+<link rel="stylesheet" href="../css/tokens.css?v=0.9.9">
+<link rel="stylesheet" href="pres.css?v=0.9.9">
 </head>
 <body>
 
@@ -29,7 +29,7 @@
 </header>
 
 <nav class="pnav" aria-label="أجزاء العرض">
-  <a href="#door">الحضور</a><a href="#pay">الفلوس</a><a href="#money">الحسابات</a><a href="#grades">الكويزات</a><a href="#levels">مستوى الطلاب</a><a href="#study">المذاكرة</a><a href="#parents">أولياء الأمور</a><a href="#team">الفريق</a><a href="#start">نبدأ إزاي</a>
+  <a href="#door">الحضور</a><a href="#pay">الفلوس</a><a href="#money">الحسابات</a><a href="#grades">الكويزات</a><a href="#levels">مستوى الطلاب</a><a href="#study">المذاكرة</a><a href="#parents">أولياء الأمور</a><a href="#team">الفريق</a><a href="#own">كل حاجة معاك</a><a href="#apps">4 تطبيقات</a><a href="#soon">جاي قريب</a><a href="#start">نبدأ إزاي</a>
 </nav>
 
 <main>
@@ -52,6 +52,8 @@
         <li><b>طالب من مجموعة تانية</b> بيدخل عادي وبيظهر جنبه تنبيه.</li>
         <li><b>آخر الحصة:</b> «قفل الحصة» ⇒ اللي ماجاش يتسجل غايب ويتبعت لولي أمره.</li>
         <li><b>ولو الـ QR مش معاه:</b> الكود أو أول حرفين من اسمه.</li>
+        <li><b>ماعملش الواجب؟</b> انت تختار: يدخل عادي، أو <b>يطلع</b> — ولو طلع حضوره مابيتسجلش والحصة بتفضل في محفظته (أو الكاش يرجعله)، وولي أمره يوصله.</li>
+        <li><b>دلوقتي بالكود والـ QR</b> من موبايل الأسيستنت. <b>والخطة الجاية:</b> كارت NFC يتقرّب، أو سكانر/جهاز ثابت على الباب — مش لازم موبايل.</li>
       </ul>
       <figure class="show">
         <div class="ph" data-who="موبايل الأسيستنت">
@@ -60,6 +62,7 @@
             <div class="st" data-cap="الطالب بيوري الـ QR من الكارت أو من موبايله"><div class="m-cam"><div class="m-qrcard"><span class="qr"></span><div><b>يوسف محمود</b><small>2551</small></div></div><span class="m-line"></span></div><div class="m-hint">بيقرا الكود…</div></div>
             <div class="st" data-cap="في ثانية: اتسجل حضوره واتخصمت حصة من اشتراكه"><div class="m-top"><b>تسجيل الحضور</b><span>133/180</span></div><div class="m-card ok"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551 · السبت 4 العصر</small></div></div><div class="m-ok">✓ اتخصمت حصة · فاضل <mark>7</mark></div><div class="m-hw"><span>✓ عمل الواجب</span><span>✕ ماعملش</span></div></div>
             <div class="st" data-cap="بيوري الكشكول ⇒ دوسة واحدة على «عمل الواجب»، واللي بعده"><div class="m-top"><b>تسجيل الحضور</b><span>133/180</span></div><div class="m-card ok"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551</small></div></div><div class="m-ok">✓ اتخصمت حصة · فاضل <mark>7</mark></div><div class="m-hw"><span class="y tap">✓ عمل الواجب</span><span>✕ ماعملش</span></div></div>
+            <div class="st" data-cap="ماعملش الواجب؟ «يطلع» ⇒ حضوره مابيتسجلش والحصة بتفضل في محفظته"><div class="m-top"><b>تسجيل الحضور</b><span>134/180</span></div><div class="m-card"><span class="av">ع</span><div><b>عمر هشام</b><small>2577 · السبت 4 العصر</small></div></div><div class="m-hw three"><span>✓ عمل</span><span>ماعملش · يدخل</span><span class="o tap">ماعملش · يطلع</span></div><div class="m-bad">عمر مادخلش · الحصة رجعت لمحفظته (فاضل 6)</div></div>
             <div class="st" data-cap="لو رصيده خلص: يدفع كاش بدوسة، أو مايدخلش — مفيش «هدفع بعدين»"><div class="m-top"><b>تسجيل الحضور</b><span>134/180</span></div><div class="m-card bad"><span class="av">م</span><div><b>مازن علي</b><small>2610 · السبت 4 العصر</small></div></div><div class="m-bad">✕ مفيش رصيد</div><div class="m-btn tap">دفع كاش 100 ج</div></div>
           </div>
         </div>
@@ -280,6 +283,37 @@
   </div>
 </section>
 
+<!-- كل حاجة ملكك -->
+<section id="own" class="sec">
+  <div class="wrap">
+    <p class="num-k">9 · كل حاجة معاك</p>
+    <h2>حساباتك، وبيانات طلابك، وفلوسك — كلها عندك ومتأمّنة</h2>
+    <div class="grid3">
+      <div class="tile"><b>الفلوس بكل تفاصيلها</b><p>كل جنيه: جه منين (اشتراك، كاش، تحويل)، مين قبضه، وإمتى — وراح فين (مصروفات). ورصيد كل طالب ومحفظته قدامك.</p></div>
+      <div class="tile"><b>بيانات طلابك ملكك</b><p>الأسامي والأرقام والدرجات والحضور — تنزّلها إكسل في أي وقت، ومحدش غيرك يقدر يمسحها أو ياخدها.</p></div>
+      <div class="tile"><b>كل دور ليه حدوده</b><p>انت اللي بتدي كل أسيستنت صلاحياتها: الحضور، الفلوس، الدرجات، الرسايل… والطالب وولي الأمر مابيشوفوش غير بياناتهم.</p></div>
+      <div class="tile"><b>متأمّن من السيرفر</b><p>محدش يقدر يغيّر رصيد ولا درجة من برة السيستم، والباسوردات متشفّرة، ومحاولات الدخول الغلط بتتقفل، وكل حاجة متسجلة باسم اللي عملها.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 تطبيقات بهويتك -->
+<section id="apps" class="sec alt">
+  <div class="wrap">
+    <p class="num-k">10 · 4 تطبيقات باسمك</p>
+    <h2>تطبيق لكل واحد — بلوجو وهوية معمولين ليك على قدك</h2>
+    <div class="apps">
+      <div class="app"><span class="ai t">م</span><b>تطبيق المستر</b><small>كل حاجة: التقارير، الفلوس، المستوى، الفريق</small></div>
+      <div class="app"><span class="ai a">أ</span><b>تطبيق الأسيستنت</b><small>الحضور، تأكيد الدفع، الدرجات — حسب صلاحيتها</small></div>
+      <div class="app"><span class="ai s">ط</span><b>تطبيق الطالب</b><small>الكارت، الرصيد، الدرجات، التمرين، الترتيب</small></div>
+      <div class="app"><span class="ai p">و</span><b>تطبيق ولي الأمر</b><small>الحضور، الدرجات، الرصيد والشحن، الإشعارات</small></div>
+    </div>
+    <div class="brand">
+      <div><b>هويتك البصرية</b><p>بنعملك <b>لوجو وألوان وأيقونة</b> لكل تطبيق باسمك — أو بناخد اللوجو والألوان اللي عندك ونظبطها على السيستم بالظبط. الطالب يحط أيقونتك على موبايله وتفتح زي أي تطبيق، من غير متجر.</p></div>
+    </div>
+  </div>
+</section>
+
 <section class="sec">
   <div class="wrap two">
     <div>
@@ -315,7 +349,7 @@
       <li><b>نعلّم الأسيستنتس</b><span>تسجيل الحضور والتصحيح وتأكيد الدفع — كل واحدة شغلها في 5 دقايق.</span></li>
       <li><b>نربط الدفع</b><span>أرقام الاستلام، وموبايل التأكيد الأوتوماتيك لو حبيت، وبنجربه معاك بتحويلات حقيقية قبل ما نعتمد عليه.</span></li>
     </ol>
-    <div class="cta" style="margin-top:var(--s5)"><a class="btn btn-lg btn-ink" href="https://ahmedelhendway0-byte.github.io/portfolio/#contact" target="_blank" rel="noopener">كلّمنا نجهّزهولك</a><a class="btn btn-lg btn-line" href="../demo/teacher/">ولو حابب تجرّب بإيدك</a></div>
+    <div class="cta" style="margin-top:var(--s5)"><a class="btn btn-lg btn-wa" href="https://wa.me/201118606692?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20HINDAWY%D8%8C%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%B3%D9%8A%D8%B3%D8%AA%D9%85%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B1" target="_blank" rel="noopener">كلّمنا على واتساب نجهّزهولك</a><a class="btn btn-lg btn-line" href="../demo/teacher/">ولو حابب تجرّب بإيدك</a></div>
   </div>
 </section>
 </main>
@@ -326,6 +360,9 @@
   <em>Take it easy. We’ve got the rest.</em>
   <span class="hw-btns"><a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">اعرف أكتر</a><a href="https://ahmedelhendway0-byte.github.io/portfolio/#team" target="_blank" rel="noopener">اعرف أكتر عن المؤسسين</a></span>
 </footer>
-<script src="pres.js?v=0.9.8"></script>
+<a class="wa-bar" href="https://wa.me/201118606692?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20HINDAWY%D8%8C%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%B3%D9%8A%D8%B3%D8%AA%D9%85%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B1" target="_blank" rel="noopener">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12z"/></svg>
+  <span><b>كلّمنا على واتساب</b><small>ونبدألك السيستم باسمك</small></span></a>
+<script src="pres.js?v=0.9.9"></script>
 </body>
 </html>

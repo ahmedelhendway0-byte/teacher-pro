@@ -117,6 +117,7 @@ const API = (() => {
     doorCash: (cid, sid, method) => rpc('tp_door_cash', { ...t(), p_class: cid, p_student: sid, p_method: method || 'search' }),
     doorHw: (aid, done) => rpc('tp_door_hw', { ...t(), p_attendance: aid, p_done: done }),
     doorUndo: aid => rpc('tp_door_undo', { ...t(), p_attendance: aid }),
+    doorHwOut: aid => rpc('tp_door_hw_out', { ...t(), p_attendance: aid }),
     buySessions: (sid, n) => rpc('tp_buy_sessions', { ...t(), p_student: sid, p_n: n }),
     ledger: sid => rpc('tp_student_ledger', { ...t(), p_student: sid }),
     closeClass: cid => rpc('tp_class_close', { ...t(), p_class: cid }),

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14284B">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>نبدأ السيستم — اللي محتاجينه منك</title>
+<link rel="stylesheet" href="../css/tokens.css?v=0.9.9">
+<link rel="stylesheet" href="start.css?v=0.9.9">
+</head>
+<body>
+<header class="top"><div class="wrap"><b>نبدأ السيستم باسمك</b><span>حوالي 10 دقايق · كل حاجة اختيارية تقدر تبعتها بعدين</span></div></header>
+<main class="wrap">
+  <p class="lead">املا اللي تقدر عليه، وفي الآخر دوس <b>«ابعتلنا على واتساب»</b> — الرسالة بتتكتب لوحدها. الملفات (اللوجو وشيتات الطلاب) ابعتها في نفس الشات.</p>
+
+  <form id="f" novalidate>
+  <section class="card"><h2><span>1</span> بياناتك</h2>
+    <label>اسمك زي ما هيظهر للطلاب<input name="الاسم" placeholder="مثلاً: مستر محمد أحمد"></label>
+    <label>اسم السيستم (اختياري)<input name="اسم السيستم" placeholder="مثلاً: أكاديمية مستر محمد"></label>
+    <label>المادة<input name="المادة" placeholder="مثلاً: فيزياء"></label>
+    <label>رقم موبايلك (هتدخل بيه)<input name="موبايل المستر" inputmode="numeric" dir="ltr"></label>
+    <fieldset><legend>الصفوف</legend><div class="chips" data-multi="الصفوف"><button type="button">أولى ثانوي</button><button type="button">تانية ثانوي</button><button type="button">تالتة ثانوي</button><button type="button">إعدادي</button></div></fieldset>
+  </section>
+
+  <section class="card"><h2><span>2</span> الهوية (اللوجو والألوان)</h2>
+    <fieldset><legend>عندك لوجو؟</legend><div class="chips" data-one="اللوجو"><button type="button">عندي — هبعته على واتساب</button><button type="button">اعملولي لوجو وهوية</button></div></fieldset>
+    <label>ألوان بتحبها (اختياري)<input name="الألوان" placeholder="مثلاً: كحلي وأصفر"></label>
+    <p class="tip">بنعمل أيقونة لكل تطبيق من الـ 4 (المستر، الأسيستنت، الطالب، ولي الأمر) بهويتك.</p>
+  </section>
+
+  <section class="card"><h2><span>3</span> المجموعات</h2>
+    <label>كل مجموعة في سطر: الصف · الأيام · الساعة · سعر الحصة · أقصى عدد<textarea name="المجموعات" rows="5" placeholder="تالتة ثانوي · السبت والتلات · 4 العصر · 100 ج · 200&#10;تانية ثانوي · الأحد والأربع · 6 المغرب · 90 ج · 180"></textarea></label>
+  </section>
+
+  <section class="card"><h2><span>4</span> الطلاب</h2>
+    <p class="tip"><b>ابعت شيت لكل مجموعة على واتساب</b> (Excel أو Google Sheets — زي ما هو عندك). المهم يكون فيه: <b>الاسم، موبايل الطالب، موبايل ولي الأمر</b>. ولو فيه <b>كود قديم</b> هنحافظ عليه، ولو فيه ولد/بنت يبقى أحسن.</p>
+    <fieldset><legend>الشيتات</legend><div class="chips" data-one="شيتات الطلاب"><button type="button">هبعتها دلوقتي</button><button type="button">هبعتها بعدين</button><button type="button">مفيش شيت — هندخلهم واحد واحد</button></div></fieldset>
+    <p class="tip">بعد ما ندخّلهم: كل طالب بياخد كود ورقم سري وكارت QR على موبايله، وانت بتاخد شيت بالأكواد وكروت جاهزة للطباعة.</p>
+  </section>
+
+  <section class="card"><h2><span>5</span> الأسيستنتس</h2>
+    <label>كل أسيستنت في سطر: الاسم · رقم الموبايل · شغلها<textarea name="الأسيستنتس" rows="4" placeholder="سارة · 010… · الحضور&#10;منى · 011… · تأكيد الدفع والدرجات"></textarea></label>
+    <p class="tip">الشغل ممكن يكون: الحضور، الفلوس وتأكيد الدفع، الدرجات، الطلاب، الرسايل، التقارير — وتقدر تغيّرها في أي وقت.</p>
+  </section>
+
+  <section class="card"><h2><span>6</span> الدفع</h2>
+    <label>رقم فودافون كاش للاستلام<input name="فودافون كاش" inputmode="numeric" dir="ltr"></label>
+    <label>عنوان أو رقم انستاباي (اختياري)<input name="انستاباي" dir="ltr"></label>
+    <label>مذكرات أو منتجات بسعر ثابت (اختياري)<input name="المنتجات" placeholder="مثلاً: مذكرة الباب الأول 50 ج"></label>
+    <fieldset><legend>التأكيد الأوتوماتيك للتحويلات</legend><div class="chips" data-one="التأكيد الأوتوماتيك"><button type="button">عايزه — عندي موبايل أندرويد عليه خط الاستلام</button><button type="button">لأ — الأسيستنت تأكد بصورة الإيصال</button><button type="button">مش عارف — اشرحولي</button></div></fieldset>
+  </section>
+
+  <section class="card"><h2><span>7</span> قواعدك</h2>
+    <fieldset><legend>اللي ماعملش الواجب</legend><div class="chips" data-one="الواجب"><button type="button">يدخل عادي</button><button type="button">يطلع (والحصة ماتتخصمش)</button><button type="button">الأسيستنت تختار كل مرة</button></div></fieldset>
+    <label>الطالب «ضعيف» لو متوسطه أقل من كام %؟<input name="حد الضعيف" inputmode="numeric" placeholder="50"></label>
+    <fieldset><legend>الرسايل اللي تتبعت لولي الأمر لوحدها</legend><div class="chips" data-multi="رسايل أوتوماتيك"><button type="button">الغياب</button><button type="button">الدرجة</button><button type="button">درجته نزلت</button><button type="button">ماعملش الواجب</button><button type="button">رصيده خلص</button></div></fieldset>
+    <fieldset><legend>الطالب يشوف ترتيبه وأوائل مجموعته؟</legend><div class="chips" data-one="الترتيب"><button type="button">أيوه</button><button type="button">لأ</button></div></fieldset>
+  </section>
+
+  <section class="card"><h2><span>8</span> اختياري — لو موجود</h2>
+    <label>رقم واتساب بيزنس (للإرسال الأوتوماتيك الكامل)<input name="واتساب بيزنس" dir="ltr"></label>
+    <label>لينك صفحة الفيسبوك (لبوستات الأوائل)<input name="فيسبوك" dir="ltr"></label>
+    <label>إيميل Google (للشيت اللي بيتحدّث لوحده)<input name="إيميل جوجل" dir="ltr"></label>
+  </section>
+  </form>
+
+  <section class="card done"><h2>الملخص</h2><div id="miss"></div><pre id="sum"></pre>
+    <div class="acts"><a id="wa" class="btn btn-lg go-wa" target="_blank" rel="noopener">ابعتلنا على واتساب</a><button type="button" class="btn btn-line" id="copy">انسخ</button></div>
+    <p class="tip">بنرد عليك ونجهّز السيستم، وبنجرب معاك الدفع قبل ما تبدأ. ومحدش غيرك هيشوف بياناتك.</p>
+  </section>
+</main>
+<footer class="byline"><small>POWERED BY</small><a class="hw" href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener"><strong>HINDAWY</strong></a>
+  <span class="hw-btns"><a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">اعرف أكتر</a><a href="https://ahmedelhendway0-byte.github.io/portfolio/#team" target="_blank" rel="noopener">اعرف أكتر عن المؤسسين</a></span></footer>
+<script src="start.js?v=0.9.9"></script>
+</body>
+</html>

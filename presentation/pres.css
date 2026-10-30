@@ -236,3 +236,24 @@ body { background: var(--paper); }
   .hero-ph { display: none; }
 }
 @media (max-width: 360px) { .ph { width: 260px; height: 520px; } }
+
+.m-hw.three { grid-template-columns: 1fr 1fr 1fr; font-size: 11px; }
+.m-hw .o { border-color: var(--pen-red); color: var(--pen-red); background: var(--pen-red-wash); }
+/* 4 تطبيقات */
+.apps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s3); }
+.app { background: var(--paper); border-radius: var(--r-lg); padding: var(--s4); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+.alt .app { background: var(--paper); }
+.ai { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; color: #fff; font-size: 32px; font-weight: 800; box-shadow: 0 10px 22px rgba(20, 40, 75, .2); margin-bottom: 6px; }
+.ai.t { background: linear-gradient(145deg, #14284B, #2B4170); color: var(--marker); }
+.ai.a { background: linear-gradient(145deg, #1F7A4D, #2FA36B); }
+.ai.s { background: linear-gradient(145deg, #F2C200, #FFE45A); color: var(--ink); }
+.ai.p { background: linear-gradient(145deg, #C2412D, #E5674F); }
+.app small { color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.7; }
+.brand { margin-top: var(--s4); background: var(--ink); color: #fff; border-radius: var(--r-lg); padding: var(--s4) var(--s5); }
+.brand b { color: var(--marker); } .brand p { margin: var(--s2) 0 0; color: #CFD8E8; line-height: 1.9; } .brand p b { color: #fff; }
+/* واتساب */
+.btn-wa { background: #16A34A; color: #fff; border-color: #16A34A; }
+.wa-bar { position: fixed; bottom: 14px; inset-inline-start: 14px; z-index: 20; display: flex; align-items: center; gap: 10px; background: #16A34A; color: #fff; text-decoration: none; border-radius: 99px; padding: 10px 18px 10px 14px; box-shadow: 0 10px 28px rgba(22, 163, 74, .4); }
+.wa-bar span { display: flex; flex-direction: column; line-height: 1.3; } .wa-bar small { font-size: 11px; opacity: .9; }
+body { padding-bottom: 80px; }
+@media (max-width: 520px) { .wa-bar { inset-inline: 12px; justify-content: center; } }

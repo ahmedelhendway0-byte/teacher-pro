@@ -83,7 +83,7 @@ const Door = (() => {
   function resultHtml() {
     const r = D.last; if (!r) return '';
     if (r.status === 'unknown') return '<div class="verdict no">' + icon('x', 'lg') + '<div><b>الكود ده مش متسجل</b><div class="tiny">اتأكد من الكود أو دوّر بالاسم.</div></div></div>';
-    const s = r.student, payLv = ctx.level('pay');
+    const s = r.student, payLv = ctx.level('pay'), pol = (ctx.me && ctx.me.hw_policy) || 'ask';
     let v = '';
     if (r.status === 'ok') v = '<div class="verdict ok">' + icon('check', 'lg') + '<div>' +
       (r.pay === 'wallet' ? 'اتخصمت حصة · فاضل <span class="big mark">' + num(s.credits) + '</span>' : 'دفع ' + num(D.cls.price) + ' ج كاش') + '</div></div>';
@@ -93,8 +93,10 @@ const Door = (() => {
       '<div class="door-act"><button class="btn btn-green btn-lg" data-door="cash">' + icon('cash') + 'دفع كاش ' + num(r.price) + ' ج</button>' +
       '<button class="btn btn-line btn-lg" data-door="skip">مايدخلش</button></div>';
     const hw = r.attendance_id ? (r.hw_claimed ? '<p class="tiny claim">' + icon('check', 'sm') + ' أكّد من البوابة إنه عمل آخر واجب — اتأكد من الكشكول.</p>' : '') +
-      '<div class="hw" role="group" aria-label="الواجب"><button class="' + (r.hw === true ? 'on-yes' : '') + '" data-door="hw" data-v="1">' + icon('check') + 'عمل الواجب</button>' +
-      '<button class="' + (r.hw === false ? 'on-no' : '') + '" data-door="hw" data-v="0">' + icon('x') + 'ماعملش</button></div>' : '';
+      // اللي ماعملش: يدخل عادي أو يطلع (مايتسجلش ولا تتخصم الحصة) — حسب اختيار المستر
+      '<div class="hw' + (pol === 'ask' ? ' three' : '') + '" role="group" aria-label="الواجب"><button class="' + (r.hw === true ? 'on-yes' : '') + '" data-door="hw" data-v="1">' + icon('check') + 'عمل الواجب</button>' +
+      (pol !== 'out' ? '<button class="' + (r.hw === false ? 'on-no' : '') + '" data-door="hw" data-v="0">' + icon('x') + (pol === 'ask' ? 'ماعملش · يدخل' : 'ماعملش') + '</button>' : '') +
+      (pol !== 'in' ? '<button class="out" data-door="hwout">' + icon('out') + 'ماعملش · يطلع</button>' : '') + '</div>' : '';
     return '<div class="surface door-res"><button class="who plain-btn" data-door="profile" aria-label="افتح ملف ' + esc(s.name) + '">' + face(s) +
       '<div><h3>' + esc(s.name) + '</h3><div class="tiny">' + s.code + ' · ' + esc(s.group || 'من غير مجموعة') + ' · ملفه ' + icon('chev', 'sm') + '</div>' +
       (r.visitor ? '<span class="tag">من مجموعة تانية</span>' : '') + '</div></button>' + v + hw + '</div>';
@@ -163,6 +165,14 @@ const Door = (() => {
         const v = b.dataset.v === '1';
         await API.doorHw(D.last.attendance_id, v).catch(x => toast(x.message, 'err'));
         D.last.hw = v; $('#dres').innerHTML = resultHtml(); return refresh();
+      }
+      if (a === 'hwout') {
+        const nm = D.last.student.name;
+        return busy(b, async () => {
+          D.cls = await API.doorHwOut(D.last.attendance_id); D.last = null;
+          $('#dres').innerHTML = '<div class="surface door-res"><div class="verdict no">' + icon('out', 'lg') + '<div><b>' + esc(nm) + ' مادخلش</b><div class="tiny">ماعملش الواجب · الحصة ماتخصمتش وحضوره ماتسجلش</div></div></div></div>';
+          await refresh();
+        });
       }
       if (a === 'undo') {
         const row = D.cls.recent.find(x => x.id === +b.dataset.id);
