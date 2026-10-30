@@ -524,3 +524,33 @@ button.mst { cursor: pointer; } button.mst:hover { border-color: var(--ink); }
 .lv-names .tiny { color: var(--ink-2); }
 .lv-sort { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-sm); }
 .lv-sort select { max-width: 220px; min-height: 38px; }
+
+/* مستوى الطلاب v3: كروت مجموعات بسيطة + صفحة تفاصيل بكروت مترتبة */
+button.lv-card { font: inherit; color: var(--ink); text-align: right; border: 1.5px solid transparent; cursor: pointer; width: 100%; align-items: stretch; }
+button.lv-card:hover { border-color: var(--ink); }
+.lv-card.all { background: var(--ink); color: #fff; justify-content: space-between; }
+.lv-card.all .tiny { color: #CFD8E8; } .lv-card.all .lv-open { color: var(--marker); }
+.lv-lines li { display: flex; align-items: center; gap: var(--s2); padding: 7px 0; font-size: var(--fs-sm); }
+.lv-lines li b { font-size: var(--fs-md); }
+.lv-open { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-sm); font-weight: 600; color: var(--ink); margin-top: auto; }
+.lvd-sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); margin-bottom: var(--s3); }
+.lvd-sum > div { background: var(--desk); border-radius: var(--r-md); padding: var(--s3); display: flex; flex-direction: column; text-align: center; }
+.lvd-sum b { font-size: var(--fs-lg); } .lvd-sum span { font-size: var(--fs-xs); color: var(--ink-2); }
+.lvd-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s3); margin-bottom: var(--s3); }
+.lvd-card { background: var(--paper); border: 1px solid var(--rule); border-top: 4px solid var(--rule); border-radius: var(--r-lg); padding: var(--s3) var(--s4); display: flex; flex-direction: column; }
+.lvd-card.g { border-top-color: var(--pen-green); } .lvd-card.r { border-top-color: var(--pen-red); } .lvd-card.a { border-top-color: var(--pen-amber); }
+.lvd-h { display: flex; align-items: center; gap: var(--s2); }
+.lvd-h b { font-size: var(--fs-md); }
+.lvd-n { margin-inline-start: auto; font-weight: 700; font-size: var(--fs-lg); }
+.lvd-card > p.tiny { margin: 2px 0 var(--s2); color: var(--ink-3); }
+.lvd-list { list-style: none; margin: 0; padding: 0; }
+.lvd-list li { display: flex; align-items: center; gap: var(--s2); padding: 7px 0; border-bottom: 1px solid var(--rule-soft); font-size: var(--fs-sm); flex-wrap: wrap; }
+.lvd-list li:last-child { border-bottom: 0; }
+.lvd-list .rk { width: 24px; height: 24px; border-radius: 50%; background: var(--desk); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.lvd-list li:nth-child(-n+3) .rk { background: var(--marker); }
+.lvd-g { color: var(--ink-3); }
+.lvd-v { margin-inline-start: auto; font-weight: 600; white-space: nowrap; }
+.lvd-none { color: var(--ink-3); }
+.lvd-act { display: flex; align-items: center; gap: var(--s2); margin-top: auto; padding-top: var(--s2); flex-wrap: wrap; }
+.lvd-act .btn { margin-inline-start: auto; }
+@media (max-width: 640px) { .lvd-grid { grid-template-columns: 1fr; } .lvd-sum span { font-size: 11px; } }
