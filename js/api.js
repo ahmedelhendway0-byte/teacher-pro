@@ -56,6 +56,27 @@ const API = (() => {
     NET: 'مفيش اتصال بالنت. اتأكد من النت وجرب تاني.'
   };
 
+  // التحديث لوحده: الشاشة بتتحدث لما المستخدم يرجع للتطبيق. وفي الديمو كمان كل 4 ثواني لو حاجة اتغيرت في أي موبايل
+  // (عداد tp_pulse) ⇒ الموبايلات الأربعة مربوطة ببعض لايف. مابنحدّثش وفيه نافذة مفتوحة أو حد بيكتب أو زرار شغال.
+  let liveFn = null, pulse = null;
+  const calm = () => !document.querySelector('.sheet-wrap, .busy, .cam, [data-door=nfc].on') &&   // نافذة / زرار شغال / كاميرا / قارئ الكروت
+    !(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && document.activeElement.value);
+  function live(fn) {
+    const first = !liveFn; liveFn = fn;
+    if (!first) return;
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && calm()) liveFn(); });
+    if (!CFG.DEMO) return;
+    setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        const n = await rpc('tp_pulse');
+        if (n == null) return;
+        if (pulse !== null && n !== pulse) { if (!calm()) return; liveFn(); }   // مش هادي ⇒ نستنى اللفة الجاية
+        pulse = n;
+      } catch (e) { }
+    }, 4000);
+  }
+
   async function rpc(fn, args = {}) {
     let res;
     try {
@@ -103,6 +124,7 @@ const API = (() => {
     demoLogin: async role => { const r = await rpc('tp_demo_login', { p_role: role || 'teacher' }); setToken(r.token); return r; },
     saveBrand: p => rpc('tp_brand_save', { ...t(), p }),
     wasOut: () => { try { return !!localStorage.getItem(OUT); } catch (e) { return false; } },
+    live: fn => live(fn),
     logout: async () => { const tk = token(); setToken(null); if (CFG.APP) flag(true); if (tk) await rpc('tp_logout', { p_token: tk }).catch(() => { }); },
     me: () => rpc('tp_me', t()),
     savePrefs: p => rpc('tp_prefs_save', { ...t(), p }),

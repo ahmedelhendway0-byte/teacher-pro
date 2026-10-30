@@ -68,6 +68,7 @@ const Portal = (() => {
       '<main class="main" id="main"></main><nav class="nav" id="nav"></nav></div>';
     root().onclick = onClick;
     window.onhashchange = () => go((location.hash || '#home').slice(1));
+    API.live(() => go(P.tab));   // الرصيد والإشعارات والدرجات بتتحدث لوحدها
     go((location.hash || '#home').slice(1), true);
   }
   function nav() {

@@ -211,9 +211,14 @@ const Door = (() => {
 
   // الديمو بس: محاكاة كارت بيتقرّب (عشان تشوف الشكل من الكمبيوتر)
   async function simulateCard() {
-    const r = await API.students({ group_id: D.cls.group_id, limit: 60 }).catch(() => null);
-    if (!r || !r.rows.length) return;
-    const s = r.rows[Math.floor(Math.random() * r.rows.length)];
+    // أول تقريب = طالب الديمو (اللي على موبايل الطالب وولي الأمر) عشان الحضور يظهر عندهم، وبعده طلاب عشوائي من المجموعة
+    const demo = await API.rpc('tp_demo_student').catch(() => null);
+    let s = demo && !(D.cls.recent || []).some(a => a.student_id === demo.id) ? demo : null;
+    if (!s) {
+      const r = await API.students({ group_id: D.cls.group_id, limit: 60 }).catch(() => null);
+      if (!r || !r.rows.length) return;
+      s = r.rows[Math.floor(Math.random() * r.rows.length)];
+    }
     const w = document.createElement('div'); w.className = 'nfc-sim';
     w.innerHTML = '<div class="nfc-phone">' + icon('nfc', 'lg') + '</div><div class="nfc-card"><b>' + esc(s.name) + '</b><span>' + s.code + '</span></div><p>الكارت بيقرّب من ضهر الموبايل…</p>';
     document.body.appendChild(w);

@@ -204,6 +204,7 @@ const App = (() => {
     root().onclick = onClick;
     root().onkeydown = null;
     window.onhashchange = route;
+    API.live(route);   // الصفحة بتتحدث لوحدها (والديمو مربوط بالموبايلات التانية لايف)
     route();
   }
 
