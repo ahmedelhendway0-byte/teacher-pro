@@ -99,6 +99,8 @@ const API = (() => {
     posts: () => rpc('tp_posts_list', t()),
     savePost: p => rpc('tp_post_save', { ...t(), p }),
     weekPost: gid => rpc('tp_week_post', { ...t(), p_group: gid }),
+    segments: p => rpc('tp_segments', { ...t(), p: p || {} }),
+    messageCount: p => rpc('tp_message_count', { ...t(), p }),
     studentByCode: code => rpc('tp_student_by_code', { ...t(), p_code: String(code) }),
     studentCard: (id, uid) => rpc('tp_student_card', { ...t(), p_id: id, p_uid: uid }),
     archiveStudent: id => rpc('tp_student_archive', { ...t(), p_id: id }),

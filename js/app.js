@@ -143,11 +143,11 @@ const App = (() => {
     students: { name: 'الطلاب', icon: 'student', show: () => true, draw: students },
     exams: { name: 'الدرجات', icon: 'pen', show: () => can('grades'), draw: () => Screens.exams(sctx()) },
     money: { name: 'الفلوس', icon: 'cash', show: () => can('money'), draw: () => Screens.money(sctx()) },
-    expenses: { name: 'المصروفات', icon: 'receipt', show: () => can('expenses'), draw: () => Screens.expenses(sctx()) },
+    reports: { name: 'التقارير', icon: 'chart', show: () => can('reports'), draw: () => Screens.reports(sctx()) },
     messages: { name: 'الرسايل', icon: 'send', show: () => can('messages') || can('notify_settings'), draw: () => Screens.messages(sctx()) },
     groups: { name: 'المجموعات', icon: 'groups', show: () => true, draw: groups },
     engage: { name: 'التفاعل', icon: 'trophy', show: () => can('bank'), draw: () => Screens.engage(sctx()) },
-    reports: { name: 'التقارير', icon: 'chart', show: () => can('reports'), draw: () => Screens.reports(sctx()) },
+    expenses: { name: 'المصروفات', icon: 'receipt', show: () => can('expenses'), draw: () => Screens.expenses(sctx()) },
     team: { name: 'الفريق', icon: 'team', show: isTeacher, draw: team },
     settings: { name: 'الإعدادات', icon: 'settings', show: isTeacher, draw: settings }
   };
@@ -196,22 +196,48 @@ const App = (() => {
   actions.logout = async () => { await API.logout(); location.hash = ''; location.reload(); };
 
   // ───── الرئيسية: عين المستر ─────
+  // الترتيب: النهارده (أرقام) ← مستوى الطلاب (الفئات) ← اختصارات ← اللي حصل (تحت)
+  const SEGS = [['top', 'الأوائل', 'متوسطهم 85% أو أكتر', 'g'], ['up', 'مستواهم بيزيد', 'آخر درجة أعلى من اللي قبلها بـ 10% أو أكتر', 'g'],
+    ['down', 'مستواهم بيقل', 'آخر درجة أقل من اللي قبلها بـ 10% أو أكتر', 'r'], ['low', 'درجاتهم ضعيفة', 'متوسطهم أقل من 50%', 'r'],
+    ['absent', 'غابوا آخر حصة', 'ماحضروش آخر حصة لمجموعتهم', 'a'], ['no_balance', 'رصيدهم خلص', 'مفيش حصص في اشتراكهم', 'a']];
   async function home() {
-    const [g, feed] = await Promise.all([API.groups(), can('log') ? API.log(null, S.feedMin) : Promise.resolve(null)]);
+    const today = new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
+    const segOk = can('students') || can('grades') || can('messages');
+    const [g, rep, seg] = await Promise.all([API.groups(), can('reports') ? API.report(today, today).catch(() => null) : null,
+      segOk ? API.segments(S.segScope || {}).catch(() => null) : null]);
     S.groups = g;
-    const c = S.me.config;
-    let h = '<div class="head"><h1>أهلاً ' + esc(S.me.staff.name) + '</h1></div>' +
-      '<div class="stats"><a class="stat" href="#students"><span class="muted">الطلاب</span><b>' + num(g.students_total) + '</b></a>' +
-      '<a class="stat" href="#groups"><span class="muted">المجموعات</span><b>' + num(g.groups.length) + '</b>' +
-      (g.groups_max ? '<span class="tiny">من ' + num(g.groups_max) + ' في باقتك</span>' : '') + '</a></div>';
-    if (feed) {
-      h += '<section class="sec"><div class="head"><h2>اللي حصل</h2><div class="chips">' +
-        '<button class="chip ' + (S.feedMin === 1 ? 'on' : '') + '" data-act="feedMin" data-v="1">الكل</button>' +
-        '<button class="chip ' + (S.feedMin === 2 ? 'on' : '') + '" data-act="feedMin" data-v="2">المهم بس</button></div></div>' +
-        feedHtml(feed) + '</section>';
+    let h = '<div class="head"><h1>أهلاً ' + esc(S.me.staff.name) + '</h1></div>';
+    // النهارده
+    h += '<div class="stats">' + (rep ? '<a class="stat" href="#reports"><span class="muted">حضروا النهارده</span><b>' + num(rep.attendance.total) + '</b><span class="tiny">' + num(rep.attendance.hw_yes) + ' عملوا الواجب</span></a>' +
+      '<a class="stat" href="#reports"><span class="muted">إيراد النهارده</span><b>' + num(rep.money.revenue) + ' ج</b><span class="tiny">كاش ' + num(rep.money.cash_in) + ' · تحويلات ' + num(rep.money.transfer_in) + '</span></a>' +
+      '<a class="stat net" href="#reports"><span class="muted">صافي النهارده</span><b>' + num(rep.net) + ' ج</b><span class="tiny">بعد المصروفات ' + num(rep.expenses) + ' ج</span></a>' : '') +
+      '<a class="stat" href="#students"><span class="muted">الطلاب</span><b>' + num(g.students_total) + '</b><span class="tiny">في ' + num(g.groups.length) + ' مجموعة' + (g.groups_max ? ' من ' + num(g.groups_max) : '') + '</span></a></div>';
+    // مستوى الطلاب بالفئات
+    if (seg) {
+      const sc = S.segScope || {};
+      h += '<section class="sec"><div class="head"><h2>مستوى الطلاب</h2><select class="inp seg-scope" id="segs" aria-label="المجموعة"><option value="">كل المجموعات</option>' +
+        g.groups.map(x => '<option value="' + x.id + '"' + (sc.group_id === x.id ? ' selected' : '') + '>' + esc(x.name) + ' · ' + esc(x.grade) + '</option>').join('') + '</select></div>' +
+        '<div class="segs">' + SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2).map(([k, n, why, cl]) => { const d = seg[k];
+          return '<div class="segc ' + cl + '"><div class="segc-h"><b class="num">' + num(d.count) + '</b><div><b>' + n + '</b><div class="tiny">' + why + '</div></div></div>' +
+            (d.rows.length ? '<ul class="seg-names">' + d.rows.slice(0, 5).map(r => '<li><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '">' + esc(r.name.split(' ').slice(0, 2).join(' ')) + '</button>' +
+              '<span class="tiny num">' + (k === 'up' || k === 'down' ? r.prev + '% ← ' + r.last + '%' : r.avg != null ? r.avg + '%' : '') + '</span></li>').join('') + '</ul>' : '<p class="tiny">مفيش حد.</p>') +
+            (d.count && can('messages') ? '<button class="btn btn-line btn-sm" data-act="segMsg" data-seg="' + k + '">' + icon('send') + 'ابعتلهم رسالة</button>' : '') + '</div>'; }).join('') + '</div></section>';
     }
-    $('#main').innerHTML = h + credit();
+    // اختصارات
+    const quick = [['door', 'qr', 'سجّل حضور'], ['students', 'student', 'الطلاب'], ['exams', 'pen', 'الدرجات'], ['reports', 'chart', 'التقارير'], ['messages', 'send', 'الرسايل'], ['expenses', 'receipt', 'المصروفات']]
+      .filter(([r]) => ROUTES[r].show());
+    h += '<section class="sec"><div class="quick">' + quick.map(([r, ic, n]) => '<a class="qk" href="#' + r + '">' + icon(ic) + '<span>' + n + '</span></a>').join('') + '</div></section>';
+    $('#main').innerHTML = h + '<div id="feedbox"></div>' + credit();
+    const ss = $('#segs'); if (ss) ss.onchange = () => { S.segScope = ss.value ? { group_id: +ss.value } : {}; home(); };
+    // اللي حصل: آخر الصفحة
+    if (can('log')) {
+      const feed = await API.log(null, S.feedMin, 15).catch(() => null);
+      if (feed && $('#feedbox')) $('#feedbox').innerHTML = '<section class="sec"><div class="head"><h2>اللي حصل</h2><div class="chips">' +
+        '<button class="chip ' + (S.feedMin === 1 ? 'on' : '') + '" data-act="feedMin" data-v="1">الكل</button>' +
+        '<button class="chip ' + (S.feedMin === 2 ? 'on' : '') + '" data-act="feedMin" data-v="2">المهم بس</button></div></div>' + feedHtml(feed) + '</section>';
+    }
   }
+  actions.segMsg = b => { window.MSG_PRESET = { seg: b.dataset.seg, group_id: (S.segScope || {}).group_id || null }; location.hash = '#messages'; };
   function feedHtml(rows) {
     if (!rows.length) return '<div class="surface empty">' + icon('eye') + '<div>لسه مفيش حاجة حصلت.</div></div>';
     return '<ul class="feed">' + rows.map(r =>

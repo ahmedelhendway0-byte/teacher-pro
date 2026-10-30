@@ -386,3 +386,46 @@ textarea.inp { padding: var(--s3) var(--s4); min-height: auto; resize: vertical;
 .name-btn { width: auto; display: inline; text-align: right; }
 .name-btn:hover b { text-decoration: underline; }
 @media (max-width: 420px) { .pstats { grid-template-columns: repeat(2, 1fr); } }
+
+/* الجولة 5: الرئيسية (الفئات + الاختصارات) والرسايل */
+.seg-scope { max-width: 240px; min-height: 40px; }
+.segs { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: var(--s3); }
+.segc { background: var(--paper); border-radius: var(--r-lg); padding: var(--s4); border-top: 4px solid var(--rule); display: flex; flex-direction: column; gap: var(--s2); }
+.segc.g { border-top-color: var(--pen-green); } .segc.r { border-top-color: var(--pen-red); } .segc.a { border-top-color: var(--pen-amber); }
+.segc-h { display: flex; gap: var(--s3); align-items: center; }
+.segc-h > b { font-size: 30px; line-height: 1; min-width: 48px; }
+.segc.g .segc-h > b { color: var(--pen-green); } .segc.r .segc-h > b { color: var(--pen-red); } .segc.a .segc-h > b { color: var(--pen-amber); }
+.seg-names { list-style: none; margin: 0; padding: 0; }
+.seg-names li { display: flex; justify-content: space-between; gap: var(--s2); padding: 4px 0; border-bottom: 1px solid var(--rule-soft); font-size: var(--fs-sm); }
+.segc .btn { align-self: flex-start; margin-top: auto; }
+.quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--s2); }
+.qk { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--s4) var(--s2); background: var(--paper); border-radius: var(--r-lg); text-decoration: none; color: var(--ink); font-size: var(--fs-sm); font-weight: 500; }
+.qk:hover { box-shadow: var(--lift); }
+.wa-bar { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s3); }
+.wa-bar .btn { align-self: flex-start; }
+.prog { height: 6px; border-radius: 4px; background: var(--rule-soft); overflow: hidden; margin: var(--s2) 0 var(--s3); }
+.prog span { display: block; height: 100%; width: var(--w); background: var(--pen-green); }
+
+/* الكويز: نموذج الإجابة + التصحيح */
+.key-box { background: var(--desk); border-radius: var(--r-lg); padding: var(--s4); margin: var(--s4) 0; }
+.key-box h3 { margin: 0 0 4px; }
+#key { display: flex; flex-direction: column; gap: 6px; margin-top: var(--s3); }
+.krow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); background: var(--paper); border-radius: var(--r-md); padding: 8px 10px; }
+.krow .kn { width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+.kbub { display: flex; gap: 6px; }
+.kbub button { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--rule); background: var(--paper); font: 600 var(--fs-md) var(--font); color: var(--ink-2); cursor: pointer; }
+.kbub button.on { background: var(--pen-green); border-color: var(--pen-green); color: #fff; }
+.kess { flex: 1; min-width: 160px; }
+.krow .btn.has { color: var(--pen-green); }
+.kmore { flex-basis: 100%; display: flex; flex-direction: column; gap: 6px; }
+.kch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sheet-list > li { flex-wrap: wrap; }
+.sheet-list .mark { flex-basis: 100%; background: var(--desk); border-radius: var(--r-md); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+.wlist { display: flex; flex-direction: column; gap: 6px; }
+.wl { background: var(--paper); border-radius: var(--r-sm); padding: 6px 10px; border-right: 3px solid var(--pen-red); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.wl mark { background: var(--pen-green-wash); color: var(--pen-green); font-weight: 600; padding: 0 6px; border-radius: 4px; }
+.wl .why { flex-basis: 100%; color: var(--ink-2); }
+.wsum { color: var(--pen-red); } .wsum .ok-t { color: var(--pen-green); display: inline-flex; align-items: center; gap: 4px; }
+.how-steps { margin: 0 0 var(--s2); padding-inline-start: 22px; font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.9; }
+.lock-hint { display: flex; gap: var(--s3); align-items: flex-start; }
+.sheet-list .mark[hidden], .kmore[hidden] { display: none; }

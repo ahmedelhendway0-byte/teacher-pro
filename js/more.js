@@ -204,105 +204,131 @@ const Screens = (() => {
     };
   }
 
-  // سؤال واحد في فورم الكويز: نص (اختياري)، اختياري أو مقالي، الإجابة الصح، الشرح (ليه ده الصح)، الجزء
-  const qCard = (q, i) => {
-    const mcq = q.kind !== 'essay', ch = (q.choices || []).concat(['', '', '', '']).slice(0, 4);
-    return '<details class="qcard"' + (i < 1 ? ' open' : '') + ' data-q><summary><b>سؤال ' + (i + 1) + '</b> <span class="tiny">' + esc((q.text || '').slice(0, 50) || 'من غير نص') + '</span>' +
-      '<button type="button" class="btn btn-ghost btn-sm q-del" aria-label="شيل السؤال">' + icon('x') + '</button></summary>' +
-      '<textarea class="inp" data-f="text" rows="2" placeholder="نص السؤال (اختياري — ممكن تكتب رقمه بس)">' + esc(q.text || '') + '</textarea>' +
-      '<div class="seg small"><button type="button" data-kind="mcq" class="' + (mcq ? 'on' : '') + '">اختياري</button><button type="button" data-kind="essay" class="' + (mcq ? '' : 'on') + '">مقالي</button></div>' +
-      '<div class="q-mcq"' + (mcq ? '' : ' hidden') + '>' + ch.map((c, k) => '<label class="choice-in"><input type="radio" name="ans' + i + '" value="' + k + '"' + (mcq && +q.answer === k ? ' checked' : '') + ' aria-label="' + LET[k] + ' هو الصح"><span class="let">' + LET[k] + '</span>' +
-        '<input class="inp" data-ch="' + k + '" value="' + esc(c) + '" placeholder="اختيار ' + LET[k] + '"></label>').join('') + '</div>' +
-      '<div class="q-essay"' + (mcq ? ' hidden' : '') + '><textarea class="inp" data-f="essay" rows="2" placeholder="الإجابة الصح">' + esc(mcq ? '' : (q.answer || '')) + '</textarea></div>' +
-      '<textarea class="inp" data-f="explain" rows="2" placeholder="الشرح: ليه دي الإجابة الصح (بيظهر للطالب اللي غلط)">' + esc(q.explain || '') + '</textarea>' +
-      '<input class="inp" data-f="part" value="' + esc(q.part || '') + '" placeholder="الجزء/الدرس (اختياري — زي بنك الأسئلة عشان «أخطائي»)"></details>';
+  // نموذج الإجابة: لكل سؤال الإجابة الصح (حرف أو كلام) + الشرح ونص السؤال (اختياري).
+  // لما المصحح يقول «الطالب غلط في سؤال 3»، الطالب بيوصله الصح والشرح لوحده.
+  const keyRow = (q, i) => {
+    const mcq = q.kind !== 'essay', ch = (q.choices || []).concat(['', '', '', '']).slice(0, 4), open = !!(q.text || q.explain || q.part || ch.some(Boolean));
+    return '<div class="krow" data-i="' + i + '"><b class="kn">' + (i + 1) + '</b>' +
+      (mcq ? '<div class="kbub">' + LET.slice(0, 4).map((L, k) => '<button type="button" data-ka="' + k + '" class="' + (q.answer != null && q.answer !== '' && +q.answer === k ? 'on' : '') + '" aria-label="سؤال ' + (i + 1) + ': الصح ' + L + '">' + L + '</button>').join('') + '</div>'
+        : '<input class="inp kess" data-kf="answer" value="' + esc(q.answer || '') + '" placeholder="الإجابة الصح">') +
+      '<button type="button" class="btn btn-ghost btn-sm" data-kt="1">' + (mcq ? 'مقالي؟' : 'اختياري؟') + '</button>' +
+      '<button type="button" class="btn btn-ghost btn-sm' + (q.explain ? ' has' : '') + '" data-km="1">' + icon('pen', 'sm') + 'الشرح</button>' +
+      '<div class="kmore"' + (open ? '' : ' hidden') + '>' +
+      '<textarea class="inp" data-kf="explain" rows="2" placeholder="الشرح: ليه دي الإجابة الصح (بيوصل للطالب اللي غلط فيه)">' + esc(q.explain || '') + '</textarea>' +
+      '<textarea class="inp" data-kf="text" rows="1" placeholder="نص السؤال (اختياري)">' + esc(q.text || '') + '</textarea>' +
+      (mcq ? '<div class="kch">' + ch.map((c, k) => '<input class="inp" data-kc="' + k + '" value="' + esc(c) + '" placeholder="' + LET[k] + ') (اختياري)">').join('') + '</div>' : '') +
+      '<input class="inp" data-kf="part" value="' + esc(q.part || '') + '" placeholder="الجزء/الدرس (اختياري — لـ «أخطائي»)"></div></div>';
   };
 
   async function examForm(ctx, ex, kind0) {
     const [grades, g] = await Promise.all([API.grades(), API.groups()]);
     const isNew = !ex; ex = ex || { title: '', kind: kind0 || 'quiz', max: kind0 === 'exam' ? 50 : 20, questions: [], solution_url: '' };
     const KN = k => k === 'exam' ? 'امتحان' : 'كويز';
+    const K = (ex.questions || []).map(q => ({ ...q }));
     sheet('<h2>' + (isNew ? KN(ex.kind) + ' جديد' : 'تعديل «' + esc(ex.title) + '»') + '</h2><form id="ef" novalidate>' +
       '<div class="field"><label for="e_t">اسم ال' + KN(ex.kind) + '</label><input class="inp" id="e_t" value="' + esc(ex.title) + '" placeholder="' + (ex.kind === 'exam' ? 'مثلاً: امتحان شهر أكتوبر' : 'مثلاً: كويز التيار الكهربي') + '"></div>' +
       (isNew ? '<div class="field"><span class="lbl">النوع</span><div class="chips"><button type="button" class="chip' + (ex.kind === 'quiz' ? ' on' : '') + '" data-k="quiz">كويز</button><button type="button" class="chip' + (ex.kind === 'exam' ? ' on' : '') + '" data-k="exam">امتحان</button></div></div>' +
         '<div class="row2"><div class="field"><label for="e_g">لمين</label><select class="inp" id="e_g">' + g.groups.map(x => '<option value="' + x.id + '" data-grade="' + x.grade_id + '">' + esc(x.name) + ' · ' + esc(x.grade) + '</option>').join('') +
         grades.map(x => '<option value="grade:' + x.id + '">كل ' + esc(x.name) + '</option>').join('') + '</select></div>' : '<div class="row2">') +
       '<div class="field"><label for="e_m">الدرجة النهائية</label><input class="inp" id="e_m" type="number" min="1" inputmode="numeric" value="' + ex.max + '"></div></div>' +
-      '<div class="field"><label for="e_u">لينك الحل (اختياري)</label><input class="inp" id="e_u" dir="ltr" value="' + esc(ex.solution_url || '') + '" placeholder="https://youtube.com/…">' +
-      '<span class="hint">فيديو حل الكويز — بيوصل لكل الطلاب مع الدرجة.</span></div>' +
-      '<div class="head" style="margin:var(--s4) 0 var(--s2)"><h3 style="margin:0">الأسئلة <span class="tiny">(اختياري — عشان الطالب يعرف غلط في إيه والصح إيه، ولإحصائية كل سؤال)</span></h3></div>' +
-      '<div id="qs">' + ex.questions.map(qCard).join('') + '</div>' +
-      '<div class="inline-form"><button type="button" class="btn btn-line" data-add="1">' + icon('plus') + 'ضيف سؤال</button>' +
-      '<input class="inp num" id="e_n" type="number" min="1" max="60" inputmode="numeric" placeholder="أو عدد" style="max-width:100px"><button type="button" class="btn btn-ghost" data-addn="1">ضيف الكل</button></div>' +
-      '<p class="err" id="eerr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'اعمله وابدأ الدرجات' : 'احفظ') + '</button></div></form>', box => {
+      '<div class="key-box"><h3>نموذج الإجابة</h3>' +
+      '<p class="tiny">اكتب عدد الأسئلة، ودوس على الإجابة الصح لكل سؤال (زي ورقة الإجابة بتاعة المستر). ولو عايز، دوس «الشرح» واكتب ليه دي الصح. ' +
+      'وانت بتصحح هتدوس بس على أرقام الأسئلة اللي الطالب غلط فيها، والدرجة بتتحسب لوحدها، والطالب بيشوف الإجابة الصح والشرح.</p>' +
+      '<div class="inline-form"><label for="e_n" class="lbl" style="margin:0">عدد الأسئلة</label><input class="inp num" id="e_n" type="number" min="0" max="100" inputmode="numeric" value="' + (K.length || '') + '" placeholder="مثلاً 10" style="max-width:110px"></div>' +
+      '<div id="key"></div></div>' +
+      '<div class="field"><label for="e_u">لينك فيديو الحل (اختياري)</label><input class="inp" id="e_u" dir="ltr" value="' + esc(ex.solution_url || '') + '" placeholder="https://youtube.com/…"></div>' +
+      '<p class="err" id="eerr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'احفظ وابدأ التصحيح' : 'احفظ') + '</button></div></form>', box => {
       let kind = ex.kind;
-      const add = () => { const n = $$('[data-q]', box).length; $('#qs', box).insertAdjacentHTML('beforeend', qCard({ kind: 'mcq' }, n)); $$('[data-q]', box).forEach((d, i) => { d.open = i === n; }); };
-      box.onclick = e => {
-        const c = e.target.closest('[data-k]'); if (c) { kind = c.dataset.k; $$('[data-k]', box).forEach(x => x.classList.toggle('on', x === c)); }
-        if (e.target.closest('[data-add]')) add();
-        if (e.target.closest('[data-addn]')) { const n = Math.min(60, +$('#e_n').value || 0); for (let i = 0; i < n; i++) add(); }
-        const del = e.target.closest('.q-del'); if (del) { e.preventDefault(); del.closest('[data-q]').remove(); }
-        const kb = e.target.closest('[data-kind]'); if (kb) {
-          const d = kb.closest('[data-q]'); $$('[data-kind]', d).forEach(x => x.classList.toggle('on', x === kb));
-          $('.q-mcq', d).hidden = kb.dataset.kind !== 'mcq'; $('.q-essay', d).hidden = kb.dataset.kind === 'mcq';
-        }
+      const draw = () => { $('#key', box).innerHTML = K.map(keyRow).join(''); };
+      draw();
+      $('#e_n', box).oninput = () => {
+        const n = Math.min(100, Math.max(0, +$('#e_n', box).value || 0));
+        while (K.length < n) K.push({ kind: 'mcq', answer: null, choices: [] });
+        if (K.length > n) K.length = n;
+        draw();
       };
+      box.onclick = e => {
+        const c = e.target.closest('[data-k]'); if (c) { kind = c.dataset.k; $$('[data-k]', box).forEach(x => x.classList.toggle('on', x === c)); return; }
+        const row = e.target.closest('.krow'); if (!row) return;
+        const q = K[+row.dataset.i];
+        const a = e.target.closest('[data-ka]'); if (a) { q.answer = +a.dataset.ka; $$('[data-ka]', row).forEach(x => x.classList.toggle('on', x === a)); return; }
+        if (e.target.closest('[data-kt]')) { q.kind = q.kind === 'essay' ? 'mcq' : 'essay'; q.answer = null; row.outerHTML = keyRow(q, +row.dataset.i); return; }
+        if (e.target.closest('[data-km]')) { const m = $('.kmore', row); m.hidden = !m.hidden; if (!m.hidden) $('textarea', m).focus(); }
+      };
+      box.addEventListener('input', e => {
+        const row = e.target.closest('.krow'); if (!row) return;
+        const q = K[+row.dataset.i];
+        if (e.target.dataset.kf) q[e.target.dataset.kf] = e.target.value;
+        if (e.target.dataset.kc != null) { q.choices = (q.choices || []).concat(['', '', '', '']).slice(0, 4); q.choices[+e.target.dataset.kc] = e.target.value; }
+      });
       $('#ef', box).onsubmit = e => {
         e.preventDefault();
-        const questions = $$('[data-q]', box).map(d => {
-          const mcq = $('[data-kind=mcq]', d).classList.contains('on'), r = $('input[type=radio]:checked', d);
-          return { text: $('[data-f=text]', d).value.trim(), kind: mcq ? 'mcq' : 'essay', choices: mcq ? $$('[data-ch]', d).map(i => i.value.trim()) : [],
-            answer: mcq ? (r ? +r.value : null) : $('[data-f=essay]', d).value.trim(), explain: $('[data-f=explain]', d).value.trim(), part: $('[data-f=part]', d).value.trim() };
-        });
+        const questions = K.map(q => ({ text: (q.text || '').trim(), kind: q.kind === 'essay' ? 'essay' : 'mcq',
+          choices: q.kind === 'essay' ? [] : (q.choices || []).concat(['', '', '', '']).slice(0, 4).map(x => (x || '').trim()),
+          answer: q.kind === 'essay' ? (q.answer || '').trim() : q.answer, explain: (q.explain || '').trim(), part: (q.part || '').trim() }));
         const p = { id: ex.id || null, title: $('#e_t').value.trim(), kind: ex.kind || kind, max: +$('#e_m').value, solution_url: $('#e_u').value.trim(), questions, parts: [] };
         if (isNew) { const sel = $('#e_g').value, opt = $('#e_g').selectedOptions[0];
           p.group_id = sel.startsWith('grade:') ? null : +sel; p.grade_id = sel.startsWith('grade:') ? +sel.slice(6) : +opt.dataset.grade; p.kind = kind; }
         if (!p.title) return ($('#eerr').textContent = 'اكتب اسم ال' + KN(p.kind) + '.');
+        const miss = questions.map((q, i) => q.kind === 'mcq' && q.answer == null ? i + 1 : 0).filter(Boolean);
+        if (miss.length) return ($('#eerr').textContent = 'اختار الإجابة الصح لسؤال ' + miss.join('، ') + '.');
         if (p.solution_url && !/^https:\/\//.test(p.solution_url)) return ($('#eerr').textContent = 'لينك الحل لازم يبدأ بـ https://');
         busy($('#ef button[type=submit]'), async () => { const r = await API.saveExam(p); close(); E.open = r.exam.id; E.stats = false; examSheet(ctx, E.open); });
       };
     });
   }
 
+  // التصحيح: لكل طالب «حدد الغلط» ⇒ أرقام الأسئلة ⇒ الدرجة بتتحسب لوحدها، وبيظهر الصح من النموذج (وتقدر تختار هو جاوب إيه)
   async function examSheet(ctx, id) {
     const d = await API.examSheet(id), ex = d.exam, editable = ctx.can('grades'), qs = ex.questions || [];
     const scored = d.rows.filter(r => r.score != null);
     const avg = scored.length ? (scored.reduce((s, r) => s + +r.score, 0) / scored.length).toFixed(1) : '—';
-    const per = qs.length ? ex.max / qs.length : 0;   // درجة السؤال لو الأسئلة متساوية (اقتراح بس)
+    const per = qs.length ? ex.max / qs.length : 0;
+    const ansTxt = q => q.kind === 'mcq' ? (q.answer != null ? LET[+q.answer] + ((q.choices || [])[+q.answer] ? ') ' + q.choices[+q.answer] : '') : '—') : (q.answer || '—');
+    const sumTxt = wq => !wq.length ? '<span class="ok-t">' + icon('check', 'sm') + 'مفيش أخطاء</span>' : 'غلط في: ' + wq.map(n => 'س' + n).join('، ');
+    const wrongList = (wq, picks) => wq.map(n => { const q = qs.find(x => x.n === n); if (!q) return '';
+      return '<div class="wl" data-pq="' + n + '"><b>س' + n + '</b> <span class="tiny">الصح:</span> <mark>' + esc(ansTxt(q)) + '</mark>' +
+        (q.kind === 'mcq' ? ' <span class="tiny">هو جاوب:</span>' + LET.slice(0, 4).map((L, k) => k === +q.answer ? '' : '<button type="button" class="chip xs' + (picks[n] != null && +picks[n] === k ? ' on' : '') + '" data-pk="' + k + '">' + L + '</button>').join('') : '') +
+        (q.explain ? '<div class="tiny why">' + esc(q.explain) + '</div>' : '') + '</div>'; }).join('');
+    const rowHtml = r => { const wq = r.wrong_q || [];
+      return '<li data-sid="' + r.id + '" data-name="' + esc(r.name) + '" class="' + (r.score != null ? 'done' : '') + '">' +
+        '<div class="grow"><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '"><b>' + esc(r.name) + '</b></button><span class="tiny num"> · ' + r.code + '</span>' +
+        (qs.length ? '<div class="tiny wsum">' + (r.score != null ? sumTxt(wq) : 'لسه ماتصححش') + '</div>' : '') + '</div>' +
+        (qs.length && editable ? '<button type="button" class="btn btn-line btn-sm" data-mk="1">' + icon('pen', 'sm') + 'حدد الغلط</button>' : '') +
+        '<input class="inp score" type="number" step="0.5" min="0" max="' + ex.max + '" inputmode="decimal" value="' + (r.score != null ? +r.score : '') + '"' + (editable ? '' : ' disabled') + ' aria-label="درجة ' + esc(r.name) + '" placeholder="الدرجة">' +
+        '<span class="saved" aria-hidden="true">' + icon('check', 'sm') + '</span>' +
+        (qs.length ? '<div class="mark" hidden><p class="tiny" style="margin:0">دوس على الأسئلة اللي <b>غلط</b> فيها (تبقى حمرا). لو كله صح دوس «كله صح».</p>' +
+          '<div class="chips wrong-chips">' + qs.map(q => '<button type="button" class="chip sm qn' + (wq.includes(q.n) ? ' bad' : '') + '" data-qn="' + q.n + '" aria-label="سؤال ' + q.n + ' غلط">' + q.n + '</button>').join('') + '</div>' +
+          '<div class="wlist">' + wrongList(wq, r.picks || {}) + '</div>' +
+          '<div class="row-btns"><button type="button" class="btn btn-ghost btn-sm" data-allok="1">' + icon('check', 'sm') + 'كله صح</button><button type="button" class="btn btn-ink btn-sm" data-mkdone="1">تمام · الطالب اللي بعده</button></div></div>' : '') + '</li>'; };
     main().innerHTML = '<div class="head"><div><button class="linkish" data-sh="back">← كل الكويزات</button><h1>' + esc(ex.title) + '</h1>' +
-      '<div class="tiny">' + num(scored.length) + ' من ' + num(d.rows.length) + ' · متوسط ' + avg + ' من ' + ex.max + (ex.solution_url ? ' · <a href="' + esc(ex.solution_url) + '" target="_blank" rel="noopener">لينك الحل</a>' : '') + '</div></div>' +
+      '<div class="tiny">' + num(scored.length) + ' من ' + num(d.rows.length) + ' اتصححوا · متوسط ' + avg + ' من ' + ex.max + (qs.length ? ' · ' + qs.length + ' سؤال' : '') + (ex.solution_url ? ' · <a href="' + esc(ex.solution_url) + '" target="_blank" rel="noopener">لينك الحل</a>' : '') + '</div></div>' +
       '<div class="head-btns"><button class="btn btn-line" data-sh="stats">' + icon('chart') + 'الإحصائية</button>' +
       (editable ? '<button class="btn btn-line" data-sh="paste">' + icon('sheet') + 'الدرجات من شيت</button>' : '') +
-      (editable && scored.length ? '<button class="btn btn-ink" data-sh="publish">' + icon('send') + (ex.results_sent_at ? 'ابعت النتيجة تاني' : 'ابعت النتيجة والترتيب') + '</button>' : '') + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل</button>' : '') + '</div></div>' +
-      '<div class="search" style="margin-bottom:var(--s3)">' + icon('search') + '<input class="inp" id="shq" placeholder="دوّر على طالب" aria-label="دوّر على طالب"></div>' +
-      '<p class="tiny">' + (qs.length ? 'دوس على رقم السؤال اللي الطالب غلط فيه (بيبقى أحمر)، ولو اختياري اختار هو جاوب إيه. الدرجة بتتحسب لوحدها لو الأسئلة متساوية، وتقدر تغيّرها. ' : 'اكتب الدرجة واضغط Enter. ') +
-      'بتتحفظ لوحدها، والطالب وولي الأمر بيوصلهم إشعار بالدرجة' + (qs.length ? ' والأسئلة الغلط بالحل الصح والشرح' : '') + '.</p>' +
-      '<ul class="list sheet-list" id="shl">' + d.rows.map(r => '<li data-sid="' + r.id + '" data-name="' + esc(r.name) + '" class="' + (r.score != null ? 'done' : '') + '">' +
-        '<div class="grow"><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '"><b>' + esc(r.name) + '</b></button><div class="tiny">' + r.code + '</div>' +
-        (qs.length ? '<div class="chips wrong-chips">' + qs.map(q => '<button type="button" class="chip sm qn' + ((r.wrong_q || []).includes(q.n) ? ' bad' : '') + '"' + (editable ? '' : ' disabled') + ' data-qn="' + q.n + '" aria-label="سؤال ' + q.n + ' غلط">' + q.n + '</button>').join('') + '</div>' +
-          '<div class="picks">' + qs.filter(q => q.kind === 'mcq' && (r.wrong_q || []).includes(q.n)).map(q => pickRow(q, (r.picks || {})[q.n])).join('') + '</div>'
-          : ex.parts.length ? '<div class="chips wrong-chips">' + ex.parts.map(p => '<button type="button" class="chip sm' + ((r.wrong || []).includes(p) ? ' bad' : '') + '"' + (editable ? '' : ' disabled') + ' data-part="' + esc(p) + '">' + esc(p) + '</button>').join('') + '</div>' : '') + '</div>' +
-        '<input class="inp score" type="number" step="0.5" min="0" max="' + ex.max + '" inputmode="decimal" value="' + (r.score != null ? +r.score : '') + '"' + (editable ? '' : ' disabled') + ' aria-label="درجة ' + esc(r.name) + '">' +
-        '<span class="saved" aria-hidden="true">' + icon('check', 'sm') + '</span></li>').join('') + '</ul>' + credit();
-    function pickRow(q, cur) {
-      return '<div class="pick" data-pq="' + q.n + '"><span class="tiny">سؤال ' + q.n + ' جاوب:</span>' + (q.choices || []).map((c, k) => c ? '<button type="button" class="chip xs' + (+cur === k && cur != null ? ' on' : '') + '" data-pk="' + k + '">' + LET[k] + '</button>' : '').join('') + '</div>';
-    }
+      (editable && scored.length ? '<button class="btn btn-ink" data-sh="publish">' + icon('send') + (ex.results_sent_at ? 'ابعت النتيجة تاني' : 'ابعت النتيجة والترتيب') + '</button>' : '') + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل النموذج</button>' : '') + '</div></div>' +
+      (qs.length ? '<ol class="how-steps"><li>دوس <b>«حدد الغلط»</b> جنب الطالب.</li><li>دوس أرقام الأسئلة اللي غلط فيها ⇒ الدرجة بتتحسب لوحدها وبيظهر الصح من النموذج.</li><li>اختياري: اختار هو جاوب إيه. كل حاجة بتتحفظ لوحدها.</li></ol>'
+        : '<div class="surface lock-hint">' + icon('pen') + '<div><b>مفيش نموذج إجابة للكويز ده.</b><div class="tiny">تقدر تكتب الدرجة بس. عشان تحدد الطالب غلط في أنهي سؤال ويوصله الصح، دوس «عدّل النموذج» وحط عدد الأسئلة والإجابات.</div></div></div>') +
+      '<div class="search" style="margin:var(--s3) 0">' + icon('search') + '<input class="inp" id="shq" placeholder="دوّر على طالب" aria-label="دوّر على طالب"></div>' +
+      '<ul class="list sheet-list" id="shl">' + d.rows.map(rowHtml).join('') + '</ul>' + credit();
+    const picksOf = li => { const p = {}; $$('[data-pq]', li).forEach(pr => { const on = $('.on', pr); if (on) p[pr.dataset.pq] = +on.dataset.pk; }); return p; };
+    const wqOf = li => $$('.qn.bad', li).map(c => +c.dataset.qn);
     const save = async li => {
       const v = $('.score', li).value; if (v === '') return;
-      const p = { score: +v, wrong: $$('[data-part].bad', li).map(c => c.dataset.part), wrong_q: $$('.qn.bad', li).map(c => +c.dataset.qn), picks: {} };
-      $$('[data-pq]', li).forEach(pr => { const on = $('.on', pr); if (on) p.picks[pr.dataset.pq] = +on.dataset.pk; });
-      try { await API.saveScore(ex.id, +li.dataset.sid, p); li.classList.add('done', 'flash'); setTimeout(() => li.classList.remove('flash'), 600); }
+      const p = { score: +v, wrong: [], wrong_q: wqOf(li), picks: picksOf(li) };
+      try { await API.saveScore(ex.id, +li.dataset.sid, p); li.classList.add('done', 'flash'); setTimeout(() => li.classList.remove('flash'), 600);
+        const s = $('.wsum', li); if (s) s.innerHTML = sumTxt(p.wrong_q); }
       catch (e) { toast(e.message, 'err'); }
     };
-    const autoScore = li => { if (!per) return; const inp = $('.score', li); if (inp.value !== '' && !inp.dataset.auto) return;
-      inp.value = Math.max(0, Math.round((ex.max - $$('.qn.bad', li).length * per) * 2) / 2); inp.dataset.auto = 1; };
+    // الدرجة = النهائية − (عدد الغلط × درجة السؤال)، وتقدر تغيّرها بإيدك
+    const autoScore = li => { if (!per) return; const inp = $('.score', li);
+      inp.value = Math.max(0, Math.round((ex.max - wqOf(li).length * per) * 2) / 2); };
+    const openMark = li => { $$('#shl .mark').forEach(m => { if (m.closest('li') !== li) m.hidden = true; }); $('.mark', li).hidden = false; li.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
     $('#shq').oninput = () => { const q = $('#shq').value.trim(); $$('#shl > li').forEach(li => { li.hidden = q && !li.dataset.name.includes(q); }); };
     $('#shl').addEventListener('keydown', e => {
       if (e.key !== 'Enter' || !e.target.matches('.score')) return;
       e.preventDefault(); const li = e.target.closest('li'); save(li);
       let n = li.nextElementSibling; while (n && n.hidden) n = n.nextElementSibling; if (n) $('.score', n).focus();
     });
-    $('#shl').addEventListener('input', e => { if (e.target.matches('.score')) delete e.target.dataset.auto; });
     $('#shl').addEventListener('change', e => { if (e.target.matches('.score')) save(e.target.closest('li')); });
     main().onclick = e => {
       if (e.target.closest('[data-sh=back]')) { E.open = null; return exams(ctx); }
@@ -313,18 +339,21 @@ const Screens = (() => {
         if (!confirm('هيوصل لكل طالب من الـ ' + scored.length + ' (وولي أمره) درجته وترتيبه ومتوسط الكل' + (ex.solution_url ? ' ولينك الحل' : '') + '. نبعت؟')) return;
         return busy(pb, async () => { const r = await API.examPublish(ex.id); toast('اتبعتت النتيجة لـ ' + num(r.sent) + ' طالب'); ex.results_sent_at = new Date().toISOString(); });
       }
-      // الأسئلة الغلط اللي متسجلة قبل كده بتفضل زي ما هي
       if (e.target.closest('[data-sh=paste]')) return Importer.scores({ rows: d.rows, max: ex.max, onDone: () => examSheet(ctx, id),
         save: (r, score) => API.saveScore(ex.id, r.id, { score, wrong: r.wrong || [], wrong_q: r.wrong_q || [], picks: r.picks || {} }) });
-      const c = e.target.closest('[data-part]'); if (c && !c.disabled) { c.classList.toggle('bad'); const li = c.closest('li'); if ($('.score', li).value !== '') save(li); return; }
-      const qb = e.target.closest('.qn'); if (qb && !qb.disabled) {
-        qb.classList.toggle('bad'); const li = qb.closest('li'), q = qs.find(x => x.n === +qb.dataset.qn);
-        const box = $('.picks', li), ex2 = $('[data-pq="' + q.n + '"]', box);
-        if (qb.classList.contains('bad') && q.kind === 'mcq' && !ex2) box.insertAdjacentHTML('beforeend', pickRow(q));
-        if (!qb.classList.contains('bad') && ex2) ex2.remove();
+      const li = e.target.closest('#shl > li'); if (!li) return;
+      if (e.target.closest('[data-mk]')) return openMark(li);
+      if (e.target.closest('[data-allok]')) { $$('.qn.bad', li).forEach(c => c.classList.remove('bad')); $('.wlist', li).innerHTML = ''; autoScore(li); save(li); return; }
+      if (e.target.closest('[data-mkdone]')) {
+        $('.mark', li).hidden = true; let n = li.nextElementSibling; while (n && n.hidden) n = n.nextElementSibling;
+        if (n) openMark(n); return;
+      }
+      const qb = e.target.closest('.qn'); if (qb) {
+        qb.classList.toggle('bad');
+        $('.wlist', li).innerHTML = wrongList(wqOf(li), picksOf(li));
         autoScore(li); save(li); return;
       }
-      const pk = e.target.closest('[data-pk]'); if (pk) { $$('[data-pk]', pk.parentNode).forEach(x => x.classList.toggle('on', x === pk)); save(pk.closest('li[data-sid]')); }
+      const pk = e.target.closest('[data-pk]'); if (pk) { const on = !pk.classList.contains('on'); $$('[data-pk]', pk.parentNode).forEach(x => x.classList.remove('on')); if (on) pk.classList.add('on'); save(li); }
     };
   }
 
@@ -357,19 +386,65 @@ const Screens = (() => {
   }
 
   // ═════════ الرسايل وواتساب ═════════
-  const W = { tab: 'queue', kind: null };
+  const W = { tab: 'queue', kind: null, to: '' };
+  const waTargets = r => { const who = W.to || r.to_role;
+    return who === 'both' ? [['parent', r.parent_phone], ['student', r.phone]] : [[who, who === 'parent' ? r.parent_phone : r.phone]]; };
+  const SEGN = { '': 'كلهم', top: 'الأوائل بس', up: 'اللي مستواهم بيزيد', down: 'اللي مستواهم بيقل', low: 'اللي درجاتهم ضعيفة', absent: 'اللي غابوا آخر حصة', no_balance: 'اللي رصيدهم خلص' };
+
+  // «ابعت الكل»: رسالة ورا رسالة — بيفتح واتساب، ولما المساعد يرجع للصفحة بيتعلّم «اتبعتت» ويفتح اللي بعدها
+  function waRunner(ctx) {
+    const jobs = []; W.rows.forEach(r => waTargets(r).forEach(([who, ph]) => jobs.push({ r, who, ph })));
+    let i = 0, opened = false;
+    const sent = new Set();
+    sheet('<div id="wr"></div>', box => {
+      const draw = () => {
+        if (i >= jobs.length) { $('#wr', box).innerHTML = '<h2>' + icon('check') + ' خلصت ' + num(jobs.length) + ' رسالة</h2><div class="actions"><button class="btn btn-ink" data-wr="close">تمام</button></div>'; return; }
+        const j = jobs[i];
+        $('#wr', box).innerHTML = '<h2>رسالة ' + (i + 1) + ' من ' + jobs.length + '</h2><div class="prog"><span style="--w:' + Math.round(i / jobs.length * 100) + '%"></span></div>' +
+          '<p><b>' + esc(j.r.name) + '</b> · ' + (j.who === 'parent' ? 'ولي الأمر' : 'الطالب') + ' <span class="num" dir="ltr">' + esc(j.ph) + '</span></p><div class="msg-prev">' + esc(j.r.body) + '</div>' +
+          '<div class="actions"><button class="btn btn-ghost" data-wr="skip">فوّتها</button><a class="btn btn-green btn-lg" data-wr="go" target="_blank" rel="noopener" href="https://wa.me/' + waPhone(j.ph) + '?text=' + encodeURIComponent(j.r.body) + '">' + icon('wa') + 'افتح واتساب وابعت</a></div>' +
+          '<p class="tiny">بعد ما تبعت في واتساب ارجع هنا، والرسالة اللي بعدها هتجهز لوحدها.</p>';
+      };
+      const next = async ok => {
+        const j = jobs[i]; if (!j) return;
+        if (ok) sent.add(j.r.id);
+        i++; opened = false;
+        // آخر رقم للرسالة دي ⇒ لو اتبعتت لحد فيهم تختفي من الطابور
+        if ((!jobs[i] || jobs[i].r.id !== j.r.id) && sent.has(j.r.id)) API.waMark([j.r.id]).catch(() => { });
+        draw();
+      };
+      const back = () => { if (opened && document.visibilityState === 'visible') setTimeout(() => next(true), 400); };
+      document.addEventListener('visibilitychange', back); window.addEventListener('focus', back);
+      box.onclick = e => {
+        const b = e.target.closest('[data-wr]'); if (!b) return;
+        if (b.dataset.wr === 'go') opened = true;
+        if (b.dataset.wr === 'skip') next(false);
+        if (b.dataset.wr === 'close') { close(); messages(ctx); }
+      };
+      const obs = new MutationObserver(() => { if (!document.body.contains(box)) { document.removeEventListener('visibilitychange', back); window.removeEventListener('focus', back); obs.disconnect(); } });
+      obs.observe(document.body, { childList: true, subtree: true });
+      draw();
+    });
+  }
   async function messages(ctx) {
     const ns = await API.notifySettings(), waLv = ns.wa_level, kinds = ns.kinds;
     const t = [['queue', 'واتساب'], ['new', 'رسالة جديدة'], ['posts', 'بوستات ثابتة']].concat(ns.can_edit ? [['auto', 'الإشعارات الأوتوماتيك']] : []);
+    const pre = window.MSG_PRESET; window.MSG_PRESET = null;
+    if (pre) W.tab = 'new';
     if (waLv < 2 && W.tab === 'queue') W.tab = 'new';
     let h = '<div class="head"><h1>الرسايل</h1></div>' + tabs(waLv < 2 ? t.filter(x => x[0] !== 'queue') : t, W.tab, 'wt');
     if (W.tab === 'queue') {
-      const q = await API.waQueue(W.kind);
-      h += '<p class="muted" style="margin-top:0">كل زرار بيفتح واتساب والرسالة مكتوبة جاهزة. بعد ما تبعت، السطر بيختفي.' + (waLv >= 3 ? ' الأنواع اللي على «أوتوماتيك» بتتبعت لوحدها أول ما رقم الواتساب يتربط (WhatsApp Cloud API).' : '') + '</p>' +
+      const q = await API.waQueue(W.kind); W.rows = q.rows;
+      h += '<p class="muted" style="margin-top:0">كل زرار بيفتح واتساب والرسالة مكتوبة جاهزة. بعد ما تبعت، السطر بيختفي.</p>' +
+        '<div class="surface wa-bar"><div class="field" style="margin:0"><span class="lbl">ابعت لـ</span><div class="seg">' +
+        [['', 'زي كل رسالة'], ['parent', 'ولي الأمر'], ['student', 'الطالب'], ['both', 'الاتنين']].map(([v, n]) => '<button type="button" data-wto="' + v + '" class="' + ((W.to || '') === v ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>' +
+        (q.rows.length ? '<button class="btn btn-green" data-wall="1">' + icon('wa') + 'ابعت الكل (' + num(q.rows.length) + ') ورا بعض</button>' : '') +
+        '<p class="tiny" style="margin:0">«ابعت الكل»: بيفتح واتساب لأول رسالة، ولما ترجع بيفتح اللي بعدها لوحده. واتساب مش بيسمح يتبعت كذا رسالة مرة واحدة من موبايل عادي. ' +
+        (waLv >= 3 ? 'الإرسال الأوتوماتيك من غير ما تدوس خالص بيشتغل من «الإشعارات الأوتوماتيك» أول ما نربط رقم واتساب بيزنس.' : 'الإرسال الأوتوماتيك من غير ما تدوس خالص في باقة أعلى.') + '</p></div>' +
         '<div class="chips" style="margin-bottom:var(--s3)"><button class="chip' + (!W.kind ? ' on' : '') + '" data-wk="">الكل</button>' +
         Object.entries(q.counts).map(([k, n]) => '<button class="chip' + (W.kind === k ? ' on' : '') + '" data-wk="' + k + '">' + esc((kinds[k] || {}).label || k) + ' · ' + n + '</button>').join('') + '</div>' +
         (q.rows.length ? '<ul class="list">' + q.rows.map(r => {
-          const tos = r.to_role === 'both' ? [['parent', r.parent_phone], ['student', r.phone]] : [[r.to_role, r.to_role === 'parent' ? r.parent_phone : r.phone]];
+          const tos = waTargets(r);
           return '<li class="col" data-nid="' + r.id + '"><div class="row-top"><div class="grow"><b>' + esc(r.name) + '</b> <span class="tiny">' + esc((kinds[r.kind] || {}).label || '') + (r.wa === 'queued' ? ' · أوتوماتيك' : '') + '</span></div><span class="tiny">' + ago(r.at) + '</span></div>' +
             '<div class="msg-prev">' + esc(r.body) + '</div><div class="row-btns">' + tos.map(([who, ph]) =>
               '<a class="btn btn-green btn-sm" target="_blank" rel="noopener" data-wa="' + r.id + '" href="https://wa.me/' + waPhone(ph) + '?text=' + encodeURIComponent(r.body) + '">' + icon('wa') + (who === 'parent' ? 'ولي الأمر' : 'الطالب') + '</a>').join('') + '</div></li>';
@@ -377,11 +452,16 @@ const Screens = (() => {
     }
     if (W.tab === 'new') {
       const g = await API.groups(), grades = await API.grades();
-      h += '<form id="mf" class="surface" novalidate><div class="row2"><div class="field"><label for="m_t">لمين؟</label><select class="inp" id="m_t"><option value="all:">كل الطلاب</option>' +
-        grades.map(x => '<option value="grade:' + x.id + '">' + esc(x.name) + '</option>').join('') + g.groups.map(x => '<option value="group:' + x.id + '">مجموعة ' + esc(x.name) + '</option>').join('') + '</select></div>' +
-        '<div class="field"><label for="m_w">تتبعت لـ</label><select class="inp" id="m_w"><option value="both">الطالب وولي الأمر</option><option value="parent">ولي الأمر بس</option><option value="student">الطالب بس</option></select></div></div>' +
-        '<div class="field"><label for="m_b">الرسالة</label><textarea class="inp" id="m_b" rows="4" placeholder="مثلاً: حصة السبت الجاية هتبقى الساعة 5 بدل 4."></textarea></div>' +
-        '<p class="tiny">بتظهر في بوابة الطالب وولي الأمر' + (waLv >= 2 ? '، وبتنزل في طابور الواتساب.' : '.') + '</p>' +
+      const pv = pre ? (pre.group_id ? 'group:' + pre.group_id : 'all:') : 'all:';
+      h += '<form id="mf" class="surface" novalidate><div class="row2"><div class="field"><label for="m_t">من أنهي طلاب؟</label><select class="inp" id="m_t"><option value="all:">كل الطلاب</option>' +
+        grades.map(x => '<option value="grade:' + x.id + '">' + esc(x.name) + '</option>').join('') + g.groups.map(x => '<option value="group:' + x.id + '"' + ('group:' + x.id === pv ? ' selected' : '') + '>مجموعة ' + esc(x.name) + '</option>').join('') + '</select></div>' +
+        '<div class="field"><label for="m_s">مين بالظبط؟</label><select class="inp" id="m_s">' + Object.entries(SEGN).filter(([k]) => k !== 'no_balance' || ctx.lvl('pay') >= 2)
+          .map(([k, n]) => '<option value="' + k + '"' + (pre && pre.seg === k ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></div></div>' +
+        '<div class="field"><span class="lbl">تتبعت لـ</span><div class="seg" id="m_w">' + [['both', 'الطالب وولي الأمر'], ['parent', 'ولي الأمر بس'], ['student', 'الطالب بس']]
+          .map(([v, n], i) => '<button type="button" data-mw="' + v + '" class="' + (i === 0 ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>' +
+        '<div class="field"><label for="m_b">الرسالة</label><textarea class="inp" id="m_b" rows="4" placeholder="مثلاً: برافو يا {الاسم}، مستواك في آخر كويز علي جداً 👏"></textarea>' +
+        '<span class="hint">{الاسم} بيتبدل باسم كل طالب.</span></div>' +
+        '<p class="tiny"><b id="m_n">…</b> · بتظهر في بوابة الطالب وولي الأمر' + (waLv >= 2 ? '، وبتنزل في طابور الواتساب (تتبعت بزرار أو كلها ورا بعض).' : '.') + '</p>' +
         '<div class="actions"><button class="btn btn-ink" type="submit">' + icon('send') + 'ابعت</button></div></form>';
     }
     // البوست الثابت: غير الرسايل — بيفضل فوق في صفحة الطالب أول ما يدخل لحد ما المستر يشيله أو ييجي تاريخ نهايته
@@ -409,16 +489,24 @@ const Screens = (() => {
     main().onclick = async e => {
       const tb = e.target.closest('[data-wt]'); if (tb) { W.tab = tb.dataset.wt; return messages(ctx); }
       const k = e.target.closest('[data-wk]'); if (k) { W.kind = k.dataset.wk || null; return messages(ctx); }
+      const wto = e.target.closest('[data-wto]'); if (wto) { W.to = wto.dataset.wto; return messages(ctx); }
+      if (e.target.closest('[data-wall]')) return waRunner(ctx);
       const pd = e.target.closest('[data-pdel]');
       if (pd) { if (!confirm('تشيل البوست ده من عند الطلاب؟')) return; return busy(pd, async () => { await API.savePost({ id: +pd.dataset.pdel, remove: true }); toast('اتشال'); messages(ctx); }); }
       const wa = e.target.closest('[data-wa]');
       if (wa) { const li = wa.closest('li'); setTimeout(async () => { await API.waMark([+wa.dataset.wa]).catch(() => { }); li.classList.add('gone'); setTimeout(() => li.remove(), 300); }, 400); }
     };
-    if (W.tab === 'new') $('#mf').onsubmit = e => {
-      e.preventDefault();
-      const [target, id] = $('#m_t').value.split(':');
-      busy($('#mf button'), async () => { const r = await API.sendMessage({ target, id: id ? +id : null, to: $('#m_w').value, body: $('#m_b').value }); toast('اتبعتت لـ ' + r.sent + ' طالب'); $('#m_b').value = ''; });
-    };
+    if (W.tab === 'new') {
+      let to = 'both';
+      const scope = () => { const [target, id] = $('#m_t').value.split(':'); return { target, id: id ? +id : null, seg: $('#m_s').value }; };
+      const count = async () => { $('#m_n').textContent = '…'; const n = await API.messageCount(scope()).catch(() => null); if ($('#m_n')) $('#m_n').textContent = n == null ? '' : 'هتوصل لـ ' + num(n) + ' طالب'; };
+      $('#m_t').onchange = $('#m_s').onchange = count; count();
+      $$('[data-mw]').forEach(b => { b.onclick = () => { to = b.dataset.mw; $$('[data-mw]').forEach(x => x.classList.toggle('on', x === b)); }; });
+      $('#mf').onsubmit = e => {
+        e.preventDefault();
+        busy($('#mf button[type=submit]'), async () => { const r = await API.sendMessage({ ...scope(), to, body: $('#m_b').value }); toast('اتبعتت لـ ' + r.sent + ' طالب'); $('#m_b').value = ''; });
+      };
+    }
     if (W.tab === 'posts') $('#pf').onsubmit = e => {
       e.preventDefault();
       const [target, id] = $('#p_t').value.split(':');

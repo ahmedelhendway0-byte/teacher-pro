@@ -9,5 +9,5 @@ window.CFG = {
   ROOT: "",
   ROLE: "assistant",        // الصفحة الرئيسية للأسيستنت · teacher/ للمستر
   PRINT: "print.html",
-  VERSION: "0.9.1"
+  VERSION: "0.9.2"
 };
