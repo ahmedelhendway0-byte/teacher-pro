@@ -196,16 +196,24 @@ const App = (() => {
   actions.logout = async () => { await API.logout(); location.hash = ''; location.reload(); };
 
   // ───── الرئيسية: عين المستر ─────
-  // الترتيب: النهارده (أرقام) ← مستوى الطلاب (الفئات) ← اختصارات ← اللي حصل (تحت)
-  const SEGS = [['top', 'الأوائل', 'متوسطهم 85% أو أكتر', 'g'], ['up', 'مستواهم بيزيد', 'آخر درجة أعلى من اللي قبلها بـ 10% أو أكتر', 'g'],
-    ['down', 'مستواهم بيقل', 'آخر درجة أقل من اللي قبلها بـ 10% أو أكتر', 'r'], ['low', 'درجاتهم ضعيفة', 'متوسطهم أقل من 50%', 'r'],
-    ['absent', 'غابوا آخر حصة', 'ماحضروش آخر حصة لمجموعتهم', 'a'], ['no_balance', 'رصيدهم خلص', 'مفيش حصص في اشتراكهم', 'a']];
+  // الترتيب: النهارده (أرقام) ← مستوى الطلاب ← اختصارات ← اللي حصل (تحت)
+  // مستوى الطلاب: كل فئة بجملة مفهومة + لونها + سبب لكل طالب. نفس تعريفات السيرفر (tp__seg_ok)
+  const LV = [
+    ['down', 'r', n => n + ' مستواهم نزل في آخر كويز', 'آخر درجة أقل من متوسط اللي قبلها بـ 10% أو أكتر', r => 'آخر كويز ' + r.last + '% — كان ' + r.prev + '%'],
+    ['low', 'r', n => n + ' درجاتهم ضعيفة', 'متوسط درجاتهم أقل من 50%', r => 'متوسطه ' + r.avg + '%'],
+    ['absent', 'a', n => n + ' غابوا آخر حصة', 'ماحضروش آخر حصة لمجموعتهم', r => 'حضر ' + r.att_month + ' حصة الشهر ده'],
+    ['no_balance', 'a', n => n + ' رصيدهم خلص', 'مفيش حصص في اشتراكهم — محتاجين يدفعوا', r => 'رصيده ' + r.credits + ' حصص'],
+    ['up', 'g', n => n + ' مستواهم طلع في آخر كويز', 'آخر درجة أعلى من متوسط اللي قبلها بـ 10% أو أكتر', r => 'آخر كويز ' + r.last + '% — كان ' + r.prev + '%'],
+    ['top', 'g', n => n + ' ممتازين', 'متوسط درجاتهم 85% أو أكتر', r => 'متوسطه ' + r.avg + '%']];
+  const lvOk = (k, r) => k === 'top' ? r.avg >= 85 : k === 'up' ? r.exams >= 2 && r.last - r.prev >= 10 : k === 'down' ? r.exams >= 2 && r.prev - r.last >= 10
+    : k === 'low' ? r.avg != null && r.avg < 50 : k === 'absent' ? r.absent : k === 'no_balance' ? r.credits <= 0 : false;
+  const lvList = () => LV.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2);
+
   async function home() {
     const today = new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
-    const segOk = can('students') || can('grades') || can('messages');
-    S.segBy = S.segBy || 'grade';
+    const segOk = can('students') || can('grades');
     const [g, rep, seg] = await Promise.all([API.groups(), can('reports') ? API.report(today, today).catch(() => null) : null,
-      segOk ? API.segmentsBy({ by: S.segBy }).catch(() => null) : null]);
+      segOk ? API.segmentsBy({ by: 'group' }).catch(() => null) : null]);
     S.groups = g;
     let h = '<div class="head"><h1>أهلاً ' + esc(S.me.staff.name) + '</h1></div>';
     // النهارده
@@ -213,19 +221,21 @@ const App = (() => {
       '<a class="stat" href="#reports"><span class="muted">إيراد النهارده</span><b>' + num(rep.money.revenue) + ' ج</b><span class="tiny">كاش ' + num(rep.money.cash_in) + ' · تحويلات ' + num(rep.money.transfer_in) + '</span></a>' +
       '<a class="stat net" href="#reports"><span class="muted">صافي النهارده</span><b>' + num(rep.net) + ' ج</b><span class="tiny">بعد المصروفات ' + num(rep.expenses) + ' ج</span></a>' : '') +
       '<a class="stat" href="#students"><span class="muted">الطلاب</span><b>' + num(g.students_total) + '</b><span class="tiny">في ' + num(g.groups.length) + ' مجموعة' + (g.groups_max ? ' من ' + num(g.groups_max) : '') + '</span></a></div>';
-    // مستوى الطلاب بالفئات
-    // مستوى الطلاب: كل صف (أو كل مجموعة) لوحده تحت بعض، وكل فئة بتفتح أساميها
-    if (seg) {
-      S.segData = seg;
-      const segs = SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2);
-      h += '<section class="sec"><div class="head"><div><h2>مستوى الطلاب</h2><div class="tiny">دوس على أي رقم تشوف الأسامي</div></div><div class="seg seg-by">' +
-        [['grade', 'كل صف لوحده'], ['group', 'كل مجموعة لوحدها']].map(([v, n]) => '<button type="button" data-act="segBy" data-v="' + v + '" class="' + (S.segBy === v ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>' +
-        (seg.length ? seg.map((x, i) => '<div class="lvl-sec" data-si="' + i + '"><button class="lvl-h plain-btn" data-act="levelOpen" data-si="' + i + '"><b>' + esc(x.name) + '</b><span class="tiny">' + esc(x.sub) + ' · ' + num(x.segs.total) + ' طالب</span>' +
-          '<span class="more-t">كل التفاصيل ' + icon('chev', 'sm') + '</span></button>' +
-          '<div class="lvl-chips">' + segs.map(([k, n, why, cl]) => '<button class="lvl-c ' + cl + '" data-act="segOpen" data-si="' + i + '" data-seg="' + k + '" title="' + why + '"' + (x.segs[k].count ? '' : ' disabled') + '>' +
-            '<b class="num">' + num(x.segs[k].count) + '</b><span>' + n + '</span></button>').join('') + '</div><div class="lvl-names"></div></div>').join('')
-          : '<div class="surface empty">لسه مفيش طلاب.</div>') +
-        '<p class="tiny">الأوائل: متوسطهم 85% أو أكتر · بيزيد/بيقل: آخر درجة فرقت 10% أو أكتر عن اللي قبلها · ضعيف: متوسط أقل من 50%.</p></section>';
+    // مستوى الطلاب: اختار الصف ⇒ كارت لكل مجموعة فيه جمل واضحة
+    if (seg && seg.length) {
+      S.lvData = seg;
+      const grades = [...new Map(seg.map(x => [x.grade_id, x.sub])).entries()];
+      if (!grades.some(([id]) => id === S.lvGrade)) S.lvGrade = grades[0][0];
+      const gs = seg.filter(x => x.grade_id === S.lvGrade), gname = (grades.find(([id]) => id === S.lvGrade) || [])[1];
+      h += '<section class="sec"><h2 style="margin-bottom:4px">مستوى الطلاب</h2><p class="tiny" style="margin-top:0">مين محتاج متابعة في كل مجموعة — من درجات الكويزات والحضور والرصيد. دوس على أي سطر تشوف الأسامي.</p>' +
+        '<div class="chips" style="margin-bottom:var(--s3)">' + grades.map(([id, n]) => '<button class="chip' + (id === S.lvGrade ? ' on' : '') + '" data-act="lvGrade" data-id="' + id + '">' + esc(n) + '</button>').join('') + '</div>' +
+        '<div class="lv-cards">' + gs.map(x => { const lines = lvList().filter(([k]) => x.segs[k].count);
+          return '<div class="lv-card"><div class="lv-top"><b>' + esc(x.name) + '</b><span class="tiny">' + num(x.segs.total) + ' طالب' + (x.segs.avg != null ? ' · متوسط المجموعة ' + x.segs.avg + '%' : '') + '</span></div>' +
+            (lines.length ? '<ul class="lv-lines">' + lines.map(([k, cl, txt]) => '<li><button class="plain-btn" data-act="lvOpen" data-g="' + x.grade_id + '" data-grp="' + x.id + '" data-k="' + k + '">' +
+              '<span class="dot ' + cl + '"></span><span class="grow">' + txt(num(x.segs[k].count)) + '</span>' + icon('chev', 'sm') + '</button></li>').join('') + '</ul>'
+              : '<p class="tiny">كله تمام — مفيش حد محتاج متابعة.</p>') +
+            '<button class="btn btn-line btn-sm" data-act="lvOpen" data-g="' + x.grade_id + '" data-grp="' + x.id + '">كل طلاب المجموعة</button></div>'; }).join('') + '</div>' +
+        (gs.length > 1 ? '<button class="btn btn-ghost" style="margin-top:var(--s3)" data-act="lvOpen" data-g="' + S.lvGrade + '">' + icon('groups') + 'كل مجموعات ' + esc(gname) + ' مع بعض</button>' : '') + '</section>';
     }
     // اختصارات
     const quick = [['door', 'qr', 'سجّل حضور'], ['students', 'student', 'الطلاب'], ['exams', 'pen', 'الدرجات'], ['reports', 'chart', 'التقارير'], ['messages', 'send', 'الرسايل'], ['expenses', 'receipt', 'المصروفات']]
@@ -240,46 +250,53 @@ const App = (() => {
         '<button class="chip ' + (S.feedMin === 2 ? 'on' : '') + '" data-act="feedMin" data-v="2">المهم بس</button></div></div>' + feedHtml(feed) + '</section>';
     }
   }
-  actions.segBy = b => { S.segBy = b.dataset.v; home(); };
-  // تفاصيل صف/مجموعة: كل طلابها بمتوسطهم وآخر درجة واتجاههم وحضورهم ورصيدهم + آخر الكويزات
-  actions.levelOpen = b => busy(b, async () => {
-    const x = S.segData[+b.dataset.si], scope = x.kind === 'grade' ? { grade_id: x.id } : { group_id: x.id };
-    const d = await API.levelDetail(scope);
-    let sort = 'avg';
-    const trend = r => r.exams >= 2 && r.last != null && r.prev != null ? (r.last - r.prev >= 10 ? '<span class="up">▲ ' + (r.last - r.prev) + '</span>' : r.prev - r.last >= 10 ? '<span class="down">▼ ' + (r.prev - r.last) + '</span>' : '<span class="tiny">ثابت</span>') : '';
-    const SORT = { avg: ['الأعلى', (a, b) => (b.avg ?? -1) - (a.avg ?? -1)], low: ['الأقل', (a, b) => (a.avg ?? 999) - (b.avg ?? 999)],
-      up: ['بيزيد', (a, b) => ((b.last ?? 0) - (b.prev ?? b.last ?? 0)) - ((a.last ?? 0) - (a.prev ?? a.last ?? 0))], down: ['بيقل', (a, b) => ((a.last ?? 0) - (a.prev ?? a.last ?? 0)) - ((b.last ?? 0) - (b.prev ?? b.last ?? 0))],
-      absent: ['غابوا', (a, b) => (b.absent - a.absent) || a.name.localeCompare(b.name, 'ar')], name: ['بالاسم', (a, b) => a.name.localeCompare(b.name, 'ar')] };
-    const rows = () => d.rows.slice().sort(SORT[sort][1]).map(r => '<tr><td><button class="plain-btn name-btn" data-sid="' + r.id + '">' + esc(r.name) + '</button>' + (x.kind === 'grade' && r.group ? '<div class="tiny">' + esc(r.group) + '</div>' : '') + '</td>' +
-      '<td class="num">' + (r.avg != null ? r.avg + '%' : '—') + '</td><td class="num">' + (r.last != null ? r.last + '%' : '—') + '</td><td>' + trend(r) + '</td>' +
-      '<td class="num">' + r.att_month + (r.absent ? ' <span class="tag bad">غاب آخر حصة</span>' : '') + '</td>' + (lvl('pay') >= 2 ? '<td class="num' + (r.credits <= 0 ? ' low-t' : '') + '">' + r.credits + '</td>' : '') + '</tr>').join('');
-    const sm = d.summary;
-    sheet('<div class="lvl-detail"><h2>' + esc(x.name) + ' <span class="tiny">' + esc(x.sub) + ' · ' + num(sm.total) + ' طالب</span></h2>' +
-      '<div class="lvl-chips">' + SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2).map(([k, n, why, cl]) => '<div class="lvl-c ' + cl + '"><b class="num">' + num(sm[k].count) + '</b><span>' + n + '</span></div>').join('') + '</div>' +
-      (d.exams.length ? '<h3 class="mini-h">آخر الكويزات والامتحانات</h3>' + d.exams.map(e => '<div class="bar-row"><span>' + esc(e.title) + ' <span class="tiny">' + e.day + '</span></span><span class="bar g" style="--w:' + Math.round(e.avg / e.max * 100) + '%"></span><b class="num">' + e.avg + '/' + e.max + '</b></div>').join('') : '') +
-      '<div class="head" style="margin-top:var(--s4)"><h3 class="mini-h" style="margin:0">الطلاب</h3><div class="chips" id="lsort">' + Object.entries(SORT).map(([k, [n]]) => '<button class="chip' + (k === sort ? ' on' : '') + '" data-sort="' + k + '">' + n + '</button>').join('') + '</div></div>' +
-      '<div class="table-wrap"><table class="tbl"><thead><tr><th>الطالب</th><th>المتوسط</th><th>آخر درجة</th><th>الاتجاه</th><th>حضور الشهر</th>' + (lvl('pay') >= 2 ? '<th>رصيده</th>' : '') + '</tr></thead><tbody id="lrows">' + rows() + '</tbody></table></div>' +
-      (can('messages') ? '<div class="actions"><button class="btn btn-ink" data-lmsg="1">' + icon('send') + 'ابعت رسالة لل' + (x.kind === 'grade' ? 'صف' : 'مجموعة') + '</button></div>' : '') + '</div>', box => {
-      box.classList.add('wide');
+  actions.lvGrade = b => { S.lvGrade = +b.dataset.id; home(); };
+
+  // أسامي الصف: بحث في الكل + اختيار مجموعة واحدة، والأسامي متقسمة بالمجموعة (مش داخلة في بعض)
+  actions.lvOpen = b => busy(b, async () => {
+    const gid = +b.dataset.g, k0 = b.dataset.k || null, d = await API.levelDetail({ grade_id: gid });
+    const groups = S.groups.groups.filter(x => x.grade_id === gid), gname = (S.lvData.find(x => x.grade_id === gid) || {}).sub || '';
+    const gidOf = name => (groups.find(x => x.name === name) || {}).id;
+    let grp = b.dataset.grp ? +b.dataset.grp : null, q = '', sort = 'avg';
+    const SORT = { avg: ['المتوسط: الأعلى الأول', (a, c) => (c.avg ?? -1) - (a.avg ?? -1)], low: ['المتوسط: الأقل الأول', (a, c) => (a.avg ?? 999) - (c.avg ?? 999)], name: ['الاسم', (a, c) => a.name.localeCompare(c.name, 'ar')] };
+    const msgBtn = (k, n, target, id, label) => can('messages') && n ? '<button class="btn btn-line btn-sm" data-msg="' + k + '" data-t="' + target + '" data-id="' + id + '">' + icon('send') + label + '</button>' : '';
+    // قايمة أسامي: لو مختار مجموعة ⇒ قايمة واحدة، لو الكل ⇒ متقسمة تحت اسم كل مجموعة
+    const names = (list, why, k) => {
+      const ul = l => '<ul class="lv-names">' + l.map(r => '<li><button class="plain-btn name-btn" data-sid="' + r.id + '">' + esc(r.name) + '</button><span class="tiny">' + why(r) + '</span></li>').join('') + '</ul>';
+      if (grp) return ul(list);
+      return groups.map(x => { const l = list.filter(r => r.group === x.name); return l.length ? '<div class="lv-gsub"><div class="lv-gh"><b>' + esc(x.name) + '</b><span class="tiny">' + l.length + ' طالب</span>' +
+        (k ? msgBtn(k, l.length, 'group', x.id, 'ابعت للمجموعة دي بس') : '') + '</div>' + ul(l) + '</div>' : ''; }).join('');
+    };
+    const allWhy = r => (r.avg != null ? 'متوسط ' + r.avg + '%' : 'لسه مالوش درجات') + (r.last != null ? ' · آخر كويز ' + r.last + '%' : '') + ' · حضر ' + r.att_month + ' الشهر ده';
+    const draw = box => {
+      const rs = d.rows.filter(r => (!grp || gidOf(r.group) === grp) && (!q || r.name.includes(q)));
+      const scope = grp ? ['group', grp, 'المجموعة'] : ['grade', gid, gname];
+      // كل فئة مترتبة: أكبر نزول/طلوع الأول، الأضعف الأول، الأعلى الأول
+      const ord = { down: (a, c) => (c.prev - c.last) - (a.prev - a.last), up: (a, c) => (c.last - c.prev) - (a.last - a.prev), low: (a, c) => a.avg - c.avg, top: (a, c) => c.avg - a.avg };
+      const secs = lvList().map(([k, cl, txt, def, why]) => { const l = rs.filter(r => lvOk(k, r)).sort(ord[k] || (() => 0)); if (!l.length) return '';
+        return '<details class="lv-sec"' + (k === k0 ? ' open' : '') + '><summary><span class="dot ' + cl + '"></span><span class="grow"><b>' + txt(num(l.length)) + '</b><span class="tiny">' + def + '</span></span></summary>' +
+          '<div class="lv-body">' + msgBtn(k, l.length, scope[0], scope[1], grp ? 'ابعت رسالة للـ ' + l.length + ' دول' : 'ابعت لكلهم (' + l.length + ')') + names(l, why, k) + '</div></details>'; }).join('');
+      const sorted = rs.slice().sort(SORT[sort][1]);
+      $('#lvb', box).innerHTML = (secs || '<p class="tiny">مفيش حد محتاج متابعة هنا.</p>') +
+        '<details class="lv-sec"' + (q ? ' open' : '') + '><summary><span class="dot"></span><span class="grow"><b>كل الطلاب (' + num(rs.length) + ')</b><span class="tiny">متوسط كل واحد وآخر كويز وحضوره الشهر ده</span></span></summary>' +
+        '<div class="lv-body"><label class="lv-sort">رتّب حسب <select class="inp" id="lvs">' + Object.entries(SORT).map(([k, [n]]) => '<option value="' + k + '"' + (k === sort ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label>' +
+        names(sorted, allWhy, null) + '</div></details>';
+      $('#lvs', box).onchange = e => { sort = e.target.value; draw(box); };
+      $$('[data-lg]', box).forEach(c => c.classList.toggle('on', (+c.dataset.lg || null) === grp));
+    };
+    sheet('<div class="lvl-detail"><h2>مستوى طلاب ' + esc(gname) + '</h2>' +
+      '<div class="search" style="margin-bottom:var(--s2)">' + icon('search') + '<input class="inp" id="lvq" type="search" placeholder="دوّر على طالب في ' + esc(gname) + '" aria-label="دوّر على طالب"></div>' +
+      '<div class="chips lv-groups"><button class="chip" data-lg="">كل المجموعات</button>' + groups.map(x => '<button class="chip" data-lg="' + x.id + '">' + esc(x.name) + '</button>').join('') + '</div>' +
+      '<div id="lvb"></div></div>', box => {
+      box.classList.add('wide'); draw(box);
+      $('#lvq', box).oninput = e => { q = e.target.value.trim(); draw(box); };
       box.onclick = e => {
-        const s = e.target.closest('[data-sort]'); if (s) { sort = s.dataset.sort; $$('[data-sort]', box).forEach(c => c.classList.toggle('on', c === s)); $('#lrows', box).innerHTML = rows(); return; }
+        const c = e.target.closest('[data-lg]'); if (c) { grp = c.dataset.lg ? +c.dataset.lg : null; return draw(box); }
         const n = e.target.closest('[data-sid]'); if (n) return openStudent(+n.dataset.sid);
-        if (e.target.closest('[data-lmsg]')) { close(); window.MSG_PRESET = { seg: '', target: x.kind, id: x.id }; location.hash = '#messages'; }
+        const m = e.target.closest('[data-msg]'); if (m) { e.preventDefault(); close(); window.MSG_PRESET = { seg: m.dataset.msg, target: m.dataset.t, id: +m.dataset.id }; location.hash = '#messages'; }
       };
     });
   });
-  // فتح أسامي فئة في صف/مجموعة (ونفس الزرار يقفلها)
-  actions.segOpen = b => {
-    const box = b.closest('.lvl-sec'), out = $('.lvl-names', box), x = S.segData[+b.dataset.si], k = b.dataset.seg, d = x.segs[k];
-    const was = b.classList.contains('on'); $$('.lvl-c', box).forEach(c => c.classList.remove('on'));
-    if (was) { out.innerHTML = ''; return; }
-    b.classList.add('on');
-    out.innerHTML = '<ul class="seg-names">' + d.rows.map(r => '<li><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '">' + esc(r.name) + '</button>' +
-      '<span class="tiny num">' + (x.kind === 'grade' && r.group ? esc(r.group) + ' · ' : '') + (k === 'up' || k === 'down' ? r.prev + '% ← ' + r.last + '%' : r.avg != null ? r.avg + '%' : '') + '</span></li>').join('') + '</ul>' +
-      (d.count > d.rows.length ? '<p class="tiny">ودول أول ' + d.rows.length + ' من ' + num(d.count) + '.</p>' : '') +
-      (can('messages') ? '<button class="btn btn-line btn-sm" data-act="segMsg" data-seg="' + k + '" data-kind="' + x.kind + '" data-id="' + x.id + '">' + icon('send') + 'ابعت رسالة للـ ' + num(d.count) + ' دول</button>' : '');
-  };
-  actions.segMsg = b => { window.MSG_PRESET = { seg: b.dataset.seg, target: b.dataset.kind || 'all', id: b.dataset.id ? +b.dataset.id : null }; location.hash = '#messages'; };
   function feedHtml(rows) {
     if (!rows.length) return '<div class="surface empty">' + icon('eye') + '<div>لسه مفيش حاجة حصلت.</div></div>';
     return '<ul class="feed">' + rows.map(r =>
