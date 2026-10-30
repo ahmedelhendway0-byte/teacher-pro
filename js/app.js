@@ -449,6 +449,7 @@ const App = (() => {
     onDone: gid => { S.groups = null; ST.group_id = gid; ST.nog = !gid; students(); } });
 
   async function students() {
+    ST.allFor = null;   // كل مرة الصفحة تتفتح بنجيب أحدث بيانات المجموعة
     [S.groups, S.grades] = await Promise.all([API.groups(), S.grades ? S.grades : API.grades()]);
     if (!S.grades.some(g => g.id === ST.grade_id)) ST.grade_id = (S.grades.find(gr => S.groups.groups.some(g => g.grade_id === gr.id)) || S.grades[0]).id;
     const grp = S.groups.groups.find(g => g.id === ST.group_id), inside = !!grp || ST.nog;
@@ -482,10 +483,78 @@ const App = (() => {
       (nog ? '<button class="gcard muted-card" data-act="openNoGroup"><b>من غير مجموعة</b><span class="tiny">طلاب محتاجين يتحطوا في مجموعة</span><span class="gnum"><b class="num">' + num(nog) + '</b> طالب</span></button>' : '') + '</div>';
   }
 
+  // ───── جوه المجموعة: كل الطلاب + مستوى كل واحد (الأوائل، بتقل، بتتحسن…) + قايمة أو جدول ─────
+  const GV = { f: 'all', view: 'list' };
+  const GF = [['all', 'الكل', ''], ['top', '🏆 الأوائل', 'g'], ['down', '▼ درجاتهم بتقل', 'r'], ['low', '⚠ ضعاف', 'r'], ['up', '▲ بتتحسن', 'g'], ['absent', 'غابوا آخر حصة', 'a'], ['no_balance', 'رصيدهم خلص', 'a']];
+  async function loadGroupAll() {
+    let rows = [];
+    for (let off = 0; ; off += 100) {
+      const r = await API.students({ group_id: ST.group_id, offset: off, limit: 100 });
+      rows = rows.concat(r.rows); if (rows.length >= r.total || !r.rows.length) break;
+    }
+    const d = can('students') || can('grades') ? await API.levelDetail({ group_id: ST.group_id }).catch(() => null) : null;
+    if (d && d.limits) Object.assign(LIM, d.limits);
+    const lv = new Map((d ? d.rows : []).map(r => [r.id, r]));
+    const ranked = (d ? d.rows : []).filter(r => r.avg != null).sort((a, c) => c.avg - a.avg);
+    const rank = new Map(ranked.map((r, i) => [r.id, i + 1]));
+    ST.all = rows.map(s => ({ ...s, lv: lv.get(s.id) || null, rank: rank.get(s.id) || null })); ST.allFor = ST.group_id; ST.hasLv = !!d;
+  }
+  const gIn = (k, s) => k === 'all' ? true : !s.lv ? false : k === 'top' ? s.rank && s.rank <= 10 : k === 'no_balance' ? s.credits <= 0 : lvOk(k, s.lv);
+  const badges = s => { if (!s.lv) return ''; const b = [];
+    if (s.rank && s.rank <= 10) b.push('<span class="bd t">🏆 #' + s.rank + '</span>');
+    if (lvOk('down', s.lv)) b.push('<span class="bd r">▼ بتقل</span>');
+    if (lvOk('up', s.lv)) b.push('<span class="bd g">▲ بتتحسن</span>');
+    if (lvOk('low', s.lv)) b.push('<span class="bd r">⚠ ضعيف</span>');
+    if (s.lv.absent) b.push('<span class="bd a">غاب آخر حصة</span>');
+    if (lvl('pay') >= 2 && s.credits <= 0) b.push('<span class="bd a">رصيده خلص</span>');
+    return '<span class="bds">' + b.join('') + '</span>'; };
+  const lvLine = s => !s.lv ? '' : (s.lv.avg != null ? ' · متوسط ' + s.lv.avg + '%' : ' · لسه مالوش درجات') +
+    (s.lv.exams >= 2 && s.lv.prev != null && Math.abs(s.lv.last - s.lv.prev) >= LIM.change ? ' · من ' + s.lv.prev + '% لـ ' + s.lv.last + '%' : s.lv.last != null ? ' · آخر كويز ' + s.lv.last + '%' : '');
+  function renderGroup() {
+    const ord = { top: (a, c) => a.rank - c.rank, down: (a, c) => (c.lv.prev - c.lv.last) - (a.lv.prev - a.lv.last), up: (a, c) => (c.lv.last - c.lv.prev) - (a.lv.last - a.lv.prev), low: (a, c) => a.lv.avg - c.lv.avg };
+    const fl = GF.filter(([k]) => (k !== 'no_balance' || lvl('pay') >= 2) && (k === 'all' || ST.hasLv));
+    const rows = ST.all.filter(s => gIn(GV.f, s)).sort(ord[GV.f] || ((a, c) => a.name.localeCompare(c.name, 'ar')));
+    $('#gcards').innerHTML = '<div class="gv-bar"><div class="chips">' + fl.map(([k, n, cl]) => { const c = ST.all.filter(s => gIn(k, s)).length;
+        return '<button class="chip gvf ' + cl + (GV.f === k ? ' on' : '') + '" data-act="gvF" data-k="' + k + '">' + n + ' <b class="num">' + num(c) + '</b></button>'; }).join('') + '</div>' +
+      '<div class="seg gv-view"><button type="button" data-act="gvView" data-v="list" class="' + (GV.view === 'list' ? 'on' : '') + '">قايمة</button><button type="button" data-act="gvView" data-v="table" class="' + (GV.view === 'table' ? 'on' : '') + '">جدول بكل البيانات</button></div></div>' +
+      (GV.f !== 'all' ? '<p class="tiny gv-def">' + ({ top: 'أعلى 10 في متوسط الدرجات', down: 'آخر كويز أقل من اللي قبله بـ ' + LIM.change + '% أو أكتر', up: 'آخر كويز أعلى من اللي قبله بـ ' + LIM.change + '% أو أكتر', low: 'متوسطهم أقل من ' + LIM.low + '%', absent: 'ماحضروش آخر حصة', no_balance: 'مفيش حصص في اشتراكهم' })[GV.f] + '</p>' : '');
+    $('#smore').innerHTML = '';
+    if (GV.view === 'table') {
+      $('#slist').hidden = true;
+      $('#smore').innerHTML = rows.length ? '<div class="table-wrap gv-table"><table class="tbl"><thead><tr><th>الترتيب</th><th>الكود</th><th>الاسم</th><th>المتوسط</th><th>آخر كويز</th><th>حضور الشهر</th>' +
+        (lvl('pay') >= 2 ? '<th>الرصيد</th>' : '') + '<th>موبايل الطالب</th><th>ولي الأمر</th><th>الرقم السري</th></tr></thead><tbody>' +
+        rows.map(s => '<tr><td class="num">' + (s.rank ? '#' + s.rank : '—') + '</td><td class="num">' + s.code + '</td><td><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + s.id + '">' + esc(s.name) + '</button>' + badges(s) + '</td>' +
+          '<td class="num">' + (s.lv && s.lv.avg != null ? s.lv.avg + '%' : '—') + '</td><td class="num">' + (s.lv && s.lv.last != null ? s.lv.last + '%' : '—') + '</td><td class="num">' + (s.lv ? s.lv.att_month : '—') + '</td>' +
+          (lvl('pay') >= 2 ? '<td class="num' + (s.credits <= 0 ? ' low-t' : '') + '">' + s.credits + '</td>' : '') +
+          '<td class="num" dir="ltr">' + esc(s.phone) + '</td><td class="num" dir="ltr">' + esc(s.parent_phone) + '</td><td class="num">' + esc(s.pin) + '</td></tr>').join('') + '</tbody></table></div>'
+        : '<div class="surface empty">مفيش حد هنا.</div>';
+      return;
+    }
+    $('#slist').hidden = false;
+    $('#slist').innerHTML = rows.length ? rows.map(s =>
+      '<li class="tap" data-act="studentOpen" data-id="' + s.id + '"><span class="av ' + s.gender + '">' + initials(s.name) + '</span>' +
+      '<div class="grow"><b>' + esc(s.name) + '</b>' + badges(s) + '<div class="tiny">' + s.code + lvLine(s) + '</div></div>' +
+      '<span class="tiny num" dir="ltr">' + esc(s.phone) + '</span></li>').join('')
+      : '<li class="empty">' + (GV.f === 'all' ? 'لسه مفيش طلاب هنا. سجّل طالب أو استورد شيت المجموعة.' : 'مفيش حد هنا — كويس 👌') + '</li>';
+  }
+  actions.gvF = b => { GV.f = b.dataset.k; renderGroup(); };
+  actions.gvView = b => { GV.view = b.dataset.v; renderGroup(); };
+  actions.allTable = b => busy(b, () => Screens.viewFile('students', '2000-01-01', '2100-01-01'));
+
   async function loadStudents(more) {
     const inside = !!ST.group_id || ST.nog;
     if (!inside && !ST.q) {   // الصفحة الرئيسية: المجموعات بس
-      $('#gcards').innerHTML = groupCards(); $('#scount').innerHTML = ''; $('#slist').innerHTML = ''; $('#smore').innerHTML = ''; $('#slist').hidden = true; return;
+      $('#gcards').innerHTML = groupCards() + (can('reports') ? '<button class="btn btn-line" style="margin-top:var(--s3)" data-act="allTable">' + icon('sheet') + 'كل الطلاب في جدول (كل البيانات)</button>' : '');
+      $('#scount').innerHTML = ''; $('#slist').innerHTML = ''; $('#smore').innerHTML = ''; $('#slist').hidden = true; return;
+    }
+    // جوه مجموعة من غير بحث: كل طلابها بمستواهم
+    if (ST.group_id && !ST.q) {
+      if (!more || ST.allFor !== ST.group_id) { if (ST.allFor !== ST.group_id) GV.f = 'all'; await loadGroupAll(); }
+      if (!$('#slist')) return;
+      $('#scount').innerHTML = '<b>' + num(ST.all.length) + '</b> طالب · <a href="' + CFG.PRINT + '?group=' + ST.group_id + '" target="_blank" rel="noopener">اطبع كروت المجموعة</a>' +
+        ' · <button class="linkish" data-act="groupSheet">نزّل شيت المجموعة بالأكواد</button>' +
+        (can('students') ? ' · <button class="linkish" data-act="groupCards" data-id="' + ST.group_id + '" data-name="' + esc((S.groups.groups.find(g => g.id === ST.group_id) || {}).name || '') + '">ابعت الكروت لكل طالب</button>' : '');
+      return renderGroup();
     }
     $('#gcards').innerHTML = ''; $('#slist').hidden = false;
     const off = more ? ST.rows.length : 0;
@@ -719,7 +788,7 @@ const App = (() => {
         await busy($('#sf button[type=submit]'), async () => {
           const r = await API.saveStudent(p); close(); S.groups = await API.groups();
           toast(isNew ? 'اتسجل ' + r.name + ' بكود ' + r.code : 'اتحفظ التعديل');
-          if ($('#slist')) loadStudents();
+          if ($('#slist')) { ST.allFor = null; loadStudents(); }
         });
       };
     });

@@ -159,10 +159,35 @@ const Screens = (() => {
   }
 
   // ═════════ تصدير إكسل (CSV بيتفتح في Excel بالعربي) ═════════
-  async function exportCsv(kind, from, to, name) {
+  // ترتيب الأعمدة (قاعدة البيانات بترجعها بترتيب طول الاسم، فبنرتبها زي الشيت العادي)
+  const COLS = ['اليوم', 'الساعة', 'الكويز', 'الكود', 'الاسم', 'النوع', 'الصف', 'المجموعة', 'موبايل الطالب', 'موبايل ولي الأمر', 'الرقم السري', 'الحصص الفاضلة', 'أمانة (ج)',
+    'حضر (كل الوقت)', 'متوسط الدرجات %', 'نقط التفاعل', 'الدخول', 'الدفع', 'قيمة الحصة', 'الواجب', 'الدرجة', 'من', 'الأسئلة الغلط', 'الأجزاء الغلط', 'الحركة', 'حصص',
+    'دخل الخزنة (ج)', 'إيراد (ج)', 'طريقة الدفع', 'البند', 'المبلغ', 'بيتكرر', 'ملاحظة', 'ملاحظات', 'سجّله', 'سجّلها', 'مين'];
+  const sortCols = cs => cs.slice().sort((a, b) => (COLS.indexOf(a) + 1 || 99) - (COLS.indexOf(b) + 1 || 99));
+  // الملف بيتفتح جدول جوه السيستم (بحث + نزّل Excel) — مش لازم ينزل عشان يتشاف
+  const XPN = { students: 'كل الطلاب وبياناتهم', attendance: 'الحضور', scores: 'الدرجات', money: 'الحسابات', expenses: 'المصروفات' };
+  async function viewFile(kind, from, to) {
     const rows = await API.exportRows(kind, from, to);
     if (!rows.length) return toast('مفيش بيانات في الفترة دي', 'err');
-    const cols = Object.keys(rows[0]), cell = v => { const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const cols = sortCols(Object.keys(rows[0])), name = kind + '_' + from + '_' + to;
+    let q = '';
+    const body = () => { const rs = q ? rows.filter(r => cols.some(c => String(r[c] == null ? '' : r[c]).includes(q))) : rows;
+      return '<p class="tiny">' + num(rs.length) + ' سطر' + (rs.length > 500 ? ' — بيظهر أول 500، والملف فيه الكل' : '') + '</p>' +
+        '<div class="table-wrap fv"><table class="tbl"><thead><tr>' + cols.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>' +
+        rs.slice(0, 500).map(r => '<tr>' + cols.map(c => '<td>' + esc(r[c] == null ? '' : r[c]) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>'; };
+    sheet('<div class="fview"><div class="head"><h2>' + XPN[kind] + '</h2><button class="btn btn-ink btn-sm" data-dl="1">' + icon('sheet') + 'نزّل Excel</button></div>' +
+      (kind === 'students' ? '' : '<p class="tiny" style="margin-top:-6px">' + from + ' ← ' + to + '</p>') +
+      '<div class="search" style="margin-bottom:var(--s2)">' + icon('search') + '<input class="inp" id="fvq" type="search" placeholder="دوّر بالكود أو الاسم أو الرقم" aria-label="دوّر"></div><div id="fvb">' + body() + '</div></div>', box => {
+      box.classList.add('wide');
+      $('#fvq', box).oninput = e => { q = e.target.value.trim(); $('#fvb', box).innerHTML = body(); };
+      $('[data-dl]', box).onclick = () => exportCsv(kind, from, to, name, rows);
+    });
+  }
+
+  async function exportCsv(kind, from, to, name, pre) {
+    const rows = pre || await API.exportRows(kind, from, to);
+    if (!rows.length) return toast('مفيش بيانات في الفترة دي', 'err');
+    const cols = sortCols(Object.keys(rows[0])), cell = v => { const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const csv = '﻿' + [cols.map(cell).join(',')].concat(rows.map(r => cols.map(c => cell(r[c])).join(','))).join('\r\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     a.download = name + '.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
@@ -222,7 +247,7 @@ const Screens = (() => {
        ['money', 'الحسابات', 'كل حركة فلوس للفترة دي'], ['expenses', 'المصروفات', 'للفترة دي بالمتكرر']].map(([k, n, s]) =>
         '<button class="file-b" data-xp="' + k + '">' + icon('sheet') + '<div><b>' + n + '</b><span class="tiny">' + s + '</span></div></button>').join('') +
       '<a class="file-b" href="' + CFG.PRINT + '?all=1" target="_blank" rel="noopener">' + icon('print') + '<div><b>كروت كل الطلاب</b><span class="tiny">للطباعة (10 في الورقة)</span></div></a></div>' +
-      '<p class="tiny">ملفات Excel بتتفتح في Excel أو Google Sheets بالعربي. كروت كل مجموعة لوحدها من صفحة المجموعة في «الطلاب».</p></section>' +
+      '<p class="tiny">دوس على أي ملف يتفتح هنا جدول تدوّر فيه، وفيه زرار ينزّله Excel. كروت كل مجموعة لوحدها من صفحة المجموعة في «الطلاب».</p></section>' +
       '<section class="sec"><h2>الحضور · ' + num(a.total) + '</h2><div class="surface split">' +
       '<div><h3 class="mini-h">طريقة الدخول</h3>' + [['nfc', 'كارت NFC'], ['qr', 'QR'], ['search', 'يدوي']].map(([k, n]) => '<div class="bar-row"><span>' + n + '</span>' + bar(a[k], a.total) + '<b class="num">' + num(a[k]) + '</b></div>').join('') + '</div>' +
       '<div><h3 class="mini-h">طريقة الدفع</h3>' + [['wallet', 'من الاشتراك'], ['cash', 'كاش على الباب']].map(([k, n]) => '<div class="bar-row"><span>' + n + '</span>' + bar(a[k], a.total, k === 'cash' ? 'a' : 'g') + '<b class="num">' + num(a[k]) + '</b></div>').join('') +
@@ -236,7 +261,7 @@ const Screens = (() => {
     main().onclick = e => {
       const b = e.target.closest('[data-rr]'); if (b) { R.range = b.dataset.rr; return reports(ctx); }
       if (e.target.closest('[data-rgo]')) { R.from = $('#rf').value; R.to = $('#rt').value; return reports(ctx); }
-      const x = e.target.closest('[data-xp]'); if (x) return busy(x, () => exportCsv(x.dataset.xp, f, t, x.dataset.xp + '_' + f + '_' + t));
+      const x = e.target.closest('[data-xp]'); if (x) return busy(x, () => viewFile(x.dataset.xp, f, t));
       const rd = e.target.closest('[data-rd]'); if (rd) return busy(rd, () => reportDetail(ctx, rd.dataset.rd, f, t));
     };
   }
@@ -747,5 +772,5 @@ const Screens = (() => {
     };
   }
 
-  return { money, expenses, reports, exams, messages, engage };
+  return { money, expenses, reports, exams, messages, engage, viewFile };
 })();

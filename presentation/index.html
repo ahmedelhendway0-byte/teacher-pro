@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#14284B">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>سيستم المستر — إزاي هيريّحك</title>
-<link rel="stylesheet" href="../css/tokens.css?v=0.9.9">
-<link rel="stylesheet" href="pres.css?v=0.9.9">
+<link rel="stylesheet" href="../css/tokens.css?v=0.10.0">
+<link rel="stylesheet" href="pres.css?v=0.10.0">
 </head>
 <body>
 
@@ -17,7 +17,7 @@
       <p class="kicker">لمستر عنده مئات الطلاب في اليوم</p>
       <h1>الحضور والفلوس والدرجات… <span class="hl">من موبايل الأسيستنت</span>، والطالب وولي الأمر عارفين كل حاجة من موبايلهم</h1>
       <p class="lead">العرض ده بيشرحلك كل جزء: المشكلة اللي انت عارفها، وإحنا بنحلها إزاي، وتشوفها <b>بتحصل قدامك على الموبايل</b> خطوة خطوة — من غير ما تجرّب حاجة بإيدك.</p>
-      <div class="cta"><a class="btn btn-lg cta-1" href="#door">ابدأ العرض</a></div>
+      <div class="cta"><a class="btn btn-lg cta-1" href="#first">ابدأ العرض</a></div>
     </div>
     <div class="ph hero-ph" aria-hidden="true" data-loop>
       <div class="scr">
@@ -29,10 +29,31 @@
 </header>
 
 <nav class="pnav" aria-label="أجزاء العرض">
-  <a href="#door">الحضور</a><a href="#pay">الفلوس</a><a href="#money">الحسابات</a><a href="#grades">الكويزات</a><a href="#levels">مستوى الطلاب</a><a href="#study">المذاكرة</a><a href="#parents">أولياء الأمور</a><a href="#team">الفريق</a><a href="#own">كل حاجة معاك</a><a href="#apps">4 تطبيقات</a><a href="#soon">جاي قريب</a><a href="#start">نبدأ إزاي</a>
+  <a href="#first">أول ما تفتح</a><a href="#door">الحضور</a><a href="#pay">الفلوس</a><a href="#money">الحسابات</a><a href="#grades">الكويزات</a><a href="#levels">مستوى الطلاب</a><a href="#study">المذاكرة</a><a href="#parents">أولياء الأمور</a><a href="#team">الفريق</a><a href="#own">كل حاجة معاك</a><a href="#apps">4 تطبيقات</a><a href="#soon">جاي قريب</a><a href="#start">نبدأ إزاي</a>
 </nav>
 
 <main>
+
+<!-- أول ما تفتح -->
+<section id="first" class="sec first">
+  <div class="wrap">
+    <p class="num-k">أول ما تفتح السيستم</p>
+    <h2>كل طلابك وفلوسهم ومستواهم — قدامك في مكان واحد</h2>
+    <div class="first-grid">
+      <div class="fg"><span>👥</span><b>كل بيانات طلابك</b><p>كل مجموعة لوحدها: الكود، الموبايلات، الرصيد، المتوسط، الحضور — في قايمة أو جدول، ومن غير ما تفتح إكسل.</p></div>
+      <div class="fg"><span>💰</span><b>كل فلوسك</b><p>الإيراد والكاش والتحويلات والمصروفات والصافي، ورصيد كل طالب في محفظته — وكل رقم بيفتح تفاصيله.</p></div>
+      <div class="fg"><span>🏆</span><b>الأوائل بالترتيب</b><p>في كل مجموعة وفي الصف كله: الأول والتاني والتالت… بمتوسط درجاتهم في كل الكويزات.</p></div>
+      <div class="fg"><span>📈</span><b>مين بيتحسن ومين بيقل</b><p>جنب اسم كل طالب علامة: ▲ بيتحسن، ▼ بيقل، ⚠ ضعيف، غاب، رصيده خلص.</p></div>
+    </div>
+    <div class="how-calc"><b>بنحسبها إزاي؟</b>
+      <ul>
+        <li><b>الأوائل:</b> بنرتب الطلاب بمتوسط كل درجاتهم في الكويزات والامتحانات.</li>
+        <li><b>ممتاز / ضعيف:</b> اللي متوسطه عدّى حد انت بتحدده (مثلاً 85%)، واللي تحت حد تاني (مثلاً 50%).</li>
+        <li><b>بيتحسن / بيقل:</b> آخر كويز مقارنة بمتوسط آخر 3 قبله — لو فرق 10% أو أكتر (والرقم ده كمان انت بتحدده).</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
 <!-- 1 الحضور -->
 <section id="door" class="sec">
@@ -363,6 +384,6 @@
 <a class="wa-bar" href="https://wa.me/201118606692?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20HINDAWY%D8%8C%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%B3%D9%8A%D8%B3%D8%AA%D9%85%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B1" target="_blank" rel="noopener">
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12z"/></svg>
   <span><b>كلّمنا على واتساب</b><small>ونبدألك السيستم باسمك</small></span></a>
-<script src="pres.js?v=0.9.9"></script>
+<script src="pres.js?v=0.10.0"></script>
 </body>
 </html>

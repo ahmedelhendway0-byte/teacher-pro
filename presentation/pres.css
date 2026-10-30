@@ -258,3 +258,13 @@ body { background: var(--paper); }
 body { padding-bottom: 80px; }
 @media (max-width: 520px) { .wa-bar { inset-inline: 12px; justify-content: center; } }
 @media (max-width: 560px) { .apps { grid-template-columns: 1fr 1fr; gap: var(--s2); } .app { padding: var(--s3); } .ai { width: 56px; height: 56px; font-size: 24px; border-radius: 16px; } .app small { font-size: 12px; } }
+
+/* أول ما تفتح */
+.first { background: #FFFBE6; }
+.first-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3); }
+.fg { background: var(--paper); border-radius: var(--r-lg); padding: var(--s4); display: flex; flex-direction: column; gap: 4px; }
+.fg span { font-size: 28px; } .fg b { font-size: var(--fs-lg); } .fg p { margin: 0; color: var(--ink-2); font-size: var(--fs-sm); line-height: 1.8; }
+.how-calc { margin-top: var(--s4); background: var(--ink); color: #fff; border-radius: var(--r-lg); padding: var(--s4) var(--s5); }
+.how-calc > b { color: var(--marker); font-size: var(--fs-lg); }
+.how-calc ul { margin: var(--s2) 0 0; padding-inline-start: 20px; line-height: 2; color: #CFD8E8; } .how-calc li b { color: #fff; }
+@media (max-width: 560px) { .first-grid { grid-template-columns: 1fr 1fr; gap: var(--s2); } .fg { padding: var(--s3); } .fg b { font-size: var(--fs-md); } }

@@ -592,3 +592,23 @@ button.lv-card:hover { border-color: var(--ink); }
 .hw .out { border-color: var(--pen-red); color: var(--pen-red); }
 .hw-pol { flex-wrap: wrap; }
 @media (max-width: 420px) { .hw.three { grid-template-columns: 1fr 1fr; } .hw.three .out { grid-column: 1 / -1; } }
+
+/* جوه المجموعة: فلاتر المستوى + علامات جنب كل طالب + الجدول + عارض الملفات */
+.gv-bar { display: flex; flex-direction: column; gap: var(--s2); margin-bottom: var(--s2); }
+.gvf b { font-size: 12px; margin-inline-start: 2px; }
+.gvf.g.on { border-color: var(--pen-green); color: var(--pen-green); background: var(--pen-green-wash); }
+.gvf.r.on { border-color: var(--pen-red); color: var(--pen-red); background: var(--pen-red-wash); }
+.gvf.a.on { border-color: var(--pen-amber); color: var(--pen-amber); background: var(--pen-amber-wash); }
+.gv-view { max-width: 340px; }
+.gv-def { margin: 0 0 var(--s2); color: var(--ink-2); }
+.bds { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-inline-start: 6px; vertical-align: middle; }
+.bd { font-size: 11px; font-weight: 600; border-radius: 99px; padding: 1px 8px; white-space: nowrap; }
+.bd.t { background: var(--marker); color: var(--ink); }
+.bd.g { background: var(--pen-green-wash); color: var(--pen-green); }
+.bd.r { background: var(--pen-red-wash); color: var(--pen-red); }
+.bd.a { background: var(--pen-amber-wash); color: var(--pen-amber); }
+.gv-table, .fv { max-height: 70vh; overflow: auto; }
+.gv-table .tbl th, .gv-table .tbl td, .fv .tbl th, .fv .tbl td { padding: 8px 10px; white-space: nowrap; }
+.gv-table .tbl thead th, .fv .tbl thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; }
+.gv-table .bds { display: block; margin: 2px 0 0; }
+.fview .head h2 { margin: 0; }
