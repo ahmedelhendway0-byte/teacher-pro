@@ -2,3 +2,4 @@
 CFG.P = "tp_";
 CFG.DEMO = true;
 CFG.ROOT = "../../";
+CFG.APP = "parent";

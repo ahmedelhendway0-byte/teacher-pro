@@ -1,10 +1,13 @@
 // الكلام مع السيرفر: كل حاجة دالة RPC بالتوكن
 const API = (() => {
-  const TK = 'token_' + (CFG.P || 'tp_');   // الديمو والحقيقي على نفس الدومين ⇒ كل واحد ليه مفتاح
+  // الديمو والحقيقي على نفس الدومين ⇒ كل واحد ليه مفتاح · وكل تطبيق ديمو متثبّت (CFG.APP) ليه مفتاحه بيفتكر مين داخل
+  const TK = 'token_' + (CFG.P || 'tp_') + (CFG.APP ? '_' + CFG.APP : '');
+  const OUT = TK + '_out';   // التطبيق المتثبّت: بعد «خروج» مايدخلش الديمو لوحده تاني لحد ما حد يسجل دخول
+  const flag = v => { try { v ? localStorage.setItem(OUT, '1') : localStorage.removeItem(OUT); } catch (e) { } };
   // CFG.MEM: التوكن في الذاكرة بس (العرض التفاعلي: كذا ديمو مفتوحين جوه نفس الصفحة من غير ما يلخبطوا بعض)
   let mem = null;
   const token = () => { if (CFG.MEM) return mem; try { return localStorage.getItem(TK); } catch (e) { return null; } };
-  const setToken = t => { if (CFG.MEM) { mem = t; return; } try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
+  const setToken = t => { if (CFG.MEM) { mem = t; return; } if (t) flag(false); try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
 
   // رسايل الأخطاء بلغة المستخدم
   const MSG = {
@@ -99,7 +102,8 @@ const API = (() => {
     login: async (phone, pw) => { const r = await rpc('tp_login', { p_phone: phone, p_pw: pw, p_role: CFG.ROLE || 'assistant' }); setToken(r.token); return r; },
     demoLogin: async role => { const r = await rpc('tp_demo_login', { p_role: role || 'teacher' }); setToken(r.token); return r; },
     saveBrand: p => rpc('tp_brand_save', { ...t(), p }),
-    logout: async () => { const tk = token(); setToken(null); if (tk) await rpc('tp_logout', { p_token: tk }).catch(() => { }); },
+    wasOut: () => { try { return !!localStorage.getItem(OUT); } catch (e) { return false; } },
+    logout: async () => { const tk = token(); setToken(null); if (CFG.APP) flag(true); if (tk) await rpc('tp_logout', { p_token: tk }).catch(() => { }); },
     me: () => rpc('tp_me', t()),
     savePrefs: p => rpc('tp_prefs_save', { ...t(), p }),
     grades: () => rpc('tp_grades_list', t()),

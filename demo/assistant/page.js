@@ -4,3 +4,4 @@ CFG.DEMO = true;
 CFG.ROOT = "../../";
 CFG.ROLE = "assistant";
 CFG.PRINT = "../print.html";
+CFG.APP = "assistant";

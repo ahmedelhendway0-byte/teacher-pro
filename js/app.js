@@ -24,7 +24,10 @@ const App = (() => {
       if (!st.setup_done) return setup(st);
       // الديمو بس: ?as=teacher|assistant بيدخل على طول (للعرض التفاعلي جوه البرزنتيشن)
       const as = new URLSearchParams(location.search).get('as');
-      if (st.demo && CFG.DEMO && (as === 'teacher' || as === 'assistant')) { CFG.MEM = true; await API.demoLogin(as); }
+      if (st.demo && CFG.DEMO && (as === 'teacher' || as === 'assistant')) {
+        if (CFG.APP) { if (!API.token() && !API.wasOut()) await API.demoLogin(as); }   // التطبيق المتثبّت بيفتكر مين داخل زي الحقيقي
+        else { CFG.MEM = true; await API.demoLogin(as); }
+      }
       if (!API.token()) return login(st);
       S.me = await API.me();
       shell();

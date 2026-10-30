@@ -1,10 +1,13 @@
 // بوابة الطالب وولي الأمر: الرصيد والشحن، الواجب، الدرجات و«أخطائي»، التمرين وسؤال اليوم، الترتيب والتحديات، الإشعارات
 const Portal = (() => {
   const { esc, icon, $, $$, num, toast, sheet, close, busy, credit, ago } = U;
-  const TK = 'ptoken_' + (CFG.P || 'tp_');
+  const TK = 'ptoken_' + (CFG.P || 'tp_') + (CFG.APP ? '_' + CFG.APP : '');   // كل تطبيق ديمو متثبّت ليه مفتاحه
+  const OUT = TK + '_out';
+  const isOut = () => { try { return !!localStorage.getItem(OUT); } catch (e) { return false; } };
+  const flag = v => { try { v ? localStorage.setItem(OUT, '1') : localStorage.removeItem(OUT); } catch (e) { } };
   let mem = null;   // CFG.MEM = العرض التفاعلي (التوكن في الذاكرة)
   const tok = () => { if (CFG.MEM) return mem; try { return localStorage.getItem(TK); } catch (e) { return null; } };
-  const setTok = t => { if (CFG.MEM) { mem = t; return; } try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
+  const setTok = t => { if (CFG.MEM) { mem = t; return; } if (t) flag(false); try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
   window.onAuthFail = () => setTok(null);
   const call = (fn, args) => API.rpc(fn, Object.assign({ p_token: tok() }, args || {}));
   const root = () => $('#app');
@@ -17,7 +20,10 @@ const Portal = (() => {
       const st = await API.status();
       document.title = (st.system_name || 'البوابة') + ' · البوابة';
       const as = new URLSearchParams(location.search).get('as');   // الديمو بس (للعرض التفاعلي)
-      if (st.demo && CFG.DEMO && (as === 'student' || as === 'parent')) { CFG.MEM = true; const x = await API.rpc('tp_portal_demo', { p_role: as }); setTok(x.token); }
+      if (st.demo && CFG.DEMO && (as === 'student' || as === 'parent')) {
+        if (!CFG.APP) CFG.MEM = true;   // التطبيق المتثبّت بيفتكر مين داخل، والعرض جوه البرزنتيشن في الذاكرة بس
+        if (!tok() && !(CFG.APP && isOut())) { const x = await API.rpc('tp_portal_demo', { p_role: as }); setTok(x.token); }
+      }
       if (!tok()) return login(st);
       P.me = await call('tp_portal_me');
       shell();
@@ -302,7 +308,7 @@ const Portal = (() => {
   async function onClick(e) {
     const b = e.target.closest('[data-p]'); if (!b) return;
     const a = b.dataset.p;
-    if (a === 'logout') { await call('tp_portal_logout').catch(() => { }); setTok(null); location.hash = ''; return location.reload(); }
+    if (a === 'logout') { await call('tp_portal_logout').catch(() => { }); setTok(null); if (CFG.APP) flag(true); location.hash = ''; return location.reload(); }
     if (a === 'topup') return topup();
     if (a === 'hw') return busy(b, async () => { await call('tp_portal_hw', { p_hw: +b.dataset.id }); toast('اتسجل إنك عملت الواجب — ورّيه للأسيستنت على الباب'); home(); });
     if (a === 'daily') return busy(b, async () => {
