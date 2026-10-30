@@ -489,6 +489,7 @@ const App = (() => {
     if (!$('#slist')) return;
     $('#scount').innerHTML = '<b>' + num(ST.total) + '</b> طالب' + (ST.q ? ' في البحث' : '') +
       (ST.group_id && !ST.q && ST.total ? ' · <a href="' + CFG.PRINT + '?group=' + ST.group_id + '" target="_blank" rel="noopener">' + 'اطبع كروت المجموعة</a>' +
+        ' · <button class="linkish" data-act="groupSheet">نزّل شيت المجموعة بالأكواد</button>' +
         (can('students') ? ' · <button class="linkish" data-act="groupCards" data-id="' + ST.group_id + '" data-name="' + esc((S.groups.groups.find(g => g.id === ST.group_id) || {}).name || '') + '">ابعت الكروت لكل طالب</button>' : '') : '');
     $('#slist').innerHTML = ST.rows.length ? ST.rows.map(s =>
       '<li class="tap" data-act="studentOpen" data-id="' + s.id + '"><span class="av ' + s.gender + '">' + initials(s.name) + '</span>' +
@@ -601,6 +602,7 @@ const App = (() => {
       };
     });
   }
+  actions.groupSheet = b => busy(b, () => Importer.groupSheet({ group_id: ST.group_id }, (S.groups.groups.find(g => g.id === ST.group_id) || {}).name || 'المجموعة'));
   actions.groupCards = b => sendCardsForm({ target: 'group', id: +b.dataset.id }, b.dataset.name);
 
   // كارت الطالب: QR + الكود + طباعة + (اختياري) نكتب نفس الكود على كارت NFC ⇒ نفس الكارت يتقري بالكاميرا أو بالتقريب

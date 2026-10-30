@@ -134,12 +134,23 @@ const Importer = (() => {
           '<button class="btn btn-ink" type="button" data-i="go"' + (ok.length ? '' : ' disabled') + '>' + icon('check') + 'سجّل ' + num(ok.length) + ' طالب</button></div>';
       }
 
+      // بعد التسجيل: شيت بالأكواد والأرقام السرية + كروت الـ QR للطباعة + ابعت لكل طالب بياناته والكارت على موبايله
       function result(r) {
+        const scope = st.group_id ? { group_id: st.group_id } : { grade_id: st.grade_id, no_group: true };
+        const gname = st.group_id ? ((o.groups.find(g => g.id === st.group_id) || {}).name || 'المجموعة') : 'من غير مجموعة';
         root.innerHTML = '<h2>' + icon('check') + ' اتسجل ' + num(r.added) + ' طالب</h2>' +
-          (r.skipped.length ? '<p class="muted">اتساب ' + num(r.skipped.length) + ':</p><ul class="feed">' + r.skipped.slice(0, 50).map(s => '<li><div class="grow"><b>صف ' + s.row + (s.name ? ' · ' + esc(s.name) : '') + '</b><div class="tiny">' + esc(s.why) + '</div></div></li>').join('') + '</ul>'
-            : '<p class="muted">كل الصفوف اتسجلت. كل طالب أخد كود ورقم سري للبوابة، وتقدر تطبع الكروت من ملفه أو من المجموعة.</p>') +
+          '<p class="muted" style="margin-top:0">كل طالب أخد كود ورقم سري للبوابة. نزّل الملفات واحتفظ بيها عند الفريق، وابعت لكل طالب بياناته.</p>' +
+          '<div class="files">' +
+          '<button class="file-b" type="button" data-i="sheet">' + icon('sheet') + '<div><b>شيت الطلاب بالأكواد</b><span class="tiny">الكود والرقم السري والموبايلات — Excel</span></div></button>' +
+          (st.group_id ? '<a class="file-b" href="' + CFG.PRINT + '?group=' + st.group_id + '" target="_blank" rel="noopener">' + icon('qr') + '<div><b>كروت الـ QR</b><span class="tiny">جاهزة للطباعة (10 في الورقة)</span></div></a>' : '') +
+          (st.group_id ? '<button class="file-b" type="button" data-i="send">' + icon('send') + '<div><b>ابعت لكل طالب بياناته</b><span class="tiny">الكود والرقم السري ولينك البوابة والكارت على موبايله</span></div></button>' : '') + '</div>' +
+          (r.skipped.length ? '<p class="muted">اتساب ' + num(r.skipped.length) + ':</p><ul class="feed">' + r.skipped.slice(0, 50).map(s => '<li><div class="grow"><b>صف ' + s.row + (s.name ? ' · ' + esc(s.name) : '') + '</b><div class="tiny">' + esc(s.why) + '</div></div></li>').join('') + '</ul>' : '') +
           '<div class="actions"><button class="btn btn-ink" type="button" data-i="done">تمام</button></div>';
         $('[data-i=done]', root).onclick = () => { close(); o.onDone && o.onDone(st.group_id); };
+        $('[data-i=sheet]', root).onclick = e => busy(e.currentTarget, () => groupSheet(scope, gname));
+        const sb = $('[data-i=send]', root);
+        if (sb) sb.onclick = () => busy(sb, async () => { const x = await API.sendCards({ target: 'group', id: st.group_id, to: 'both' });
+          sb.innerHTML = icon('check') + '<div><b>اتبعت لـ ' + num(x.sent) + ' طالب</b><span class="tiny">في تطبيقهم وفي طابور الواتساب</span></div>'; sb.disabled = true; });
       }
 
       async function start(rows) {
@@ -225,5 +236,21 @@ const Importer = (() => {
     });
   }
 
-  return { students, scores, phone11, gender, readPaste };
+  // شيت طلاب (مجموعة أو صف) بالكود والرقم السري — بيتنزل CSV ويتفتح في Excel بالعربي
+  async function groupSheet(scope, name) {
+    let rows = [];
+    for (let off = 0; ; off += 100) {
+      const r = await API.students({ ...scope, offset: off, limit: 100 });
+      rows = rows.concat(r.rows); if (rows.length >= r.total || !r.rows.length) break;
+    }
+    if (!rows.length) return toast('مفيش طلاب', 'err');
+    const cell = v => { const s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const head = ['الكود', 'الاسم', 'الرقم السري للبوابة', 'موبايل الطالب', 'موبايل ولي الأمر', 'الصف', 'المجموعة'];
+    const csv = '﻿' + [head.join(',')].concat(rows.map(s => [s.code, s.name, s.pin, s.phone, s.parent_phone, s.grade, s.group || ''].map(cell).join(','))).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'طلاب-' + String(name).replace(/\s+/g, '-') + '.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('اتنزل شيت ' + rows.length + ' طالب');
+  }
+
+  return { students, scores, groupSheet, phone11, gender, readPaste };
 })();

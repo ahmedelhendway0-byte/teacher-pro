@@ -227,7 +227,9 @@ const Portal = (() => {
       '<div class="seg" style="margin-top:var(--s4)">' + (w.vodafone ? '<button type="button" data-m="vodafone">فودافون كاش</button>' : '') + (w.instapay ? '<button type="button" data-m="instapay">انستاباي</button>' : '') + '</div>' +
       '<ol class="steps" id="tsteps"></ol>' +
       '<div class="field"><label for="ts">' + 'الرقم أو الاسم اللي حوّلت منه' + '</label><input class="inp" id="ts" dir="ltr" value="' + esc(isStudent() ? s.phone : s.parent_phone) + '"></div>' +
-      '<div class="field"><label for="tr">صورة الإيصال (اختياري — بتسرّع المراجعة)</label><input class="inp" id="tr" type="file" accept="image/*"></div>' +
+      // من غير التأكيد الأوتوماتيك: صورة الإيصال لازم، عشان اللي بيأكد يقارن بيها
+      '<div class="field"><label for="tr">صورة إيصال التحويل' + (lv('pay') >= 3 ? ' (اختياري — بتسرّع المراجعة)' : ' (لازم)') + '</label><input class="inp" id="tr" type="file" accept="image/*">' +
+      '<span class="hint">اسكرين شوت من رسالة أو تطبيق المحفظة بعد التحويل.</span></div>' +
       '<p class="err" id="terr"></p><button class="btn btn-ink btn-lg btn-block" id="tgo"></button>', box => {
       const upd = () => {
         $('#tn').innerHTML = n + '<small>حصص</small>'; $('#tt').textContent = num(total()) + ' ج';
@@ -249,6 +251,7 @@ const Portal = (() => {
       $('#tgo').onclick = e => {
         if (total() <= 0) return ($('#terr').textContent = 'اختار عدد حصص أو منتج.');
         if (!$('#ts').value.trim()) return ($('#terr').textContent = 'اكتب الرقم أو الاسم اللي حوّلت منه.');
+        if (lv('pay') < 3 && !receipt && !(CFG.DEMO)) return ($('#terr').textContent = 'ارفع صورة إيصال التحويل.');
         busy(e.currentTarget, async () => {
           const r = await call('tp_portal_topup', { p: { sessions: n, products: [...prods], method, sender: $('#ts').value.trim(), sent_at: new Date().toISOString(), receipt } });
           sheet('<div class="result">' + icon(r.status === 'approved' ? 'check' : 'receipt', 'lg') + '<h2>' + (r.status === 'approved' ? 'اتشحن رصيدك' : 'الطلب وصل') + '</h2><p class="muted">' +

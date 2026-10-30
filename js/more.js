@@ -45,12 +45,16 @@ const Screens = (() => {
           '<dl class="tc-dl"><div><dt>اشترى</dt><dd>' + (r.sessions ? r.sessions + ' حصص' : '') + (r.products.length ? (r.sessions ? ' + ' : '') + r.products.map(p => esc(p.name)).join('، ') : '') + '</dd></div>' +
           '<div><dt>حوّل على</dt><dd>' + (r.method === 'vodafone' ? 'فودافون كاش' : 'انستاباي') + '</dd></div>' +
           '<div><dt>من رقم</dt><dd class="num" dir="ltr">' + esc(r.sender) + '</dd></div><div><dt>الوقت</dt><dd>' + dt(r.sent_at) + '</dd></div></dl>' +
-          (M.tab === 'pending' ? '<div class="tc-act">' + (r.has_receipt ? '<button class="btn btn-line btn-sm" data-m="receipt" data-id="' + r.id + '">' + icon('receipt') + 'الإيصال</button>' : '<span class="tiny">من غير إيصال</span>') +
+          (M.tab === 'pending' ? (r.has_receipt ? '<button class="tc-rc" data-m="receipt" data-id="' + r.id + '" data-rc="' + r.id + '" aria-label="كبّر الإيصال"><span class="tiny">بيحمّل صورة الإيصال…</span></button>'
+            : '<div class="tc-norc">' + icon('receipt') + 'الطالب مارفعش صورة إيصال — اتأكد من المحفظة كويس</div>') + '<div class="tc-act">' +
             '<button class="btn btn-red btn-sm" data-m="reject" data-id="' + r.id + '">رفض</button><button class="btn btn-green" data-m="approve" data-id="' + r.id + '">' + icon('check') + 'وصل · اشحن</button></div>'
             : '<div class="tc-foot">' + (r.auto ? '<span class="tag ok">اتأكد أوتوماتيك</span> ' : '') + (r.reviewed_name ? esc(r.reviewed_name) + ' · ' : '') + (r.reviewed_at ? dt(r.reviewed_at) : '') + (r.note ? ' · ' + esc(r.note) : '') + '</div>') +
           '</div>').join('') + '</div>';
     }
     main().innerHTML = h + credit();
+    // صورة الإيصال جوه الكارت على طول (اللي بيأكد يقارنها بالمحفظة)
+    $$('[data-rc]').forEach(async el => { const img = await API.receipt(+el.dataset.rc).catch(() => null);
+      el.innerHTML = img ? '<img alt="صورة الإيصال" src="' + esc(img) + '"><span class="tiny">دوس تكبّر</span>' : '<span class="tiny">الإيصال ماتحمّلش</span>'; });
     main().onclick = async e => {
       const tb = e.target.closest('[data-mtab]'); if (tb) { M.tab = tb.dataset.mtab; return money(ctx); }
       const b = e.target.closest('[data-m]'); if (!b) return;
