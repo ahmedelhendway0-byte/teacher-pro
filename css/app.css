@@ -374,3 +374,15 @@ textarea.inp { padding: var(--s3) var(--s4); min-height: auto; resize: vertical;
 .tag.bad { color: var(--pen-red); background: var(--pen-red-wash); }
 .tbl tr.bad td { background: var(--pen-red-wash); }
 .sheet-box .tbl th, .sheet-box .tbl td { padding: var(--s2); white-space: nowrap; }
+
+/* الجولة 4: ملف الطالب الكامل */
+.pstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); margin-bottom: var(--s3); }
+.pstats div { background: var(--desk); border-radius: var(--r-md); padding: var(--s3) var(--s2); text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.pstats b { font-size: var(--fs-lg); } .pstats b small { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 400; }
+.pstats span { font-size: var(--fs-xs); color: var(--ink-2); }
+.ptabs { margin-bottom: var(--s2); }
+.pgrade { font-size: var(--fs-lg); white-space: nowrap; } .pgrade small { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 400; }
+.pgrade.good { color: var(--pen-green); } .pgrade.low { color: var(--pen-red); }
+.name-btn { width: auto; display: inline; text-align: right; }
+.name-btn:hover b { text-decoration: underline; }
+@media (max-width: 420px) { .pstats { grid-template-columns: repeat(2, 1fr); } }

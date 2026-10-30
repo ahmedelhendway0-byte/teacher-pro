@@ -365,23 +365,47 @@ const App = (() => {
   }, 'امسح QR الطالب عشان تفتح ملفه');
 
   actions.studentOpen = b => openStudent(+b.dataset.id);
+  // ملف الطالب الكامل: البيانات + الرصيد + ملخص سريع + الدرجات بالترتيب + الحضور — بيفتح من أي مكان فيه اسم طالب
+  const PTAB = { t: 'grades' };
   async function openStudent(id, pre) {
-    const s = pre || await API.student(id).catch(e => toast(e.message, 'err'));
+    const s = await API.studentFull(id || pre.id).catch(e => toast(e.message, 'err'));
     if (!s) return;
+    const at = s.attendance, sc = s.scores || [], hwAll = at.hw_yes + at.hw_no;
+    const avg = sc.length ? Math.round(sc.reduce((a, x) => a + x.score / x.max, 0) / sc.length * 100) : null;
+    const dt = d => new Date(d).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'short', day: 'numeric', month: 'short' });
+    const tabsH = () => '<div class="tabs ptabs">' + [['grades', 'الدرجات'], ['att', 'الحضور'], ['info', 'البيانات']].map(([k, n]) =>
+      '<button class="tab' + (PTAB.t === k ? ' on' : '') + '" data-pt="' + k + '">' + n + '</button>').join('') + '</div>';
+    const body = () => PTAB.t === 'grades'
+      ? (sc.length ? '<ul class="feed">' + sc.map(x => { const p = x.score / x.max;
+          return '<li><div class="grow"><b>' + esc(x.title) + '</b> <span class="tiny">' + (x.kind === 'exam' ? 'امتحان' : 'كويز') + '</span>' +
+            '<div class="tiny">' + dt(x.at) + ' · الترتيب <b class="num">' + x.rank.rank + '</b> من ' + num(x.rank.of) + ' · المتوسط ' + x.rank.avg +
+            (x.wrong_q && x.wrong_q.length ? ' · غلط في ' + (x.wrong_q.length === 1 ? 'سؤال واحد' : x.wrong_q.length + (x.wrong_q.length <= 10 ? ' أسئلة' : ' سؤال')) : '') + (x.wrong && x.wrong.length ? ' · ' + x.wrong.map(esc).join('، ') : '') + '</div></div>' +
+            '<b class="pgrade ' + (p >= .85 ? 'good' : p < .5 ? 'low' : '') + '">' + (+x.score) + '<small>/' + x.max + '</small></b></li>'; }).join('') + '</ul>'
+        : '<div class="empty">لسه مفيش درجات.</div>')
+      : PTAB.t === 'att'
+        ? (at.last.length ? '<ul class="feed">' + at.last.map(a => '<li><span class="dot ' + (a.pay === 'wallet' ? 'g' : 'a') + '"></span><div class="grow">' + dt(a.at) +
+            '<div class="tiny">' + (a.pay === 'wallet' ? 'من الاشتراك' : 'كاش') + (a.hw === true ? ' · عمل الواجب' : a.hw === false ? ' · ماعملش الواجب' : '') + '</div></div></li>').join('') + '</ul>'
+          : '<div class="empty">لسه ماحضرش.</div>')
+        : '<dl class="facts"><div><dt>الكود</dt><dd class="num">' + s.code + '</dd></div>' +
+          '<div><dt>الرقم السري للبوابة</dt><dd class="num">' + esc(s.pin) + '</dd></div>' +
+          '<div><dt>موبايل الطالب</dt><dd>' + phoneLink(s.phone) + '</dd></div>' +
+          '<div><dt>موبايل ولي الأمر</dt><dd>' + phoneLink(s.parent_phone) + '</dd></div>' +
+          (s.notes ? '<div class="wide"><dt>ملاحظات</dt><dd>' + esc(s.notes) + '</dd></div>' : '') + '</dl>';
     sheet('<div class="profile"><span class="av lg ' + s.gender + '">' + initials(s.name) + '</span><div><h2>' + esc(s.name) + '</h2>' +
-      '<div class="muted">' + esc(s.grade) + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div>' +
+      '<div class="muted">' + esc(s.grade) + ' · ' + esc(s.group || 'من غير مجموعة') + ' · <span class="num">' + s.code + '</span></div></div>' +
       '<button class="qr-mini" data-act="card" aria-label="كارت الطالب">' + Scanner.qrSvg(s.code, 3) + '</button></div>' +
       (lvl('pay') >= 2 ? '<div class="balance"><div><span class="muted">رصيده</span><div><span class="big mark">' + num(s.credits) + '</span> حصص</div></div>' +
         '<div class="balance-btns">' + (can('money') ? '<button class="btn btn-ink" data-act="buy">' + icon('ticket') + 'اشترك في حصص</button>' : '') +
         (can('money') || can('students') ? '<button class="btn btn-line" data-act="ledger">كشف الحساب</button>' : '') + '</div></div>' : '') +
-      '<dl class="facts"><div><dt>الكود</dt><dd class="num">' + s.code + '</dd></div>' +
-      '<div><dt>الرقم السري للبوابة</dt><dd class="num">' + esc(s.pin) + '</dd></div>' +
-      '<div><dt>موبايل الطالب</dt><dd>' + phoneLink(s.phone) + '</dd></div>' +
-      '<div><dt>موبايل ولي الأمر</dt><dd>' + phoneLink(s.parent_phone) + '</dd></div>' +
-      (s.notes ? '<div class="wide"><dt>ملاحظات</dt><dd>' + esc(s.notes) + '</dd></div>' : '') + '</dl>' +
+      '<div class="pstats"><div><b class="num">' + at.month + '<small>/' + at.classes_month + '</small></b><span>حضور الشهر</span></div>' +
+      '<div><b class="num">' + (hwAll ? Math.round(at.hw_yes / hwAll * 100) + '%' : '—') + '</b><span>عمل الواجب</span></div>' +
+      '<div><b class="num">' + (avg != null ? avg + '%' : '—') + '</b><span>متوسط الدرجات</span></div>' +
+      '<div><b class="num">#' + s.rank_xp + '</b><span>ترتيبه في التفاعل</span></div></div>' +
+      '<div id="pt">' + tabsH() + body() + '</div>' +
       (can('students') ? '<div class="actions"><button class="btn btn-red" data-act="studentArchive">' + icon('archive') + 'شيله من القوايم</button>' +
         '<button class="btn btn-ink" data-act="studentEdit">' + icon('pen') + 'عدّل البيانات</button></div>' : ''), box => {
       box.onclick = e => {
+        const t = e.target.closest('[data-pt]'); if (t) { PTAB.t = t.dataset.pt; $('#pt', box).innerHTML = tabsH() + body(); return; }
         const a = e.target.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'studentEdit') studentForm(s);
         if (a.dataset.act === 'buy') buyForm(s);

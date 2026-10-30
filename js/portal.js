@@ -78,11 +78,14 @@ const Portal = (() => {
 
   // ───── الرئيسية ─────
   async function home() {
-    await refreshMe();
-    const m = P.me, s = m.student, last = m.scores[0];
-    const daily = isStudent() && lv('engage') >= 2 ? await call('tp_portal_daily').catch(() => null) : null;
+    const [, daily, posts, sc] = await Promise.all([refreshMe(),
+      isStudent() && lv('engage') >= 2 ? call('tp_portal_daily').catch(() => null) : null,
+      call('tp_portal_posts').catch(() => []), call('tp_portal_scores').catch(() => [])]);
+    const m = P.me, s = m.student, last = sc[0] || m.scores[0];
     let h = '<h1 class="hello">أهلاً ' + esc(isStudent() ? s.name.split(' ')[0] : 'بولي أمر ' + s.name.split(' ')[0]) + '</h1>' +
       '<p class="muted hello-sub">' + esc(s.group || '') + (s.schedule ? ' · ' + esc(s.schedule) : '') + '</p>' +
+      // بوستات المستر الثابتة: أول حاجة في الصفحة
+      posts.map(p => '<div class="card post-card"><div class="post-h">' + icon('bell', 'sm') + '<b>' + esc(p.by || 'المستر') + '</b><span class="tiny">' + ago(p.at) + '</span></div><p>' + esc(p.body) + '</p></div>').join('') +
       '<button class="card wrap-card plain-btn" data-p="wrapped">' + icon('star') + '<div class="grow"><b>' + (isStudent() ? 'شهرك' : 'شهر ' + esc(s.name.split(' ')[0])) + ' في دقيقة</b>' +
       '<div class="tiny">الحضور والدرجات والترتيب في الشهر اللي فات</div></div>' + icon('chev') + '</button>';
     if (lv('pay') >= 2) h += '<div class="card bal"><div><span class="muted">' + (isStudent() ? 'فاضلك' : 'فاضل لـ ' + esc(s.name.split(' ')[0])) + '</span>' +
@@ -92,7 +95,7 @@ const Portal = (() => {
     if (m.homework) h += '<div class="card todo">' + icon('book') + '<div class="grow"><b>الواجب</b><div class="tiny">' + esc(m.homework.title) + '</div></div>' +
       (m.homework.done ? '<span class="tag ok">' + icon('check', 'sm') + 'عملته</span>' : isStudent() ? '<button class="btn btn-ink btn-sm" data-p="hw" data-id="' + m.homework.id + '">عملته</button>' : '<span class="tag">لسه ماأكدش</span>') + '</div>';
     if (last) h += '<div class="card"><div class="quiz"><div class="grade">' + (+last.score) + '<small> / ' + last.max + '</small></div><div><b>' + esc(last.title) + '</b>' +
-      (last.note ? '<div class="tiny">' + esc(last.note) + '</div>' : '') + '</div></div>' +
+      (last.rank ? '<div class="tiny">' + rankTxt(last.rank) + '</div>' : '') + (last.note ? '<div class="tiny">' + esc(last.note) + '</div>' : '') + '</div></div>' +
       (last.wrong.length ? '<div class="wrong">' + last.wrong.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' +
         (isStudent() && lv('engage') >= 2 ? '<button class="btn btn-ghost btn-sm mist-btn" data-p="mistakes">' + icon('bolt') + 'حل أسئلة على أخطائي</button>' : '') : '<div class="tiny" style="color:var(--pen-green);margin-top:6px">مفيش أخطاء — برافو</div>') + '</div>';
     if (daily) h += dailyCard(daily);
@@ -105,6 +108,8 @@ const Portal = (() => {
       '<div class="tiny">' + new Date(a.at).toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'short' }) + (a.hw === true ? ' · عمل الواجب' : a.hw === false ? ' · ماعملش الواجب' : '') + '</div></div></li>').join('') + '</ul>';
     $('#main').innerHTML = h + credit();
   }
+
+  const rankTxt = r => (isStudent() ? 'ترتيبك ' : 'ترتيبه ') + '<b class="num">' + r.rank + '</b> من ' + num(r.of) + ' · متوسط الكل ' + r.avg + ' · أعلى درجة ' + (+r.top);
 
   function dailyCard(d) {
     return '<div class="card dq" id="dq"><div class="row-top"><b>' + icon('bolt', 'sm') + ' سؤال اليوم</b><span class="tiny">' + num(d.solvers) + ' حلّوه' +
@@ -123,7 +128,7 @@ const Portal = (() => {
       (P.me.mistakes.length ? '<div class="card"><b>' + (isStudent() ? 'أخطائي' : 'الأجزاء اللي محتاجة مراجعة') + '</b><div class="wrong">' + P.me.mistakes.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' +
         (isStudent() && lv('engage') >= 2 ? '<button class="btn btn-ink btn-sm mist-btn" data-p="mistakes">' + icon('bolt') + 'حل أسئلة عليها</button>' : '') + '</div>' : '') +
       (sc.length ? '<ul class="list">' + sc.map(x => { const pct = x.score / x.max;
-        return '<li class="col"><div class="row-top"><div class="grow"><b>' + esc(x.title) + '</b><div class="tiny">' + (x.kind === 'exam' ? 'امتحان' : 'كويز') + ' · ' + ago(x.at) + '</div></div>' +
+        return '<li class="col"><div class="row-top"><div class="grow"><b>' + esc(x.title) + '</b><div class="tiny">' + (x.kind === 'exam' ? 'امتحان' : 'كويز') + ' · ' + ago(x.at) + '</div>' + (x.rank ? '<div class="tiny">' + rankTxt(x.rank) + '</div>' : '') + '</div>' +
           '<div class="grade sm ' + (pct >= .85 ? 'good' : pct < .5 ? 'low' : '') + '">' + (+x.score) + '<small> / ' + x.max + '</small></div></div>' +
           (x.wrong.length ? '<div class="wrong">' + x.wrong.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' : '') + (x.note ? '<div class="tiny">' + esc(x.note) + '</div>' : '') +
           (x.wrong_q.length ? '<details class="wrongq"><summary>' + (isStudent() ? 'غلطت' : 'غلط') + ' في ' + (x.wrong_q.length === 1 ? 'سؤال واحد' : x.wrong_q.length + (x.wrong_q.length <= 10 ? ' أسئلة' : ' سؤال')) + ' — شوف الصح والشرح</summary>' + x.wrong_q.map(q =>

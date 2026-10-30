@@ -188,16 +188,19 @@ const Screens = (() => {
   const LET = ['أ', 'ب', 'ج', 'د', 'هـ'];
   async function exams(ctx) {
     if (E.open) return E.stats ? examStats(ctx, E.open) : examSheet(ctx, E.open);
-    const list = await API.exams();
-    main().innerHTML = '<div class="head"><h1>الدرجات</h1>' + (ctx.can('grades') ? '<button class="btn btn-ink" data-ex="new">' + icon('plus') + 'كويز جديد</button>' : '') + '</div>' +
+    const all = await API.exams(), list = all.filter(x => !E.kind || x.kind === E.kind);
+    main().innerHTML = '<div class="head"><h1>الدرجات</h1>' + (ctx.can('grades') ? '<div class="head-btns"><button class="btn btn-line" data-ex="new" data-kind="exam">' + icon('plus') + 'امتحان جديد</button>' +
+      '<button class="btn btn-ink" data-ex="new" data-kind="quiz">' + icon('plus') + 'كويز جديد</button></div>' : '') + '</div>' +
+      tabs([['', 'الكل'], ['quiz', 'الكويزات'], ['exam', 'الامتحانات']], E.kind || '', 'ek') +
       (list.length ? '<ul class="list">' + list.map(x => '<li class="tap" data-ex="open" data-id="' + x.id + '"><span class="av">' + icon('pen') + '</span><div class="grow"><b>' + esc(x.title) + '</b>' +
         '<div class="tiny">' + (x.kind === 'exam' ? 'امتحان' : 'كويز') + ' · ' + esc(x.group_name || x.grade) + ' · من ' + x.max_score + '</div></div>' +
         '<div class="tiny" style="text-align:left">' + num(x.scored) + ' درجة' + (x.avg != null ? '<br>متوسط ' + x.avg : '') + '</div></li>').join('') + '</ul>'
-        : '<div class="surface empty">' + icon('pen') + '<div>لسه مفيش كويزات.</div></div>') + credit();
+        : '<div class="surface empty">' + icon('pen') + '<div>لسه مفيش ' + (E.kind === 'exam' ? 'امتحانات' : 'كويزات') + '.</div></div>') + credit();
     main().onclick = e => {
+      const tk = e.target.closest('[data-ek]'); if (tk) { E.kind = tk.dataset.ek || null; return exams(ctx); }
       const b = e.target.closest('[data-ex]'); if (!b) return;
       if (b.dataset.ex === 'open') { E.open = +b.dataset.id; E.stats = false; return examSheet(ctx, E.open); }
-      if (b.dataset.ex === 'new') return examForm(ctx);
+      if (b.dataset.ex === 'new') return examForm(ctx, null, b.dataset.kind);
     };
   }
 
@@ -215,12 +218,13 @@ const Screens = (() => {
       '<input class="inp" data-f="part" value="' + esc(q.part || '') + '" placeholder="الجزء/الدرس (اختياري — زي بنك الأسئلة عشان «أخطائي»)"></details>';
   };
 
-  async function examForm(ctx, ex) {
+  async function examForm(ctx, ex, kind0) {
     const [grades, g] = await Promise.all([API.grades(), API.groups()]);
-    const isNew = !ex; ex = ex || { title: '', kind: 'quiz', max: 20, questions: [], solution_url: '' };
-    sheet('<h2>' + (isNew ? 'كويز جديد' : 'تعديل «' + esc(ex.title) + '»') + '</h2><form id="ef" novalidate>' +
-      '<div class="field"><label for="e_t">العنوان</label><input class="inp" id="e_t" value="' + esc(ex.title) + '" placeholder="مثلاً: كويز التيار الكهربي"></div>' +
-      (isNew ? '<div class="field"><span class="lbl">النوع</span><div class="chips"><button type="button" class="chip on" data-k="quiz">كويز</button><button type="button" class="chip" data-k="exam">امتحان</button></div></div>' +
+    const isNew = !ex; ex = ex || { title: '', kind: kind0 || 'quiz', max: kind0 === 'exam' ? 50 : 20, questions: [], solution_url: '' };
+    const KN = k => k === 'exam' ? 'امتحان' : 'كويز';
+    sheet('<h2>' + (isNew ? KN(ex.kind) + ' جديد' : 'تعديل «' + esc(ex.title) + '»') + '</h2><form id="ef" novalidate>' +
+      '<div class="field"><label for="e_t">اسم ال' + KN(ex.kind) + '</label><input class="inp" id="e_t" value="' + esc(ex.title) + '" placeholder="' + (ex.kind === 'exam' ? 'مثلاً: امتحان شهر أكتوبر' : 'مثلاً: كويز التيار الكهربي') + '"></div>' +
+      (isNew ? '<div class="field"><span class="lbl">النوع</span><div class="chips"><button type="button" class="chip' + (ex.kind === 'quiz' ? ' on' : '') + '" data-k="quiz">كويز</button><button type="button" class="chip' + (ex.kind === 'exam' ? ' on' : '') + '" data-k="exam">امتحان</button></div></div>' +
         '<div class="row2"><div class="field"><label for="e_g">لمين</label><select class="inp" id="e_g">' + g.groups.map(x => '<option value="' + x.id + '" data-grade="' + x.grade_id + '">' + esc(x.name) + ' · ' + esc(x.grade) + '</option>').join('') +
         grades.map(x => '<option value="grade:' + x.id + '">كل ' + esc(x.name) + '</option>').join('') + '</select></div>' : '<div class="row2">') +
       '<div class="field"><label for="e_m">الدرجة النهائية</label><input class="inp" id="e_m" type="number" min="1" inputmode="numeric" value="' + ex.max + '"></div></div>' +
@@ -230,8 +234,8 @@ const Screens = (() => {
       '<div id="qs">' + ex.questions.map(qCard).join('') + '</div>' +
       '<div class="inline-form"><button type="button" class="btn btn-line" data-add="1">' + icon('plus') + 'ضيف سؤال</button>' +
       '<input class="inp num" id="e_n" type="number" min="1" max="60" inputmode="numeric" placeholder="أو عدد" style="max-width:100px"><button type="button" class="btn btn-ghost" data-addn="1">ضيف الكل</button></div>' +
-      '<p class="err" id="eerr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'اعمل الكويز وابدأ الدرجات' : 'احفظ') + '</button></div></form>', box => {
-      let kind = 'quiz';
+      '<p class="err" id="eerr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'اعمله وابدأ الدرجات' : 'احفظ') + '</button></div></form>', box => {
+      let kind = ex.kind;
       const add = () => { const n = $$('[data-q]', box).length; $('#qs', box).insertAdjacentHTML('beforeend', qCard({ kind: 'mcq' }, n)); $$('[data-q]', box).forEach((d, i) => { d.open = i === n; }); };
       box.onclick = e => {
         const c = e.target.closest('[data-k]'); if (c) { kind = c.dataset.k; $$('[data-k]', box).forEach(x => x.classList.toggle('on', x === c)); }
@@ -253,7 +257,7 @@ const Screens = (() => {
         const p = { id: ex.id || null, title: $('#e_t').value.trim(), kind: ex.kind || kind, max: +$('#e_m').value, solution_url: $('#e_u').value.trim(), questions, parts: [] };
         if (isNew) { const sel = $('#e_g').value, opt = $('#e_g').selectedOptions[0];
           p.group_id = sel.startsWith('grade:') ? null : +sel; p.grade_id = sel.startsWith('grade:') ? +sel.slice(6) : +opt.dataset.grade; p.kind = kind; }
-        if (!p.title) return ($('#eerr').textContent = 'اكتب عنوان الكويز.');
+        if (!p.title) return ($('#eerr').textContent = 'اكتب اسم ال' + KN(p.kind) + '.');
         if (p.solution_url && !/^https:\/\//.test(p.solution_url)) return ($('#eerr').textContent = 'لينك الحل لازم يبدأ بـ https://');
         busy($('#ef button[type=submit]'), async () => { const r = await API.saveExam(p); close(); E.open = r.exam.id; E.stats = false; examSheet(ctx, E.open); });
       };
@@ -268,12 +272,13 @@ const Screens = (() => {
     main().innerHTML = '<div class="head"><div><button class="linkish" data-sh="back">← كل الكويزات</button><h1>' + esc(ex.title) + '</h1>' +
       '<div class="tiny">' + num(scored.length) + ' من ' + num(d.rows.length) + ' · متوسط ' + avg + ' من ' + ex.max + (ex.solution_url ? ' · <a href="' + esc(ex.solution_url) + '" target="_blank" rel="noopener">لينك الحل</a>' : '') + '</div></div>' +
       '<div class="head-btns"><button class="btn btn-line" data-sh="stats">' + icon('chart') + 'الإحصائية</button>' +
-      (editable ? '<button class="btn btn-line" data-sh="paste">' + icon('sheet') + 'الدرجات من شيت</button>' : '') + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل</button>' : '') + '</div></div>' +
+      (editable ? '<button class="btn btn-line" data-sh="paste">' + icon('sheet') + 'الدرجات من شيت</button>' : '') +
+      (editable && scored.length ? '<button class="btn btn-ink" data-sh="publish">' + icon('send') + (ex.results_sent_at ? 'ابعت النتيجة تاني' : 'ابعت النتيجة والترتيب') + '</button>' : '') + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل</button>' : '') + '</div></div>' +
       '<div class="search" style="margin-bottom:var(--s3)">' + icon('search') + '<input class="inp" id="shq" placeholder="دوّر على طالب" aria-label="دوّر على طالب"></div>' +
       '<p class="tiny">' + (qs.length ? 'دوس على رقم السؤال اللي الطالب غلط فيه (بيبقى أحمر)، ولو اختياري اختار هو جاوب إيه. الدرجة بتتحسب لوحدها لو الأسئلة متساوية، وتقدر تغيّرها. ' : 'اكتب الدرجة واضغط Enter. ') +
       'بتتحفظ لوحدها، والطالب وولي الأمر بيوصلهم إشعار بالدرجة' + (qs.length ? ' والأسئلة الغلط بالحل الصح والشرح' : '') + '.</p>' +
       '<ul class="list sheet-list" id="shl">' + d.rows.map(r => '<li data-sid="' + r.id + '" data-name="' + esc(r.name) + '" class="' + (r.score != null ? 'done' : '') + '">' +
-        '<div class="grow"><b>' + esc(r.name) + '</b><div class="tiny">' + r.code + '</div>' +
+        '<div class="grow"><button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.id + '"><b>' + esc(r.name) + '</b></button><div class="tiny">' + r.code + '</div>' +
         (qs.length ? '<div class="chips wrong-chips">' + qs.map(q => '<button type="button" class="chip sm qn' + ((r.wrong_q || []).includes(q.n) ? ' bad' : '') + '"' + (editable ? '' : ' disabled') + ' data-qn="' + q.n + '" aria-label="سؤال ' + q.n + ' غلط">' + q.n + '</button>').join('') + '</div>' +
           '<div class="picks">' + qs.filter(q => q.kind === 'mcq' && (r.wrong_q || []).includes(q.n)).map(q => pickRow(q, (r.picks || {})[q.n])).join('') + '</div>'
           : ex.parts.length ? '<div class="chips wrong-chips">' + ex.parts.map(p => '<button type="button" class="chip sm' + ((r.wrong || []).includes(p) ? ' bad' : '') + '"' + (editable ? '' : ' disabled') + ' data-part="' + esc(p) + '">' + esc(p) + '</button>').join('') + '</div>' : '') + '</div>' +
@@ -303,6 +308,11 @@ const Screens = (() => {
       if (e.target.closest('[data-sh=back]')) { E.open = null; return exams(ctx); }
       if (e.target.closest('[data-sh=stats]')) { E.stats = true; return examStats(ctx, id); }
       if (e.target.closest('[data-sh=edit]')) return examForm(ctx, ex);
+      const pb = e.target.closest('[data-sh=publish]');
+      if (pb) {
+        if (!confirm('هيوصل لكل طالب من الـ ' + scored.length + ' (وولي أمره) درجته وترتيبه ومتوسط الكل' + (ex.solution_url ? ' ولينك الحل' : '') + '. نبعت؟')) return;
+        return busy(pb, async () => { const r = await API.examPublish(ex.id); toast('اتبعتت النتيجة لـ ' + num(r.sent) + ' طالب'); ex.results_sent_at = new Date().toISOString(); });
+      }
       // الأسئلة الغلط اللي متسجلة قبل كده بتفضل زي ما هي
       if (e.target.closest('[data-sh=paste]')) return Importer.scores({ rows: d.rows, max: ex.max, onDone: () => examSheet(ctx, id),
         save: (r, score) => API.saveScore(ex.id, r.id, { score, wrong: r.wrong || [], wrong_q: r.wrong_q || [], picks: r.picks || {} }) });
@@ -350,7 +360,7 @@ const Screens = (() => {
   const W = { tab: 'queue', kind: null };
   async function messages(ctx) {
     const ns = await API.notifySettings(), waLv = ns.wa_level, kinds = ns.kinds;
-    const t = [['queue', 'واتساب'], ['new', 'رسالة جديدة']].concat(ns.can_edit ? [['auto', 'الإشعارات الأوتوماتيك']] : []);
+    const t = [['queue', 'واتساب'], ['new', 'رسالة جديدة'], ['posts', 'بوستات ثابتة']].concat(ns.can_edit ? [['auto', 'الإشعارات الأوتوماتيك']] : []);
     if (waLv < 2 && W.tab === 'queue') W.tab = 'new';
     let h = '<div class="head"><h1>الرسايل</h1></div>' + tabs(waLv < 2 ? t.filter(x => x[0] !== 'queue') : t, W.tab, 'wt');
     if (W.tab === 'queue') {
@@ -374,6 +384,19 @@ const Screens = (() => {
         '<p class="tiny">بتظهر في بوابة الطالب وولي الأمر' + (waLv >= 2 ? '، وبتنزل في طابور الواتساب.' : '.') + '</p>' +
         '<div class="actions"><button class="btn btn-ink" type="submit">' + icon('send') + 'ابعت</button></div></form>';
     }
+    // البوست الثابت: غير الرسايل — بيفضل فوق في صفحة الطالب أول ما يدخل لحد ما المستر يشيله أو ييجي تاريخ نهايته
+    if (W.tab === 'posts') {
+      const [ps, g, grades] = await Promise.all([API.posts(), API.groups(), API.grades()]);
+      h += '<p class="muted" style="margin-top:0">البوست بيفضل ظاهر فوق في الصفحة الرئيسية للطالب وولي الأمر أول ما يدخلوا (مش بيضيع وسط الرسايل). مناسب للمواعيد والتنبيهات المهمة والتهنئة.</p>' +
+        '<form id="pf" class="surface" novalidate><div class="row2"><div class="field"><label for="p_t">لمين؟</label><select class="inp" id="p_t"><option value="all:">كل الطلاب</option>' +
+        grades.map(x => '<option value="grade:' + x.id + '">' + esc(x.name) + '</option>').join('') + g.groups.map(x => '<option value="group:' + x.id + '">مجموعة ' + esc(x.name) + '</option>').join('') + '</select></div>' +
+        '<div class="field"><label for="p_u">يختفي بعد (اختياري)</label><input class="inp" id="p_u" type="date"></div></div>' +
+        '<div class="field"><label for="p_b">البوست</label><textarea class="inp" id="p_b" rows="4" maxlength="2000" placeholder="مثلاً: مراجعة ليلة الامتحان يوم الخميس الساعة 7 في القاعة الكبيرة 📚"></textarea></div>' +
+        '<div class="actions"><button class="btn btn-ink" type="submit">' + icon('send') + 'انشر للطلاب</button></div></form>' +
+        '<h2 class="grade-h">المنشور دلوقتي</h2>' + (ps.length ? '<ul class="list">' + ps.map(p => '<li class="col"><div class="row-top"><div class="grow"><b>' + esc(p.to) + '</b> <span class="tiny">' + esc(p.by || '') + ' · ' + ago(p.at) +
+          (p.until ? ' · لحد ' + p.until : '') + '</span></div><button class="btn btn-ghost btn-sm" data-pdel="' + p.id + '" aria-label="شيل البوست">' + icon('archive') + 'شيله</button></div>' +
+          '<div class="msg-prev">' + esc(p.body) + '</div></li>').join('') + '</ul>' : '<div class="surface empty">' + icon('send') + '<div>مفيش بوستات منشورة.</div></div>');
+    }
     if (W.tab === 'auto') {
       h += '<p class="muted" style="margin-top:0">لكل نوع: أوتوماتيك (بيتبعت لوحده)، بزرار (بينزل في طابور الواتساب وانت تبعته)، أو مقفول. الإشعار بيظهر في البوابة في الحالتين الأولانيين.</p>' +
         Object.entries(kinds).map(([k, v]) => '<form class="feat notify-f" data-kind="' + k + '"><h3>' + esc(v.label) + '</h3>' +
@@ -386,6 +409,8 @@ const Screens = (() => {
     main().onclick = async e => {
       const tb = e.target.closest('[data-wt]'); if (tb) { W.tab = tb.dataset.wt; return messages(ctx); }
       const k = e.target.closest('[data-wk]'); if (k) { W.kind = k.dataset.wk || null; return messages(ctx); }
+      const pd = e.target.closest('[data-pdel]');
+      if (pd) { if (!confirm('تشيل البوست ده من عند الطلاب؟')) return; return busy(pd, async () => { await API.savePost({ id: +pd.dataset.pdel, remove: true }); toast('اتشال'); messages(ctx); }); }
       const wa = e.target.closest('[data-wa]');
       if (wa) { const li = wa.closest('li'); setTimeout(async () => { await API.waMark([+wa.dataset.wa]).catch(() => { }); li.classList.add('gone'); setTimeout(() => li.remove(), 300); }, 400); }
     };
@@ -393,6 +418,15 @@ const Screens = (() => {
       e.preventDefault();
       const [target, id] = $('#m_t').value.split(':');
       busy($('#mf button'), async () => { const r = await API.sendMessage({ target, id: id ? +id : null, to: $('#m_w').value, body: $('#m_b').value }); toast('اتبعتت لـ ' + r.sent + ' طالب'); $('#m_b').value = ''; });
+    };
+    if (W.tab === 'posts') $('#pf').onsubmit = e => {
+      e.preventDefault();
+      const [target, id] = $('#p_t').value.split(':');
+      if (!$('#p_b').value.trim()) return toast('اكتب البوست الأول', 'err');
+      busy($('#pf button'), async () => {
+        await API.savePost({ body: $('#p_b').value, grade_id: target === 'grade' ? +id : null, group_id: target === 'group' ? +id : null, until: $('#p_u').value });
+        toast('اتنشر — هيظهر فوق عند الطلاب'); messages(ctx);
+      });
     };
     $$('.notify-f').forEach(f => f.onsubmit = e => {
       e.preventDefault();
@@ -452,8 +486,8 @@ const Screens = (() => {
       const lb = await API.leaderboard(B.tg, B.by);
       h += '<div class="row2"><select class="inp" id="tg">' + g.groups.map(x => '<option value="' + x.id + '"' + (x.id === B.tg ? ' selected' : '') + '>' + esc(x.name) + '</option>').join('') + '</select>' +
         '<select class="inp" id="tb"><option value="avg"' + (B.by === 'avg' ? ' selected' : '') + '>بالدرجات</option><option value="xp"' + (B.by === 'xp' ? ' selected' : '') + '>بنقط التفاعل</option></select></div>' +
-        '<ol class="list top-list">' + lb.map((s, i) => '<li><span class="rank">' + (i + 1) + '</span><div class="grow"><b>' + esc(s.name) + '</b></div><b class="num">' + (B.by === 'avg' ? (s.avg != null ? s.avg + '%' : '—') : s.xp + ' نقطة') + '</b></li>').join('') + '</ol>' +
-        (ctx.lvl('facebook') >= 2 ? '<div class="actions"><button class="btn btn-line" data-top="img">' + icon('image') + 'صورة الأوائل</button><button class="btn btn-ink" data-top="post">' + icon('send') + 'بوست الشهر للفيسبوك</button></div><div id="topimg"></div>' : lockBox('بوست الأوائل للفيسبوك مش في باقتك.'));
+        '<ol class="list top-list">' + lb.map((s, i) => '<li><span class="rank">' + (i + 1) + '</span><div class="grow">' + (s.id ? '<button class="plain-btn name-btn" data-act="studentOpen" data-id="' + s.id + '"><b>' + esc(s.name) + '</b></button>' : '<b>' + esc(s.name) + '</b>') + '</div><b class="num">' + (B.by === 'avg' ? (s.avg != null ? s.avg + '%' : '—') : s.xp + ' نقطة') + '</b></li>').join('') + '</ol>' +
+        (ctx.lvl('facebook') >= 2 ? '<div class="actions"><button class="btn btn-line" data-top="img">' + icon('image') + 'صورة الأوائل</button><button class="btn btn-line" data-top="week">' + icon('send') + 'بوست الأسبوع</button><button class="btn btn-ink" data-top="post">' + icon('send') + 'بوست الشهر</button></div><div id="topimg"></div>' : lockBox('بوست الأوائل للفيسبوك مش في باقتك.'));
       B.lb = lb; B.gname = (g.groups.find(x => x.id === B.tg) || {}).name;
     }
     main().innerHTML = h + credit();
@@ -466,6 +500,7 @@ const Screens = (() => {
       if (e.target.closest('[data-c=new]')) return contestForm(ctx);
       if (e.target.closest('[data-top=img]')) return topImage(ctx);
       const mp = e.target.closest('[data-top=post]'); if (mp) return busy(mp, () => monthPost(ctx));
+      const wp = e.target.closest('[data-top=week]'); if (wp) return busy(wp, () => monthPost(ctx, true));
       if (e.target.closest('[data-top=copy]')) { navigator.clipboard.writeText($('#mpost').value).catch(() => { }); toast('اتنسخ'); }
     };
     if (B.tab === 'top') { $('#tg').onchange = () => { B.tg = +$('#tg').value; engage(ctx); }; $('#tb').onchange = () => { B.by = $('#tb').value; engage(ctx); }; }
@@ -521,14 +556,18 @@ const Screens = (() => {
   }
 
   // بوست آخر الشهر: أوائل المجموعة بالدرجات وبالتفاعل — كلام جاهز، والمستر يحط صورته
-  async function monthPost(ctx) {
-    const d = await API.monthPost(B.tg), mn = new Date(d.month + 'T12:00').toLocaleDateString('ar-EG', { month: 'long' });
+  // week = true ⇒ بوست آخر الأسبوع (آخر 7 أيام) بنفس الشكل
+  async function monthPost(ctx, week) {
+    const d = week ? await API.weekPost(B.tg) : await API.monthPost(B.tg);
+    const fd = s => new Date(s + 'T12:00').toLocaleDateString('ar-EG-u-nu-latn', { day: 'numeric', month: 'long' });
+    const mn = week ? 'الأسبوع (' + fd(d.from) + ' — ' + fd(d.to) + ')' : 'شهر ' + new Date(d.month + 'T12:00').toLocaleDateString('ar-EG', { month: 'long' });
     const nm = n => n.split(' ').slice(0, 3).join(' '), medal = ['🥇', '🥈', '🥉', '🏅', '🏅'];
-    const txt = '🏆 أوائل شهر ' + mn + ' — ' + (d.group || '') + '\n\n' +
+    const txt = '🏆 أوائل ' + mn + ' — ' + (d.group || '') + '\n\n' +
+      (week && d.exams.length ? '📝 اللي اتعمل الأسبوع ده: ' + d.exams.join('، ') + '\n\n' : '') +
       (d.by_score.length ? '📚 في الدرجات:\n' + d.by_score.map((x, i) => medal[i] + ' ' + nm(x.name) + ' — ' + x.pct + '%').join('\n') + '\n\n' : '') +
       (d.by_xp.length ? '⚡ في التفاعل وحل الأسئلة:\n' + d.by_xp.map((x, i) => medal[i] + ' ' + nm(x.name) + ' — ' + x.xp + ' نقطة').join('\n') + '\n\n' : '') +
-      'ألف مبروك يا أبطال، وكملوا كده 💪\nوالشهر الجاي مستنيين أسامي جديدة 👀\n#' + String(ctx.me.config.system_name || '').replace(/\s+/g, '_');
-    $('#topimg').innerHTML = '<h3 class="mini-h" style="margin-top:var(--s4)">بوست شهر ' + mn + '</h3><textarea class="inp" id="mpost" rows="12">' + esc(txt) + '</textarea>' +
+      'ألف مبروك يا أبطال، وكملوا كده 💪\n' + (week ? 'والأسبوع الجاي' : 'والشهر الجاي') + ' مستنيين أسامي جديدة 👀\n#' + String(ctx.me.config.system_name || '').replace(/\s+/g, '_');
+    $('#topimg').innerHTML = '<h3 class="mini-h" style="margin-top:var(--s4)">بوست ' + mn + '</h3><textarea class="inp" id="mpost" rows="12">' + esc(txt) + '</textarea>' +
       '<div class="row-btns" style="justify-content:flex-start;margin-top:var(--s2)"><button class="btn btn-ink" data-top="copy">انسخ</button></div>' +
       '<p class="tiny">النشر الأوتوماتيك على صفحة المستر محتاج ربط الصفحة بفيسبوك (هنعمله لما نستلم الحساب). دلوقتي: انسخ وانشر بالصورة اللي المستر عايزها.</p>';
   }
