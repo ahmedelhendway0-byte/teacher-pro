@@ -2,8 +2,9 @@
 const Portal = (() => {
   const { esc, icon, $, $$, num, toast, sheet, close, busy, credit, ago } = U;
   const TK = 'ptoken_' + (CFG.P || 'tp_');
-  const tok = () => { try { return localStorage.getItem(TK); } catch (e) { return null; } };
-  const setTok = t => { try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
+  let mem = null;   // CFG.MEM = العرض التفاعلي (التوكن في الذاكرة)
+  const tok = () => { if (CFG.MEM) return mem; try { return localStorage.getItem(TK); } catch (e) { return null; } };
+  const setTok = t => { if (CFG.MEM) { mem = t; return; } try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
   window.onAuthFail = () => setTok(null);
   const call = (fn, args) => API.rpc(fn, Object.assign({ p_token: tok() }, args || {}));
   const root = () => $('#app');
@@ -15,6 +16,8 @@ const Portal = (() => {
     try {
       const st = await API.status();
       document.title = (st.system_name || 'البوابة') + ' · البوابة';
+      const as = new URLSearchParams(location.search).get('as');   // الديمو بس (للعرض التفاعلي)
+      if (st.demo && CFG.DEMO && (as === 'student' || as === 'parent')) { CFG.MEM = true; const x = await API.rpc('tp_portal_demo', { p_role: as }); setTok(x.token); }
       if (!tok()) return login(st);
       P.me = await call('tp_portal_me');
       shell();
@@ -79,7 +82,9 @@ const Portal = (() => {
     const m = P.me, s = m.student, last = m.scores[0];
     const daily = isStudent() && lv('engage') >= 2 ? await call('tp_portal_daily').catch(() => null) : null;
     let h = '<h1 class="hello">أهلاً ' + esc(isStudent() ? s.name.split(' ')[0] : 'بولي أمر ' + s.name.split(' ')[0]) + '</h1>' +
-      '<p class="muted hello-sub">' + esc(s.group || '') + (s.schedule ? ' · ' + esc(s.schedule) : '') + '</p>';
+      '<p class="muted hello-sub">' + esc(s.group || '') + (s.schedule ? ' · ' + esc(s.schedule) : '') + '</p>' +
+      '<button class="card wrap-card plain-btn" data-p="wrapped">' + icon('star') + '<div class="grow"><b>' + (isStudent() ? 'شهرك' : 'شهر ' + esc(s.name.split(' ')[0])) + ' في دقيقة</b>' +
+      '<div class="tiny">الحضور والدرجات والترتيب في الشهر اللي فات</div></div>' + icon('chev') + '</button>';
     if (lv('pay') >= 2) h += '<div class="card bal"><div><span class="muted">' + (isStudent() ? 'فاضلك' : 'فاضل لـ ' + esc(s.name.split(' ')[0])) + '</span>' +
       '<div><span class="n mark">' + num(s.credits) + '</span> <span class="muted">حصص</span></div>' +
       (m.topups.some(t => t.status === 'pending') ? '<span class="tag">فيه طلب شحن مستني مراجعة</span>' : '') + '</div>' +
@@ -111,25 +116,34 @@ const Portal = (() => {
 
   // ───── الدرجات ─────
   async function grades() {
-    await refreshMe();
-    const sc = P.me.scores;
+    const [, sc] = await Promise.all([refreshMe(), call('tp_portal_scores')]);
+    const LET = ['أ', 'ب', 'ج', 'د', 'هـ'];
+    const ans = q => q.kind === 'mcq' ? (q.answer != null ? LET[+q.answer] + (q.choices[+q.answer] ? ') ' + q.choices[+q.answer] : '') : '') : (q.answer || '');
     $('#main').innerHTML = '<h1 class="page-h">' + (isStudent() ? 'درجاتي' : 'الدرجات') + '</h1>' +
       (P.me.mistakes.length ? '<div class="card"><b>' + (isStudent() ? 'أخطائي' : 'الأجزاء اللي محتاجة مراجعة') + '</b><div class="wrong">' + P.me.mistakes.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' +
         (isStudent() && lv('engage') >= 2 ? '<button class="btn btn-ink btn-sm mist-btn" data-p="mistakes">' + icon('bolt') + 'حل أسئلة عليها</button>' : '') + '</div>' : '') +
       (sc.length ? '<ul class="list">' + sc.map(x => { const pct = x.score / x.max;
         return '<li class="col"><div class="row-top"><div class="grow"><b>' + esc(x.title) + '</b><div class="tiny">' + (x.kind === 'exam' ? 'امتحان' : 'كويز') + ' · ' + ago(x.at) + '</div></div>' +
           '<div class="grade sm ' + (pct >= .85 ? 'good' : pct < .5 ? 'low' : '') + '">' + (+x.score) + '<small> / ' + x.max + '</small></div></div>' +
-          (x.wrong.length ? '<div class="wrong">' + x.wrong.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' : '') + (x.note ? '<div class="tiny">' + esc(x.note) + '</div>' : '') + '</li>'; }).join('') + '</ul>'
+          (x.wrong.length ? '<div class="wrong">' + x.wrong.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' : '') + (x.note ? '<div class="tiny">' + esc(x.note) + '</div>' : '') +
+          (x.wrong_q.length ? '<details class="wrongq"><summary>' + (isStudent() ? 'غلطت' : 'غلط') + ' في ' + (x.wrong_q.length === 1 ? 'سؤال واحد' : x.wrong_q.length + (x.wrong_q.length <= 10 ? ' أسئلة' : ' سؤال')) + ' — شوف الصح والشرح</summary>' + x.wrong_q.map(q =>
+            '<div class="wq"><b>سؤال ' + q.n + '</b>' + (q.text ? '<p>' + esc(q.text) + '</p>' : '') +
+            (q.kind === 'mcq' && q.picked != null ? '<div class="was">جاوبت: ' + LET[+q.picked] + (q.choices[+q.picked] ? ') ' + esc(q.choices[+q.picked]) : '') + '</div>' : '') +
+            (ans(q) ? '<div class="right-a">الصح: ' + esc(ans(q)) + '</div>' : '') + (q.explain ? '<div class="why">' + esc(q.explain) + '</div>' : '') + '</div>').join('') + '</details>' : '') +
+          (x.solution_url ? '<a class="btn btn-line btn-sm sol" href="' + esc(x.solution_url) + '" target="_blank" rel="noopener">' + icon('eye') + 'فيديو الحل</a>' : '') + '</li>'; }).join('') + '</ul>'
         : '<div class="card empty">' + icon('pen') + '<div>لسه مفيش درجات.</div></div>') + credit();
   }
 
   // ───── التمرين: الوحدات + أخطائي + التحديات ─────
   async function practice() {
-    const [units, ch] = await Promise.all([call('tp_portal_units'), lv('engage') >= 3 ? call('tp_portal_challenges') : Promise.resolve(null)]);
+    const [U2, ch] = await Promise.all([call('tp_portal_units'), lv('engage') >= 3 ? call('tp_portal_challenges') : Promise.resolve(null)]);
+    const units = U2.units;
     let h = '<h1 class="page-h">التمرين</h1><p class="muted" style="margin-top:0">كل إجابة صح أول مرة بـ 10 نقط. النقط بتعلّي مستواك وترتيبك.</p>';
+    if (U2.current) h += '<button class="card plain-btn mist-card now-lesson" data-p="lesson" data-l="' + esc(U2.current) + '">' + icon('book') + '<div class="grow"><b>حل على درس النهارده</b><div class="tiny">' + esc(U2.current) + '</div></div>' + icon('chev') + '</button>';
     if (P.me.mistakes.length) h += '<button class="card plain-btn mist-card" data-p="mistakes">' + icon('bolt') + '<div class="grow"><b>أخطائي</b><div class="tiny">' + P.me.mistakes.map(esc).join('، ') + '</div></div>' + icon('chev') + '</button>';
-    h += '<h2 class="grade-h">الوحدات</h2><ul class="list">' + units.map(u => '<li class="tap" data-p="unit" data-u="' + esc(u.unit) + '"><div class="grow"><b>' + esc(u.unit) + '</b>' +
-      '<div class="prog"><span style="--w:' + Math.round(u.solved / u.total * 100) + '%"></span></div><div class="tiny">' + u.solved + ' من ' + u.total + '</div></div>' + icon('chev') + '</li>').join('') + '</ul>';
+    h += '<h2 class="grade-h">الوحدات والدروس</h2>' + units.map(u => '<div class="card unit"><button class="plain-btn" data-p="unit" data-u="' + esc(u.unit) + '"><div class="grow"><b>' + esc(u.unit) + '</b>' +
+      '<div class="prog"><span style="--w:' + Math.round(u.solved / u.total * 100) + '%"></span></div><div class="tiny">' + u.solved + ' من ' + u.total + ' · حل على الوحدة كلها</div></div>' + icon('chev') + '</button>' +
+      (u.lessons.length ? '<div class="lessons">' + u.lessons.map(l => '<button class="chip" data-p="lesson" data-l="' + esc(l.lesson) + '">' + esc(l.lesson) + ' <span class="tiny">' + l.solved + '/' + l.total + '</span></button>').join('') + '</div>' : '') + '</div>').join('');
     if (ch) {
       h += '<div class="head" style="margin-top:var(--s6)"><h2>التحديات</h2><button class="btn btn-ink btn-sm" data-p="challenge-new">' + icon('bolt') + 'تحدّى زميل</button></div>' +
         '<p class="tiny" style="margin-top:-8px">5 أسئلة، وكل واحد بيحلها في وقته خلال 24 ساعة. الكسبان ياخد 30 نقطة.</p>' +
@@ -264,6 +278,8 @@ const Portal = (() => {
     });
     if (a === 'mistakes') { const qs = await call('tp_portal_practice', { p: { mistakes: true } }); return quiz(qs, 'أخطائي'); }
     if (a === 'unit') { const qs = await call('tp_portal_practice', { p: { unit: b.dataset.u } }); return quiz(qs, b.dataset.u); }
+    if (a === 'lesson') { const qs = await call('tp_portal_practice', { p: { lesson: b.dataset.l } }); return quiz(qs, b.dataset.l); }
+    if (a === 'wrapped') return wrapped();
     if (a === 'rank') {
       const r = await call('tp_portal_rank'); if (!r) return;
       return sheet('<h2>أوائل مجموعتك</h2><ol class="list top-list">' + r.map((x, i) => '<li class="' + (x.me ? 'me' : '') + '"><span class="rank">' + (i + 1) + '</span><div class="grow">' + esc(x.name) + (x.me ? ' (انت)' : '') + '</div><b class="num">' + x.xp + '</b></li>').join('') + '</ol>');
@@ -277,6 +293,53 @@ const Portal = (() => {
         practice();
       });
     }
+  }
+
+  // ───── ملخص الشهر (زي Spotify Wrapped): كروت ورا بعض بأنيميشن، بتتقلب لوحدها أو بالضغط ─────
+  async function wrapped() {
+    const w = await call('tp_portal_month').catch(e => toast(e.message, 'err')); if (!w) return;
+    const you = isStudent(), nm = w.name, mon = new Date(w.month + 'T12:00').toLocaleDateString('ar-EG', { month: 'long' });
+    const pctA = w.classes ? Math.round(w.attended / w.classes * 100) : 0, hwAll = w.hw_yes + w.hw_no;
+    const slides = [
+      ['s1', '<p class="w-k">' + mon + '</p><h2>' + (you ? 'شهرك يا ' + esc(nm) : 'شهر ' + esc(nm)) + '<br>في دقيقة</h2><p>دوس عشان تكمّل</p>'],
+      ['s2', '<p class="w-k">الحضور</p><div class="w-big" data-count="' + w.attended + '">0</div><p>' + (you ? 'حصة حضرتها' : 'حصة حضرها') + ' من ' + w.classes + '</p>' +
+        '<div class="w-ring" style="--p:' + pctA + '"><span>' + pctA + '%</span></div>'],
+      ['s3', '<p class="w-k">الواجب</p>' + (hwAll ? '<div class="w-big" data-count="' + w.hw_yes + '">0</div><p>مرة ' + (you ? 'عملت' : 'عمل') + ' الواجب من ' + hwAll + '</p>' +
+        '<p class="w-note">' + (w.hw_no === 0 ? 'ولا مرة فاتت 👏' : w.hw_no + ' مرة ماتعملش — الشهر ده نقفلها') + '</p>' : '<h2>مفيش واجبات اتسجلت الشهر ده</h2>')],
+      ['s4', '<p class="w-k">الدرجات</p>' + (w.avg != null ? '<div class="w-big"><span data-count="' + w.avg + '">0</span>%</div><p>متوسط ' + (you ? 'درجاتك' : 'درجاته') + '</p>' +
+        (w.group_avg != null ? '<p class="w-note">متوسط المجموعة ' + w.group_avg + '% ' + (w.avg >= w.group_avg ? '— ' + (you ? 'انت' : 'هو') + ' فوقه 🔥' : '') + '</p>' : '') +
+        '<div class="w-bars">' + w.scores.slice(-6).map(s => '<div><span style="--h:' + Math.round(s.score / s.max * 100) + '%"></span><small>' + esc(s.title.split(' ').slice(-2).join(' ')) + '</small></div>').join('') + '</div>' : '<h2>مفيش كويزات الشهر ده</h2>')],
+      ['s5', '<p class="w-k">التمرين</p><div class="w-big" data-count="' + w.solved + '">0</div><p>سؤال ' + (you ? 'حليته' : 'حله') + ' صح</p>' +
+        '<ul class="w-list"><li><b>' + w.daily + '</b> سؤال يوم</li><li><b>' + w.xp + '</b> نقطة</li><li><b>' + w.wins + '</b> تحدي ' + (you ? 'كسبته' : 'كسبه') + '</li></ul>' +
+        (w.top_lesson ? '<p class="w-note">أكتر درس ' + (you ? 'ذاكرته' : 'ذاكره') + ': ' + esc(w.top_lesson) + '</p>' : '')],
+      ['s6', '<p class="w-k">الترتيب في المجموعة</p><div class="w-big">#<span data-count="' + w.rank + '">0</span></div><p>من ' + w.group_size + ' طالب في نقط الشهر</p>' +
+        '<p class="w-note">' + (w.rank <= 3 ? 'من الأوائل 🏆' : w.rank <= 10 ? 'في أول عشرة 💪' : 'الشهر الجاي نطلع لفوق') + '</p>'],
+      ['s7', '<h2>' + (you ? 'يلا بينا على الشهر الجاي' : 'شكراً إنك متابع') + '</h2><p>الملخص ده بيتعمل لوحده كل شهر.</p><button class="btn btn-ink" data-close-w>تمام</button>']
+    ];
+    let i = 0, timer;
+    const box = document.createElement('div'); box.className = 'wrap-story'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'ملخص الشهر');
+    box.innerHTML = '<div class="w-prog">' + slides.map(() => '<i><b></b></i>').join('') + '</div><button class="w-x" data-close-w aria-label="قفل">' + icon('x') + '</button><div class="w-slide"></div>';
+    document.body.appendChild(box); document.body.classList.add('locked');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const show = () => {
+      const [cls, html] = slides[i], sl = $('.w-slide', box);
+      sl.className = 'w-slide ' + cls; sl.innerHTML = html;
+      $$('.w-prog i', box).forEach((x, k) => { x.className = k < i ? 'done' : k === i ? 'now' : ''; });
+      $$('[data-count]', sl).forEach(el => {   // الرقم بيعد لحد قيمته
+        const to = +el.dataset.count; if (reduce) { el.textContent = to; return; }
+        const t0 = performance.now(); const step = t => { const k = Math.min(1, (t - t0) / 900); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+        requestAnimationFrame(step);
+      });
+      clearTimeout(timer); if (i < slides.length - 1) timer = setTimeout(() => { i++; show(); }, 5500);
+    };
+    const end = () => { clearTimeout(timer); box.remove(); document.body.classList.remove('locked'); };
+    box.onclick = e => {
+      if (e.target.closest('[data-close-w]')) return end();
+      // عربي: الضغط على الثلث اليمين يرجع، أي حتة تانية تقدّم
+      i = Math.max(0, Math.min(slides.length - 1, i + (e.clientX > innerWidth * 2 / 3 ? -1 : 1)));
+      show();
+    };
+    show();
   }
 
   function mates() {

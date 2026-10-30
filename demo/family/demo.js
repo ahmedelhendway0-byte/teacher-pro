@@ -1,2 +1,4 @@
-// الديمو: جداول tp_ (داتا تجريبية) + أزرار الدخول التجريبي والمحاكاة
-CFG.P = "tp_"; CFG.DEMO = true; CFG.ROOT = "../../";
+// اتولد من tools/make_demo.py
+CFG.P = "tp_";
+CFG.DEMO = true;
+CFG.ROOT = "../../";

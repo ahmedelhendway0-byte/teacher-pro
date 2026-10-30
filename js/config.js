@@ -7,5 +7,7 @@ window.CFG = {
   P: "tr_",
   DEMO: false,
   ROOT: "",
-  VERSION: "0.7.0"
+  ROLE: "assistant",        // الصفحة الرئيسية للأسيستنت · teacher/ للمستر
+  PRINT: "print.html",
+  VERSION: "0.8.1"
 };

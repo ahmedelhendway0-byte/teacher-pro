@@ -1,4 +1,4 @@
-﻿// التطبيق: الإعداد أول مرة ← الدخول ← الشاشات (الرئيسية، المجموعات، الإعدادات)
+// التطبيق: الإعداد أول مرة ← الدخول ← الشاشات (الرئيسية، المجموعات، الإعدادات)
 // مفيش onclick جوه الـ HTML (الـ CSP بيمنعه) — كل الأزرار بـ data-act
 const App = (() => {
   const { esc, icon, $, $$, num, toast, sheet, close, busy, credit, ago } = U;
@@ -8,7 +8,7 @@ const App = (() => {
   // ───── المميزات ومستوياتها (نفس جدول PLAN.md) ─────
   const FEATURES = [
     { k: 'pay', name: 'الدفع', lv: ['', 'كاش على الباب، الأسيستنت تسجّل بضغطة', 'اشتراك بالحصص + الشحن بالتحويل والأسيستنت توافق', 'اشتراك بالحصص + تأكيد التحويل أوتوماتيك'] },
-    { k: 'door', name: 'الحضور على الباب', lv: ['', 'بحث بالاسم أو الكود', 'QR بكاميرا الموبايل', 'كارت NFC'] },
+    { k: 'door', name: 'تسجيل الحضور', lv: ['', 'بحث بالاسم أو الكود', 'QR بكاميرا الموبايل أو السكانر', 'QR + كارت NFC (اختياري)'] },
     { k: 'engage', name: 'تفاعل الطلاب', lv: ['', 'مقفول', 'بنك أسئلة + سؤال اليوم + الترتيب', 'كل اللي فات + مسابقات المجموعات والتحديات'] },
     { k: 'whatsapp', name: 'واتساب', lv: ['', 'من غير واتساب (البوابة والإشعارات بس)', 'رسالة جاهزة بزرار لكل طالب', 'إرسال أوتوماتيك'] },
     { k: 'facebook', name: 'فيسبوك', lv: ['', 'مقفول', 'صورة الأوائل + زرار مشاركة', 'نشر أوتوماتيك'] },
@@ -22,6 +22,9 @@ const App = (() => {
       const st = await API.status();
       document.title = st.system_name || 'السيستم';
       if (!st.setup_done) return setup(st);
+      // الديمو بس: ?as=teacher|assistant بيدخل على طول (للعرض التفاعلي جوه البرزنتيشن)
+      const as = new URLSearchParams(location.search).get('as');
+      if (st.demo && CFG.DEMO && (as === 'teacher' || as === 'assistant')) { CFG.MEM = true; await API.demoLogin(as); }
       if (!API.token()) return login(st);
       S.me = await API.me();
       shell();
@@ -109,15 +112,15 @@ const App = (() => {
   // ───── الدخول ─────
   function login(st) {
     root().innerHTML = '<div class="gate"><div class="brand">' + esc(st.system_name) + '</div><div class="gate-card">' +
-      '<h1>دخول المستر والأسيستنت</h1><p class="sub">بالموبايل والباسورد.</p>' +
+      '<h1>' + (CFG.ROLE === 'teacher' ? 'دخول المستر' : 'دخول الأسيستنت') + '</h1><p class="sub">بالموبايل والباسورد.</p>' +
       '<form id="lf" novalidate>' +
       '<div class="field"><label for="ph">رقم الموبايل</label><input class="inp" id="ph" type="tel" inputmode="numeric" dir="ltr" autocomplete="username" required></div>' +
       '<div class="field"><label for="pw">الباسورد</label><input class="inp" id="pw" type="password" dir="ltr" autocomplete="current-password" required></div>' +
       '<p class="err" id="err"></p><button class="btn btn-ink btn-lg btn-block" type="submit">ادخل</button></form>' +
       (st.demo ? '<div class="demo-box"><b>دي نسخة تجريبية</b><span class="tiny">ادخل وجرّب كل حاجة من غير تسجيل.</span>' +
-        '<button class="btn btn-line btn-block" data-demo="teacher">ادخل الديمو كمستر</button>' +
-        '<button class="btn btn-line btn-block" data-demo="assistant">ادخل الديمو كأسيستنت</button>' +
-        '<span class="tiny">الأسيستنت في الديمو معاها صلاحيات: الباب، الطلاب، الفلوس.</span></div>' : '') +
+        (CFG.ROLE === 'teacher' ? '<button class="btn btn-line btn-block" data-demo="teacher">ادخل الديمو كمستر</button>'
+          : '<button class="btn btn-line btn-block" data-demo="assistant">ادخل الديمو كأسيستنت</button>' +
+            '<span class="tiny">الأسيستنت في الديمو معاها صلاحيات: تسجيل الحضور، الطلاب، الدرجات، الفلوس.</span>') + '</div>' : '') +
       '</div>' + credit() + '</div>';
     $$('[data-demo]').forEach(b => { b.onclick = e => busy(e.currentTarget, async () => { await API.demoLogin(b.dataset.demo); location.hash = ''; S.me = await API.me(); shell(); }); });
     $('#ph').focus();
@@ -136,13 +139,14 @@ const App = (() => {
   const can = p => isTeacher() || !!(S.me.staff.perms || {})[p];
   const ROUTES = {
     home: { name: 'الرئيسية', icon: 'home', show: () => true, draw: home },
-    door: { name: 'الباب', icon: 'door', show: () => can('door'), draw: () => Door.draw({ me: S.me, can, level: k => +(S.me.levels || {})[k] || 0, openStudent: id => openStudent(id) }) },
+    door: { name: 'الحضور', icon: 'qr', show: () => can('door'), draw: () => Door.draw({ me: S.me, can, level: k => +(S.me.levels || {})[k] || 0, openStudent: id => openStudent(id) }) },
     students: { name: 'الطلاب', icon: 'student', show: () => true, draw: students },
-    exams: { name: 'الدرجات', icon: 'pen', show: () => true, draw: () => Screens.exams(sctx()) },
+    exams: { name: 'الدرجات', icon: 'pen', show: () => can('grades'), draw: () => Screens.exams(sctx()) },
     money: { name: 'الفلوس', icon: 'cash', show: () => can('money'), draw: () => Screens.money(sctx()) },
+    expenses: { name: 'المصروفات', icon: 'receipt', show: () => can('expenses'), draw: () => Screens.expenses(sctx()) },
     messages: { name: 'الرسايل', icon: 'send', show: () => can('messages') || can('notify_settings'), draw: () => Screens.messages(sctx()) },
     groups: { name: 'المجموعات', icon: 'groups', show: () => true, draw: groups },
-    engage: { name: 'التفاعل', icon: 'trophy', show: () => isTeacher() || can('students'), draw: () => Screens.engage(sctx()) },
+    engage: { name: 'التفاعل', icon: 'trophy', show: () => can('bank'), draw: () => Screens.engage(sctx()) },
     reports: { name: 'التقارير', icon: 'chart', show: () => can('reports'), draw: () => Screens.reports(sctx()) },
     team: { name: 'الفريق', icon: 'team', show: isTeacher, draw: team },
     settings: { name: 'الإعدادات', icon: 'settings', show: isTeacher, draw: settings }
@@ -234,7 +238,7 @@ const App = (() => {
         ' · ' + num(x.students) + (x.capacity ? ' / ' + num(x.capacity) : '') + ' طالب</div></div>' +
         '<span class="price">' + num(x.price) + ' ج</span>' +
         '<button class="btn btn-ghost btn-sm" data-act="homework" data-id="' + x.id + '" aria-label="واجب ' + esc(x.name) + '">' + icon('book') + '</button>' +
-        '<a class="btn btn-ghost btn-sm" href="' + 'print.html?group=' + x.id + '" target="_blank" rel="noopener" aria-label="اطبع كروت ' + esc(x.name) + '">' + icon('print') + '</a>' +
+        '<a class="btn btn-ghost btn-sm" href="' + CFG.PRINT + '?group=' + x.id + '" target="_blank" rel="noopener" aria-label="اطبع كروت ' + esc(x.name) + '">' + icon('print') + '</a>' +
         (can('groups') ? '<button class="btn btn-ghost btn-sm" data-act="groupEdit" data-id="' + x.id + '" aria-label="تعديل ' + esc(x.name) + '">' + icon('pen') + '</button>' : '') +
         '</li>').join('') + '</ul>';
     });
@@ -359,7 +363,7 @@ const App = (() => {
     });
   }
 
-  // كارت الطالب: QR + الكود + طباعة + ربط كارت NFC
+  // كارت الطالب: QR + الكود + طباعة + (اختياري) نكتب نفس الكود على كارت NFC ⇒ نفس الكارت يتقري بالكاميرا أو بالتقريب
   function cardView(s) {
     const nfcOk = lvl('door') >= 3;
     sheet('<h2>كارت «' + esc(s.name) + '»</h2>' +
@@ -368,25 +372,20 @@ const App = (() => {
       '<div class="id-code num">' + s.code + '</div><div class="tiny">' + esc(s.group || '') + '</div></div></div>' +
       '<div class="id-foot">POWERED BY HINDAWY</div></div>' +
       '<p class="muted">الطالب يقدر يوري الـ QR ده من موبايله أو من الكارت المطبوع. الكود نفسه بيشتغل مع سكانر الباركود.</p>' +
-      '<div class="actions"><a class="btn btn-ink" href="' + 'print.html?student=' + s.id + '" target="_blank" rel="noopener">' + icon('print') + 'اطبع الكارت</a></div>' +
-      (nfcOk ? '<div class="nfc-link"><b>كارت NFC</b><p class="tiny">' + (s.has_card ? 'فيه كارت مربوط بالطالب ده.' : 'لسه مفيش كارت مربوط.') +
-        ' الربط بيتعمل من موبايل أندرويد فيه NFC: دوس الزرار وقرّب الكارت الفاضي من ضهر الموبايل.</p>' +
-        ('NDEFReader' in window && can('students') ? '<button class="btn btn-line" data-act="nfcLink">' + icon('nfc') + (s.has_card ? 'غيّر الكارت' : 'اربط كارت') + '</button>' : '') +
-        (s.has_card && can('students') ? ' <button class="btn btn-ghost" data-act="nfcUnlink">فك الكارت</button>' : '') + '</div>' : ''), box => {
+      '<div class="actions"><a class="btn btn-ink" href="' + CFG.PRINT + '?student=' + s.id + '" target="_blank" rel="noopener">' + icon('print') + 'اطبع الكارت</a></div>' +
+      (nfcOk ? '<div class="nfc-link"><b>كارت NFC (اختياري)</b><p class="tiny">نفس الكارت المطبوع عليه الـ QR ممكن يكون كارت NFC (نوع NTAG213 أو NTAG215). ' +
+        'من موبايل أندرويد بكروم: دوس «اكتب الكود على الكارت» وقرّب الكارت من ضهر الموبايل ⇒ الكارت يبقى بيتقري بالتقريب كمان.</p>' +
+        ('NDEFReader' in window && can('students') ? '<button class="btn btn-line" data-act="nfcWrite">' + icon('nfc') + 'اكتب الكود على الكارت</button>' : '<p class="tiny">الكتابة على الكارت بتشتغل من كروم على أندرويد بس.</p>') +
+        (s.has_card && can('students') ? ' <button class="btn btn-ghost" data-act="nfcUnlink">فك الكارت القديم</button>' : '') + '</div>' : ''), box => {
       box.onclick = async e => {
         const a = e.target.closest('[data-act]'); if (!a) return;
         if (a.dataset.act === 'nfcUnlink') return busy(a, async () => { await API.studentCard(s.id, null); close(); toast('اتفك الكارت'); });
-        if (a.dataset.act === 'nfcLink') {
+        if (a.dataset.act === 'nfcWrite') {
           try {
-            const r = new NDEFReader(), ctl = new AbortController();
-            await r.scan({ signal: ctl.signal });
-            a.textContent = 'قرّب الكارت دلوقتي…';
-            r.onreading = async ev => {
-              ctl.abort();
-              try { await API.studentCard(s.id, ev.serialNumber); close(); toast('اتربط الكارت بـ ' + s.name); }
-              catch (x) { toast(x.message, 'err'); }
-            };
-          } catch (x) { toast('مش قادر يشغّل NFC. اتأكد إنه شغال من إعدادات الموبايل.', 'err'); }
+            a.textContent = 'قرّب الكارت دلوقتي من ضهر الموبايل…';
+            await new NDEFReader().write({ records: [{ recordType: 'text', data: String(s.code) }] });
+            toast('اتكتب كود ' + s.code + ' على الكارت'); a.innerHTML = icon('check') + 'اتكتب';
+          } catch (x) { toast('ماتكتبش: اتأكد إن الـ NFC شغال وإن الكارت NTAG ومش مقفول.', 'err'); a.innerHTML = icon('nfc') + 'جرّب تاني'; }
         }
       };
     });
@@ -482,22 +481,29 @@ const App = (() => {
 
   // ───── الفريق: الأسيستنتس وصلاحياتهم ─────
   const PERMS = [
-    ['door', 'الباب', 'تسجّل الحضور على الباب'],
-    ['students', 'الطلاب', 'تسجّل طلاب جداد وتعدّل بياناتهم'],
+    ['door', 'تسجيل الحضور', 'تمسح QR الطلاب وتسجل الحضور والواجب والكاش'],
+    ['students', 'الطلاب', 'تسجّل طلاب جداد وتعدّل بياناتهم وتنزّل الواجب'],
+    ['grades', 'الدرجات', 'تعمل الكويز وتسجل الدرجات والأسئلة الغلط'],
+    ['bank', 'بنك الأسئلة', 'تشوف وتضيف أسئلة البنك وسؤال اليوم (الأسئلة مابتطلعش لحد غيرها)'],
     ['groups', 'المجموعات', 'تضيف وتعدّل المجموعات'],
-    ['money', 'الفلوس', 'تقبض كاش وتوافق على طلبات الشحن'],
-    ['messages', 'الرسايل', 'تبعت رسايل للطلاب وأولياء الأمور'],
+    ['money', 'الفلوس', 'تقبض اشتراكات وتوافق على الشحن وتلغي حضور'],
+    ['expenses', 'المصروفات', 'تسجل المصروفات'],
+    ['messages', 'الرسايل', 'تبعت رسايل وواتساب للطلاب وأولياء الأمور'],
     ['notify_settings', 'إعدادات الإشعارات', 'تحدد إيه يتبعت أوتوماتيك وإيه بزرار'],
-    ['reports', 'التقارير', 'تشوف التقارير اليومي والأسبوعي والشهري'],
+    ['reports', 'التقارير والإكسل', 'تشوف التقارير وتنزّل ملفات إكسل'],
     ['log', 'اللي حصل', 'تشوف كل العمليات اللي اتعملت']
   ];
+  const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+  // قيمة الصلاحية: true = دايماً، تاريخ = لحد اليوم ده (النهارده بس)
+  const permState = v => v === true ? 'always' : (typeof v === 'string' && v >= today()) ? 'today' : 'off';
   async function team() {
     S.staff = await API.staff();
     $('#main').innerHTML = '<div class="head"><h1>الفريق</h1><button class="btn btn-ink" data-act="staffNew">' + icon('plus') + 'أسيستنت جديدة</button></div>' +
       '<ul class="list">' + S.staff.map(m =>
         '<li' + (m.role === 'assistant' ? ' class="tap" data-act="staffEdit" data-id="' + m.id + '"' : '') + '>' +
         '<span class="av">' + initials(m.name) + '</span><div class="grow"><b>' + esc(m.name) + '</b>' +
-        '<div class="tiny">' + (m.role === 'teacher' ? 'المستر · كل الصلاحيات' : (m.active ? PERMS.filter(p => m.perms[p[0]]).map(p => p[1]).join('، ') || 'من غير صلاحيات' : 'الحساب مقفول')) + '</div></div>' +
+        '<div class="tiny">' + (m.role === 'teacher' ? 'المستر · كل الصلاحيات' : (m.active ? PERMS.filter(p => permState(m.perms[p[0]]) !== 'off')
+          .map(p => p[1] + (permState(m.perms[p[0]]) === 'today' ? ' (النهارده)' : '')).join('، ') || 'من غير صلاحيات' : 'الحساب مقفول')) + '</div></div>' +
         '<span class="tiny num" dir="ltr">' + esc(m.phone) + '</span></li>').join('') + '</ul>' +
       (S.staff.length === 1 ? '<p class="muted">ضيف الأسيستنتس واختار لكل واحدة الصلاحيات اللي تقدر تعملها.</p>' : '') + credit();
   }
@@ -511,14 +517,18 @@ const App = (() => {
       '<div class="field"><label for="t_pw">' + (isNew ? 'الباسورد' : 'باسورد جديد (سيبه فاضي لو مش هتغيّره)') + '</label>' +
       '<div class="inline-form"><input class="inp" id="t_pw" dir="ltr" autocomplete="new-password" value="' + (isNew ? genPw() : '') + '"><button type="button" class="btn btn-line" data-act="genPw">باسورد جديد</button></div>' +
       '<span class="hint">ابعته للأسيستنت. لو اتغيّر، بتخرج من كل الأجهزة.</span></div>' +
-      '<fieldset class="perms"><legend>الصلاحيات</legend>' + PERMS.map(p =>
-        '<label class="perm"><input type="checkbox" value="' + p[0] + '"' + (m.perms[p[0]] ? ' checked' : '') + '><span><b>' + p[1] + '</b><span class="tiny">' + p[2] + '</span></span></label>').join('') + '</fieldset>' +
+      '<fieldset class="perms"><legend>الصلاحيات</legend>' + PERMS.map(p => { const v = permState(m.perms[p[0]]);
+        return '<div class="perm3" data-perm="' + p[0] + '"><div><b>' + p[1] + '</b><span class="tiny">' + p[2] + '</span></div><div class="seg3" role="radiogroup" aria-label="' + p[1] + '">' +
+          [['off', 'لأ'], ['today', 'النهارده بس'], ['always', 'دايماً']].map(([k, n]) => '<button type="button" role="radio" aria-checked="' + (v === k) + '" class="' + (v === k ? 'on' : '') + '" data-v="' + k + '">' + n + '</button>').join('') + '</div></div>'; }).join('') + '</fieldset>' +
       (isNew ? '' : '<label class="perm"><input type="checkbox" id="t_active"' + (m.active ? ' checked' : '') + '><span><b>الحساب شغال</b><span class="tiny">لو شلت العلامة، الأسيستنت مش هتقدر تدخل</span></span></label>') +
       '<p class="err" id="terr"></p><div class="actions"><button class="btn btn-ink" type="submit">' + (isNew ? 'ضيف الأسيستنت' : 'احفظ') + '</button></div></form>', box => {
-      box.onclick = e => { if (e.target.closest('[data-act=genPw]')) $('#t_pw', box).value = genPw(); };
+      box.onclick = e => {
+        if (e.target.closest('[data-act=genPw]')) $('#t_pw', box).value = genPw();
+        const sb = e.target.closest('.seg3 [data-v]'); if (sb) $$('[data-v]', sb.parentNode).forEach(x => { x.classList.toggle('on', x === sb); x.setAttribute('aria-checked', x === sb); });
+      };
       $('#tf', box).onsubmit = async e => {
         e.preventDefault();
-        const perms = {}; $$('.perms input', box).forEach(i => { perms[i.value] = i.checked; });
+        const perms = {}; $$('.perm3', box).forEach(r => { const v = ($('.on', r) || {}).dataset.v; perms[r.dataset.perm] = v === 'always' ? 'true' : v === 'today' ? 'today' : 'false'; });
         const p = { id: m.id || null, name: $('#t_name').value.trim(), phone: $('#t_phone').value, password: $('#t_pw').value.trim(), perms,
           active: isNew ? true : $('#t_active').checked };
         if (!p.name) return ($('#terr').textContent = 'اكتب الاسم.');

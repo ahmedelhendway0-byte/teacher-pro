@@ -1,8 +1,10 @@
 // الكلام مع السيرفر: كل حاجة دالة RPC بالتوكن
 const API = (() => {
   const TK = 'token_' + (CFG.P || 'tp_');   // الديمو والحقيقي على نفس الدومين ⇒ كل واحد ليه مفتاح
-  const token = () => { try { return localStorage.getItem(TK); } catch (e) { return null; } };
-  const setToken = t => { try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
+  // CFG.MEM: التوكن في الذاكرة بس (العرض التفاعلي: كذا ديمو مفتوحين جوه نفس الصفحة من غير ما يلخبطوا بعض)
+  let mem = null;
+  const token = () => { if (CFG.MEM) return mem; try { return localStorage.getItem(TK); } catch (e) { return null; } };
+  const setToken = t => { if (CFG.MEM) { mem = t; return; } try { t ? localStorage.setItem(TK, t) : localStorage.removeItem(TK); } catch (e) { } };
 
   // رسايل الأخطاء بلغة المستخدم
   const MSG = {
@@ -39,6 +41,9 @@ const API = (() => {
     SENDER_REQUIRED: 'اكتب الرقم أو الاسم اللي حوّلت منه.',
     TOO_MANY: 'عندك طلبات كتير مستنية. استنى لحد ما تتراجع.',
     NO_QUESTIONS: 'لسه مفيش أسئلة كفاية في البنك.',
+    USE_TEACHER_LINK: 'ده حساب المستر — ادخل من لينك المستر.',
+    USE_STAFF_LINK: 'ده حساب أسيستنت — ادخل من لينك الأسيستنت.',
+    AMOUNT_NOT_SESSIONS: 'المبلغ مش عدد حصص بالظبط لمجموعة الطالب — راجعه يدوي.',
     SETUP_CODE: 'كود التفعيل غلط.',
     BAD_PIN: 'الكود أو الرقم السري غلط.',
     CARD_TAKEN: 'الكارت ده مربوط بطالب تاني.',
@@ -73,7 +78,7 @@ const API = (() => {
     rpc, token, setToken,
     status: () => rpc('tp_status'),
     setup: async p => { const r = await rpc('tp_setup', { p }); setToken(r.token); return r; },
-    login: async (phone, pw) => { const r = await rpc('tp_login', { p_phone: phone, p_pw: pw }); setToken(r.token); return r; },
+    login: async (phone, pw) => { const r = await rpc('tp_login', { p_phone: phone, p_pw: pw, p_role: CFG.ROLE || 'assistant' }); setToken(r.token); return r; },
     demoLogin: async role => { const r = await rpc('tp_demo_login', { p_role: role || 'teacher' }); setToken(r.token); return r; },
     saveBrand: p => rpc('tp_brand_save', { ...t(), p }),
     logout: async () => { const tk = token(); setToken(null); if (tk) await rpc('tp_logout', { p_token: tk }).catch(() => { }); },
@@ -106,7 +111,16 @@ const API = (() => {
     topups: status => rpc('tp_topups_list', { ...t(), p_status: status || 'pending' }),
     receipt: id => rpc('tp_receipt', { ...t(), p_topup: id }),
     reviewTopup: (id, ok, note) => rpc('tp_topup_review', { ...t(), p_id: id, p_ok: ok, p_note: note || null }),
-    report: (from, to) => rpc('tp_report', { ...t(), p_from: from, p_to: to }),
+    report: (from, to) => rpc('tp_report_x', { ...t(), p_from: from, p_to: to }),
+    exportRows: (kind, from, to) => rpc('tp_export', { ...t(), p_kind: kind, p_from: from, p_to: to }),
+    expenses: (from, to) => rpc('tp_expenses_list', { ...t(), p_from: from, p_to: to }),
+    saveExpense: p => rpc('tp_expense_save', { ...t(), p }),
+    examStats: id => rpc('tp_exam_stats', { ...t(), p_exam: id }),
+    setLesson: (gid, lesson) => rpc('tp_lesson_set', { ...t(), p_grade: gid, p_lesson: lesson }),
+    smsUnmatched: () => rpc('tp_sms_unmatched', t()),
+    smsApply: (sms, sid) => rpc('tp_sms_apply', { ...t(), p_sms: sms, p_student: sid }),
+    smsTrust: sms => rpc('tp_sms_trust', { ...t(), p_sms: sms }),
+    monthPost: (gid, month) => rpc('tp_month_post', { ...t(), p_group: gid, p_month: month || null }),
     notifySettings: () => rpc('tp_notify_settings', t()),
     waQueue: kind => rpc('tp_wa_queue', { ...t(), p_kind: kind || null }),
     waMark: ids => rpc('tp_wa_mark', { ...t(), p_ids: ids }),
@@ -116,7 +130,7 @@ const API = (() => {
     exams: () => rpc('tp_exams_list', t()),
     saveExam: p => rpc('tp_exam_save', { ...t(), p }),
     examSheet: id => rpc('tp_exam_sheet', { ...t(), p_exam: id }),
-    saveScore: (eid, sid, score, wrong, note) => rpc('tp_score_save', { ...t(), p_exam: eid, p_student: sid, p_score: score, p_wrong: wrong, p_note: note || null }),
+    saveScore: (eid, sid, p) => rpc('tp_score_save', { ...t(), p_exam: eid, p_student: sid, p }),
     questions: gid => rpc('tp_questions_list', { ...t(), p_grade: gid }),
     saveQuestion: p => rpc('tp_question_save', { ...t(), p }),
     contests: () => rpc('tp_contests_list', t()),

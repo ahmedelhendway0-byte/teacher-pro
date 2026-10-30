@@ -52,6 +52,51 @@
 .id-wrap .id-card { margin-bottom: var(--s2); }
 .center { text-align: center; }
 .prods { margin-top: var(--s3); }
+/* الدرجات: الأسئلة الغلط بالصح والشرح */
+.wrongq { margin-top: var(--s2); border: 1px solid var(--rule); border-radius: var(--r-md); padding: var(--s2) var(--s3); }
+.wrongq summary { cursor: pointer; font-weight: 600; font-size: var(--fs-sm); color: var(--pen-red); }
+.wq { border-top: 1px solid var(--rule-soft); padding: var(--s3) 0; }
+.wq p { margin: 4px 0; }
+.wq .was { color: var(--pen-red); font-size: var(--fs-sm); }
+.wq .right-a { color: var(--pen-green); font-weight: 600; font-size: var(--fs-sm); }
+.wq .why { background: var(--desk); border-radius: var(--r-sm); padding: var(--s2) var(--s3); margin-top: 6px; font-size: var(--fs-sm); line-height: 1.8; }
+.sol { margin-top: var(--s2); align-self: flex-start; }
+.card.unit > .plain-btn { display: flex; }
+.lessons { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.now-lesson { border: 1.5px solid var(--pen-green); }
+.wrap-card { background: linear-gradient(120deg, #14284B, #24407A); color: #fff; }
+.wrap-card .tiny { color: #CFD8E8; }
+.wrap-card > .ic { color: var(--marker); width: 28px; height: 28px; }
+
+/* ملخص الشهر */
+.wrap-story { position: fixed; inset: 0; z-index: 50; background: #0E1C38; color: #fff; display: flex; flex-direction: column; user-select: none; }
+.w-prog { display: flex; gap: 4px; padding: calc(10px + env(safe-area-inset-top)) 12px 0; }
+.w-prog i { flex: 1; height: 3px; background: rgba(255, 255, 255, .25); border-radius: 2px; overflow: hidden; }
+.w-prog i b { display: block; height: 100%; width: 0; background: #fff; }
+.w-prog i.done b { width: 100%; }
+.w-prog i.now b { animation: wprog 5.5s linear forwards; }
+@keyframes wprog { to { width: 100%; } }
+.w-x { position: absolute; top: calc(22px + env(safe-area-inset-top)); left: 12px; background: none; border: 0; color: #fff; cursor: pointer; padding: 6px; }
+.w-slide { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: var(--s6) var(--s5); gap: var(--s3); animation: win .5s ease-out; }
+@keyframes win { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+.w-slide h2 { font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1.25; }
+.w-slide p { margin: 0; color: #CFD8E8; font-size: var(--fs-lg); }
+.w-k { color: var(--marker) !important; font-weight: 600; font-size: var(--fs-md) !important; }
+.w-big { font-size: clamp(72px, 22vw, 120px); font-weight: 800; line-height: 1; color: #fff; }
+.w-note { background: rgba(255, 255, 255, .1); border-radius: 999px; padding: 6px 16px; font-size: var(--fs-md) !important; }
+.w-ring { width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--marker) calc(var(--p) * 1%), rgba(255, 255, 255, .15) 0); }
+.w-ring span { width: 92px; height: 92px; border-radius: 50%; background: #0E1C38; display: grid; place-items: center; font-weight: 700; font-size: var(--fs-xl); }
+.w-bars { display: flex; gap: 10px; align-items: flex-end; height: 120px; margin-top: var(--s3); }
+.w-bars div { width: 34px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.w-bars span { width: 100%; height: var(--h); background: var(--marker); border-radius: 6px 6px 0 0; animation: grow .8s ease-out; }
+.w-bars small { font-size: 9px; color: #AEBBD3; white-space: nowrap; }
+@keyframes grow { from { height: 0; } }
+.w-list { list-style: none; padding: 0; margin: var(--s2) 0 0; display: flex; gap: var(--s4); flex-wrap: wrap; justify-content: center; }
+.w-list li { color: #CFD8E8; } .w-list b { display: block; color: #fff; font-size: var(--fs-2xl); }
+.s1 { background: radial-gradient(600px 400px at 80% 20%, rgba(255, 228, 90, .25), transparent 60%); }
+.s6 { background: radial-gradient(500px 400px at 50% 30%, rgba(61, 220, 151, .2), transparent 60%); }
+@media (prefers-reduced-motion: reduce) { .w-slide, .w-bars span { animation: none; } .w-prog i.now b { animation: none; width: 100%; } }
+
 .steps { margin: var(--s3) 0; padding: 0; list-style: none; counter-reset: s; }
 .steps li { counter-increment: s; display: flex; gap: var(--s3); padding: var(--s2) 0; font-size: var(--fs-sm); }
 .steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; font-weight: 600; font-size: var(--fs-xs); }

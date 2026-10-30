@@ -1,4 +1,5 @@
-// شاشة الباب: بتفتح على المجموعة الشغالة دلوقتي ⇒ الطالب يتقري (كارت NFC / QR بالكاميرا أو السكانر / الكود / الاسم)
+// تسجيل الحضور (أي أسيستنت معاها الصلاحية، من موبايلها): بتفتح على المجموعة الشغالة دلوقتي ⇒
+// الطالب يتقري (QR بالكاميرا أو السكانر / الكود / الاسم / كارت NFC اختياري) ⇒ يتخصم من اشتراكه أو يدفع كاش ⇒ الواجب
 // ⇒ يتخصم من اشتراكه أو يدفع كاش ⇒ الواجب. الضغط على الطالب بيفتح ملفه كامل.
 const Door = (() => {
   const { esc, icon, $, num, toast, busy, credit } = U;
@@ -38,7 +39,7 @@ const Door = (() => {
     const openIds = new Set(open.map(o => o.group_id)), shown = new Set();
     const row = (x, extra) => '<li class="tap" data-door="open" data-id="' + x.id + '"><div class="grow"><b>' + esc(x.name) + '</b>' + (extra || '') +
       '<div class="tiny">' + esc(x.grade) + ' · ' + num(x.students) + ' طالب · ' + num(x.price) + ' ج</div></div>' + icon('chev') + '</li>';
-    let h = '<div class="head"><h1>الباب</h1></div>';
+    let h = '<div class="head"><h1>تسجيل الحضور</h1></div>';
     if (now.length) { h += '<h2 class="grade-h">شغالة دلوقتي</h2><ul class="list">' + now.map(x => { shown.add(x.id); return row(x, ' <span class="tag ok">دلوقتي</span>'); }).join('') + '</ul>'; }
     const opened = g.groups.filter(x => openIds.has(x.id) && !shown.has(x.id));
     if (opened.length) { h += '<h2 class="grade-h">اتفتحت النهارده</h2><ul class="list">' + opened.map(x => { shown.add(x.id); const o = open.find(y => y.group_id === x.id); return row(x, ' <span class="tag">دخل ' + num(o.present) + '</span>'); }).join('') + '</ul>'; }
@@ -63,9 +64,9 @@ const Door = (() => {
       '<div class="door-count"><b>' + num(c.present) + '</b><span>/ ' + num(c.expected) + '</span><div class="tiny">دخلوا</div></div>' +
       '<button class="btn btn-ghost btn-sm" data-door="change">غيّر</button></div>' +
       '<div class="door-in"><div class="search">' + icon('search') + '<input class="inp inp-lg" id="dq" autocomplete="off" enterkeyhint="go" placeholder="الكود أو الاسم" aria-label="كود الطالب أو اسمه"></div>' +
-      (camOk ? '<button class="btn btn-ink btn-icon" data-door="cam" aria-label="امسح QR بالكاميرا">' + icon('qr') + '</button>' : '') +
+      (camOk ? '<button class="btn btn-ink btn-qr" data-door="cam">' + icon('qr') + 'امسح QR</button>' : '') +
       (nfcOk ? '<button class="btn btn-line btn-icon' + (D.nfc ? ' on' : '') + '" data-door="nfc" aria-label="قراية الكروت">' + icon('nfc') + '</button>' : '') + '</div>' +
-      '<p class="tiny door-hint">' + (camOk ? 'دوس ' + '<b>QR</b>' + ' وامسح كارت الطالب أو موبايله' + (nfcOk ? '، أو شغّل الكروت وقرّب الكارت' : '') + '. أو اكتب الكود أو الاسم.' : 'اكتب كود الطالب أو اسمه.') +
+      '<p class="tiny door-hint">' + (camOk ? 'امسح QR الكارت أو موبايل الطالب ورا بعض، أو اكتب الكود أو الاسم' + (nfcOk ? '، أو شغّل قارئ الكروت' : '') + '.' : 'اكتب كود الطالب أو اسمه.') +
       (CFG.DEMO && lv('door') >= 3 ? ' <button class="linkish" data-door="sim">جرّب تقريب كارت (محاكاة)</button>' : '') + '</p>' +
       '<ul class="list hits" id="dhits" hidden></ul>' +
       '<div id="dres">' + resultHtml() + '</div>' +
@@ -185,7 +186,15 @@ const Door = (() => {
     try {
       const reader = new NDEFReader(), ctl = new AbortController();
       await reader.scan({ signal: ctl.signal });
-      reader.onreading = e => { if (D.cls) scan({ card: e.serialNumber, method: 'nfc' }); };
+      // الكارت متسجل عليه كود الطالب (نفس الـ QR) ⇒ بنقراه. لو كارت قديم من غير كود ⇒ بنستخدم رقمه التسلسلي المربوط
+      reader.onreading = e => {
+        if (!D.cls) return;
+        let code = null;
+        for (const r of e.message.records) {
+          if (r.recordType === 'text') { try { code = (new TextDecoder(r.encoding || 'utf-8').decode(r.data).match(/\d{3,}/) || [])[0]; } catch (x) { } }
+        }
+        scan(code ? { code, method: 'nfc' } : { card: e.serialNumber, method: 'nfc' });
+      };
       D.nfc = ctl; btn.classList.add('on'); toast('جاهز · قرّب الكارت من ضهر الموبايل');
     } catch (e) { toast('مش قادر يشغّل NFC. اتأكد إنه شغال من إعدادات الموبايل.', 'err'); }
   }
