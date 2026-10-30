@@ -48,6 +48,8 @@ const API = (() => {
     BAD_PIN: 'الكود أو الرقم السري غلط.',
     CARD_TAKEN: 'الكارت ده مربوط بطالب تاني.',
     PHONE_TAKEN: 'الرقم ده متسجل لحد تاني في الفريق.',
+    IMPORT_INVALID: 'الشيت فاضي أو أكتر من 1000 صف. قسّمه كل مجموعة لوحدها.',
+    GRADE_INVALID: 'اختار الصف.',
     NET: 'مفيش اتصال بالنت. اتأكد من النت وجرب تاني.'
   };
 
@@ -91,6 +93,7 @@ const API = (() => {
     students: p => rpc('tp_students_page', { ...t(), p: p || {} }),
     student: id => rpc('tp_student_get', { ...t(), p_id: id }),
     saveStudent: p => rpc('tp_student_save', { ...t(), p }),
+    importStudents: p => rpc('tp_students_import', { ...t(), p }),
     studentByCode: code => rpc('tp_student_by_code', { ...t(), p_code: String(code) }),
     studentCard: (id, uid) => rpc('tp_student_card', { ...t(), p_id: id, p_uid: uid }),
     archiveStudent: id => rpc('tp_student_archive', { ...t(), p_id: id }),

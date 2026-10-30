@@ -267,7 +267,8 @@ const Screens = (() => {
     const per = qs.length ? ex.max / qs.length : 0;   // درجة السؤال لو الأسئلة متساوية (اقتراح بس)
     main().innerHTML = '<div class="head"><div><button class="linkish" data-sh="back">← كل الكويزات</button><h1>' + esc(ex.title) + '</h1>' +
       '<div class="tiny">' + num(scored.length) + ' من ' + num(d.rows.length) + ' · متوسط ' + avg + ' من ' + ex.max + (ex.solution_url ? ' · <a href="' + esc(ex.solution_url) + '" target="_blank" rel="noopener">لينك الحل</a>' : '') + '</div></div>' +
-      '<div class="head-btns"><button class="btn btn-line" data-sh="stats">' + icon('chart') + 'الإحصائية</button>' + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل</button>' : '') + '</div></div>' +
+      '<div class="head-btns"><button class="btn btn-line" data-sh="stats">' + icon('chart') + 'الإحصائية</button>' +
+      (editable ? '<button class="btn btn-line" data-sh="paste">' + icon('sheet') + 'الدرجات من شيت</button>' : '') + (editable ? '<button class="btn btn-ghost" data-sh="edit">' + icon('pen') + 'عدّل</button>' : '') + '</div></div>' +
       '<div class="search" style="margin-bottom:var(--s3)">' + icon('search') + '<input class="inp" id="shq" placeholder="دوّر على طالب" aria-label="دوّر على طالب"></div>' +
       '<p class="tiny">' + (qs.length ? 'دوس على رقم السؤال اللي الطالب غلط فيه (بيبقى أحمر)، ولو اختياري اختار هو جاوب إيه. الدرجة بتتحسب لوحدها لو الأسئلة متساوية، وتقدر تغيّرها. ' : 'اكتب الدرجة واضغط Enter. ') +
       'بتتحفظ لوحدها، والطالب وولي الأمر بيوصلهم إشعار بالدرجة' + (qs.length ? ' والأسئلة الغلط بالحل الصح والشرح' : '') + '.</p>' +
@@ -302,6 +303,9 @@ const Screens = (() => {
       if (e.target.closest('[data-sh=back]')) { E.open = null; return exams(ctx); }
       if (e.target.closest('[data-sh=stats]')) { E.stats = true; return examStats(ctx, id); }
       if (e.target.closest('[data-sh=edit]')) return examForm(ctx, ex);
+      // الأسئلة الغلط اللي متسجلة قبل كده بتفضل زي ما هي
+      if (e.target.closest('[data-sh=paste]')) return Importer.scores({ rows: d.rows, max: ex.max, onDone: () => examSheet(ctx, id),
+        save: (r, score) => API.saveScore(ex.id, r.id, { score, wrong: r.wrong || [], wrong_q: r.wrong_q || [], picks: r.picks || {} }) });
       const c = e.target.closest('[data-part]'); if (c && !c.disabled) { c.classList.toggle('bad'); const li = c.closest('li'); if ($('.score', li).value !== '') save(li); return; }
       const qb = e.target.closest('.qn'); if (qb && !qb.disabled) {
         qb.classList.toggle('bad'); const li = qb.closest('li'), q = qs.find(x => x.n === +qb.dataset.qn);
@@ -406,18 +410,26 @@ const Screens = (() => {
       if (ctx.lvl('engage') < 2) h += lockBox('بنك الأسئلة وسؤال اليوم والترتيب مش في باقتك.');
       else {
         const grades = await API.grades(); B.grade = B.grade || grades[grades.length - 1].id;
-        const data = await API.questions(B.grade), qs = data.rows;
+        const [data, gl] = await Promise.all([API.questions(B.grade), API.groups()]);
+        B.groups = gl.groups.filter(g => g.grade_id === B.grade);
+        if (B.bgrp && !B.groups.some(g => g.id === B.bgrp)) B.bgrp = null;
+        const gname = id => (B.groups.find(g => g.id === id) || {}).name || '';
+        const qs = data.rows.filter(q => !B.bgrp || !q.group_ids.length || q.group_ids.includes(B.bgrp));
         const units = [...new Set(qs.map(q => q.unit))], lessons = [...new Set(qs.map(q => q.lesson).filter(Boolean))];
         const today = iso(new Date()), upcoming = data.upcoming || [];
         h += '<div class="head-btns" style="margin-bottom:var(--s3)"><div class="chips">' + grades.map(g => '<button class="chip' + (g.id === B.grade ? ' on' : '') + '" data-bg="' + g.id + '">' + esc(g.name) + '</button>').join('') + '</div>' +
           '<button class="btn btn-ink" data-q="new">' + icon('plus') + 'سؤال جديد</button></div>' +
+          (B.groups.length > 1 ? '<div class="chips grp-filter"><span class="tiny">اعرض أسئلة:</span><button class="chip' + (!B.bgrp ? ' on' : '') + '" data-bgrp="">كل المجموعات</button>' +
+            B.groups.map(g => '<button class="chip' + (g.id === B.bgrp ? ' on' : '') + '" data-bgrp="' + g.id + '">' + esc(g.name) + '</button>').join('') + '</div>' : '') +
           '<div class="surface lesson-box"><div><b>الدرس الحالي</b><div class="tiny">الطالب بيشوف «حل على درس النهارده»، وسؤال اليوم بيتختار منه لو مش محدد.</div></div>' +
           '<div class="inline-form"><input class="inp" id="cur_l" list="lessons" value="' + esc(data.current || '') + '" placeholder="اسم الدرس"><datalist id="lessons">' + lessons.map(l => '<option value="' + esc(l) + '">').join('') + '</datalist>' +
           '<button class="btn btn-line" data-lesson="1">ثبّت</button></div></div>' +
           (upcoming.length ? '<p class="tiny">أسئلة اليوم المحددة: ' + upcoming.map(u => (u.day === today ? 'النهارده' : u.day) + ' ← «' + esc(((qs.find(q => q.id === u.id) || {}).body || '').slice(0, 40)) + '»').join(' · ') + '</p>' : '') +
           '<p class="muted">' + num(qs.length) + ' سؤال. الأسئلة والإجابات بتظهر بس للمستر واللي معاه صلاحية «بنك الأسئلة»، والطالب بيشوف السؤال من غير إجابته لحد ما يجاوب.</p>' +
           (units.length ? units.map(u => '<h2 class="grade-h">' + esc(u) + '</h2><ul class="list">' + qs.filter(q => q.unit === u).map(q =>
-            '<li class="tap" data-q="edit" data-id="' + q.id + '"><div class="grow"><b>' + esc(q.body) + '</b><div class="tiny">' + (q.lesson ? 'درس ' + esc(q.lesson) + ' · ' : '') + 'الصح: ' + esc(q.choices[q.answer]) +
+            '<li class="tap" data-q="edit" data-id="' + q.id + '"><div class="grow"><b>' + esc(q.body) + '</b><div class="tiny">' +
+            (q.group_ids.length ? '<span class="tag">' + icon('groups') + q.group_ids.map(gname).filter(Boolean).map(esc).join('، ') + '</span> ' : '') +
+            (q.lesson ? 'درس ' + esc(q.lesson) + ' · ' : '') + 'الصح: ' + esc(q.choices[q.answer]) +
             (q.solved ? ' · حلّه ' + q.solved + ' (' + Math.round(q.right / q.solved * 100) + '% صح)' : '') + (q.daily ? ' · سؤال يوم ' + (q.daily === today ? 'النهارده' : q.daily) : '') + '</div></div></li>').join('') + '</ul>').join('')
             : '<div class="surface empty">' + icon('book') + '<div>لسه مفيش أسئلة للصف ده.</div></div>');
         B.qs = qs;
@@ -447,7 +459,8 @@ const Screens = (() => {
     main().innerHTML = h + credit();
     main().onclick = e => {
       const tb = e.target.closest('[data-bt]'); if (tb) { B.tab = tb.dataset.bt; return engage(ctx); }
-      const bg = e.target.closest('[data-bg]'); if (bg) { B.grade = +bg.dataset.bg; return engage(ctx); }
+      const bg = e.target.closest('[data-bg]'); if (bg) { B.grade = +bg.dataset.bg; B.bgrp = null; return engage(ctx); }
+      const bgr = e.target.closest('[data-bgrp]'); if (bgr) { B.bgrp = bgr.dataset.bgrp ? +bgr.dataset.bgrp : null; return engage(ctx); }
       const q = e.target.closest('[data-q]'); if (q) return questionForm(ctx, q.dataset.q === 'edit' ? B.qs.find(x => x.id === +q.dataset.id) : null);
       const ls = e.target.closest('[data-lesson]'); if (ls) return busy(ls, async () => { await API.setLesson(B.grade, $('#cur_l').value); toast('اتثبت الدرس الحالي'); });
       if (e.target.closest('[data-c=new]')) return contestForm(ctx);
@@ -459,8 +472,11 @@ const Screens = (() => {
   }
 
   function questionForm(ctx, q) {
-    q = q || { unit: '', skill: '', body: '', choices: ['', '', '', ''], answer: 0 };
+    q = q || { unit: '', skill: '', body: '', choices: ['', '', '', ''], answer: 0, group_ids: B.bgrp ? [B.bgrp] : [] };
     const ch = q.choices.concat(['', '', '', '']).slice(0, 4);
+    let gsel = (q.group_ids || []).slice();
+    const gchips = () => '<button type="button" class="chip' + (!gsel.length ? ' on' : '') + '" data-qg="">كل مجموعات الصف</button>' +
+      B.groups.map(g => '<button type="button" class="chip' + (gsel.includes(g.id) ? ' on' : '') + '" data-qg="' + g.id + '">' + esc(g.name) + '</button>').join('');
     sheet('<h2>' + (q.id ? 'تعديل سؤال' : 'سؤال جديد') + '</h2><form id="qf" novalidate>' +
       '<div class="field"><label for="q_b">السؤال</label><textarea class="inp" id="q_b" rows="2">' + esc(q.body) + '</textarea></div>' +
       '<div class="field"><span class="lbl">الاختيارات (دوس على الدايرة جنب الصح)</span>' + ch.map((c, i) =>
@@ -469,12 +485,18 @@ const Screens = (() => {
       '<div class="field"><label for="q_l">الدرس</label><input class="inp" id="q_l" value="' + esc(q.lesson || '') + '" placeholder="مثلاً: التوصيل على التوازي"></div></div>' +
       '<div class="row2"><div class="field"><label for="q_s">الجزء (زي أجزاء الكويز — لـ «أخطائي»)</label><input class="inp" id="q_s" value="' + esc(q.skill || '') + '" placeholder="مثلاً: التوازي"></div>' +
       '<div class="field"><label for="q_d">خليه سؤال يوم (اختياري)</label><input class="inp" id="q_d" type="date" value=""><span class="hint">سؤال مميز لكل طلاب الصف في اليوم ده.</span></div></div>' +
+      (B.groups.length ? '<div class="field"><span class="lbl">السؤال ده لمين؟</span><div class="chips" id="qgl">' + gchips() + '</div>' +
+        '<span class="hint">لو اخترت مجموعات، السؤال بيظهر لطلابها بس. سؤال اليوم بيوصل لطلاب المجموعات دي بس.</span></div>' : '') +
       '<p class="err" id="qerr"></p><div class="actions">' + (q.id ? '<button type="button" class="btn btn-red" data-qdel="1">' + icon('archive') + 'شيل السؤال</button>' : '') +
       '<button class="btn btn-ink" type="submit">احفظ</button></div></form>', box => {
-      box.onclick = e => { const d = e.target.closest('[data-qdel]'); if (d) busy(d, async () => { await API.saveQuestion({ id: q.id, remove: true }); close(); engage(ctx); }); };
+      box.onclick = e => {
+        const gc = e.target.closest('[data-qg]');
+        if (gc) { const id = +gc.dataset.qg; gsel = !id ? [] : gsel.includes(id) ? gsel.filter(x => x !== id) : gsel.concat(id); $('#qgl', box).innerHTML = gchips(); return; }
+        const d = e.target.closest('[data-qdel]'); if (d) busy(d, async () => { await API.saveQuestion({ id: q.id, remove: true }); close(); engage(ctx); });
+      };
       $('#qf', box).onsubmit = e => {
         e.preventDefault();
-        const p = { id: q.id || null, grade_id: B.grade, body: $('#q_b').value, unit: $('#q_u').value, lesson: $('#q_l').value, skill: $('#q_s').value, daily_day: $('#q_d').value,
+        const p = { id: q.id || null, grade_id: B.grade, group_ids: gsel, body: $('#q_b').value, unit: $('#q_u').value, lesson: $('#q_l').value, skill: $('#q_s').value, daily_day: $('#q_d').value,
           choices: $$('[data-ch]', box).map(i => i.value.trim()), answer: +(($('input[name=ans]:checked', box) || {}).value || 0) };
         const filled = p.choices.filter(Boolean);
         if (!p.body.trim() || filled.length < 2 || !p.choices[p.answer]) return ($('#qerr').textContent = 'اكتب السؤال واختيارين على الأقل، واختار الإجابة الصح من اختيار مكتوب.');

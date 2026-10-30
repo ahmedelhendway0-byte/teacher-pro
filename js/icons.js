@@ -36,7 +36,9 @@
     S('bolt', '<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>'),
     S('fire', '<path d="M12 21c-4 0-7-3-7-7 0-4 4-6 4-10 3 2 5 5 5 8 1-1 2-2 2-4 2 2 3 4 3 6 0 4-3 7-7 7z"/>'),
     S('user', '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>'),
-    S('star', '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>')
+    S('star', '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'),
+    S('upload', '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4 15v4a1 1 0 001 1h14a1 1 0 001-1v-4"/>'),
+    S('sheet', '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>')
   ];
   const svg = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>' + icons.join('') + '</defs></svg>';
   document.body.insertAdjacentHTML('afterbegin', svg);

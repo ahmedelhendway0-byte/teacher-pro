@@ -357,3 +357,20 @@ textarea.inp { padding: var(--s3) var(--s4); min-height: auto; resize: vertical;
   .actions { flex-direction: column-reverse; }
 }
 .loading { display: grid; place-items: center; min-height: 60vh; color: var(--ink-3); }
+
+/* الجولة 3: كروت المجموعات + الاستيراد */
+.gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--s3); }
+.gcard { display: flex; flex-direction: column; gap: 4px; text-align: right; background: var(--paper); border: 1.5px solid transparent; border-radius: var(--r-lg); padding: var(--s4); font: inherit; color: var(--ink); cursor: pointer; min-height: 112px; }
+.gcard:hover { border-color: var(--ink); }
+.gcard > b { font-size: var(--fs-lg); }
+.gcard .gnum { margin-top: auto; font-size: var(--fs-sm); color: var(--ink-2); }
+.gcard .gnum b { font-size: var(--fs-lg); color: var(--ink); }
+.gcard .bar { margin-top: 4px; height: 6px; }
+.gcard.muted-card { background: var(--pen-amber-wash); }
+.grp-filter { align-items: center; margin: -4px 0 var(--s3); }
+.drop { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s4); border: 1.5px dashed var(--rule); border-radius: var(--r-md); margin-bottom: var(--s4); }
+.map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 var(--s3); }
+.imp-sum { margin: var(--s3) 0 var(--s2); }
+.tag.bad { color: var(--pen-red); background: var(--pen-red-wash); }
+.tbl tr.bad td { background: var(--pen-red-wash); }
+.sheet-box .tbl th, .sheet-box .tbl td { padding: var(--s2); white-space: nowrap; }

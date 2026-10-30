@@ -288,40 +288,72 @@ const App = (() => {
   }
 
   // ───── الطلاب ─────
-  const ST = { q: '', group_id: null, rows: [], total: 0, timer: null };
+  // الطلاب متقسمين: الصف ← المجموعة ← طلابها (مش كل الطلاب في صفحة واحدة)
+  const ST = { q: '', grade_id: null, group_id: null, nog: false, rows: [], total: 0, timer: null };
   const initials = n => esc(String(n || '').trim().charAt(0));   // حرف واحد: الحروف العربية بتتلزق في بعض
   const phoneLink = p => '<a class="num" dir="ltr" href="tel:' + esc(p) + '">' + esc(p) + '</a>';
-  actions.openGroupStudents = b => { ST.group_id = +b.dataset.id; ST.q = ''; location.hash = '#students'; };
+  actions.openGroupStudents = b => {
+    const g = (S.groups ? S.groups.groups : []).find(x => x.id === +b.dataset.id);
+    ST.group_id = +b.dataset.id; ST.nog = false; ST.q = ''; if (g) ST.grade_id = g.grade_id;
+    if (location.hash === '#students') students(); else location.hash = '#students';
+  };
+  actions.openNoGroup = () => { ST.group_id = null; ST.nog = true; ST.q = ''; students(); };
+  actions.studentsBack = () => { ST.group_id = null; ST.nog = false; ST.q = ''; students(); };
+  actions.studentsGrade = b => { ST.grade_id = +b.dataset.id; students(); };
+  actions.importSheet = () => Importer.students({ grades: S.grades, groups: S.groups.groups, grade_id: ST.grade_id, group_id: ST.group_id,
+    onDone: gid => { S.groups = null; ST.group_id = gid; ST.nog = !gid; students(); } });
 
   async function students() {
-    if (!S.groups) S.groups = await API.groups();
-    if (!S.grades) S.grades = await API.grades();
-    const opts = S.grades.map(gr => {
-      const gs = S.groups.groups.filter(g => g.grade_id === gr.id);
-      return gs.length ? '<optgroup label="' + esc(gr.name) + '">' + gs.map(g => '<option value="' + g.id + '"' + (g.id === ST.group_id ? ' selected' : '') + '>' + esc(g.name) + '</option>').join('') + '</optgroup>' : '';
-    }).join('');
-    $('#main').innerHTML = '<div class="head"><h1>الطلاب</h1><div class="head-btns">' +
+    [S.groups, S.grades] = await Promise.all([API.groups(), S.grades ? S.grades : API.grades()]);
+    if (!S.grades.some(g => g.id === ST.grade_id)) ST.grade_id = (S.grades.find(gr => S.groups.groups.some(g => g.grade_id === gr.id)) || S.grades[0]).id;
+    const grp = S.groups.groups.find(g => g.id === ST.group_id), inside = !!grp || ST.nog;
+    if (ST.group_id && !grp) ST.group_id = null;
+    const grade = S.grades.find(g => g.id === ST.grade_id);
+    const btns = '<div class="head-btns">' +
       (navigator.mediaDevices ? '<button class="btn btn-line" data-act="scanProfile">' + icon('qr') + 'امسح QR</button>' : '') +
-      (can('students') ? '<button class="btn btn-ink" data-act="studentNew">' + icon('plus') + 'طالب جديد</button>' : '') + '</div></div>' +
-      '<div class="filters"><div class="search">' + icon('search') + '<input class="inp" id="sq" type="search" placeholder="اسم، كود، أو رقم موبايل" value="' + esc(ST.q) + '" aria-label="دوّر على طالب"></div>' +
-      '<select class="inp" id="sg" aria-label="المجموعة"><option value="">كل المجموعات</option>' + opts + '</select></div>' +
-      '<p class="limit" id="scount"></p><ul class="list" id="slist"></ul><div id="smore"></div>' + credit();
+      (can('students') ? '<button class="btn btn-line" data-act="importSheet">' + icon('sheet') + 'استيراد شيت</button>' +
+        '<button class="btn btn-ink" data-act="studentNew">' + icon('plus') + 'طالب جديد</button>' : '') + '</div>';
+    const head = inside
+      ? '<div class="head"><div><button class="linkish" data-act="studentsBack">← مجموعات ' + esc(grade.name) + '</button>' +
+        '<h1>' + (grp ? esc(grp.name) : 'من غير مجموعة') + '</h1>' + (grp ? '<div class="tiny">' + esc(grp.schedule || 'من غير ميعاد') + (grp.price ? ' · الحصة ' + num(grp.price) + ' ج' : '') + '</div>' : '') + '</div>' + btns + '</div>'
+      : '<div class="head"><div><h1>الطلاب</h1><div class="tiny">' + num(S.groups.students_total) + ' طالب في كل الصفوف</div></div>' + btns + '</div>';
+    $('#main').innerHTML = head +
+      '<div class="search" style="margin-bottom:var(--s3)">' + icon('search') + '<input class="inp" id="sq" type="search" placeholder="' + (inside ? 'دوّر في المجموعة دي' : 'دوّر في كل الطلاب: اسم، كود، أو موبايل') + '" value="' + esc(ST.q) + '" aria-label="دوّر على طالب"></div>' +
+      (inside ? '' : '<div class="chips" role="tablist" style="margin-bottom:var(--s3)">' + S.grades.map(gr => '<button class="chip' + (gr.id === ST.grade_id ? ' on' : '') + '" role="tab" aria-selected="' + (gr.id === ST.grade_id) + '" data-act="studentsGrade" data-id="' + gr.id + '">' + esc(gr.name) +
+        ' <span class="tiny num">' + num(S.groups.groups.filter(g => g.grade_id === gr.id).reduce((s, g) => s + g.students, 0) + (+(S.groups.nogroup || {})[gr.id] || 0)) + '</span></button>').join('') + '</div>') +
+      '<div id="gcards"></div><p class="limit" id="scount"></p><ul class="list" id="slist"></ul><div id="smore"></div>' + credit();
     $('#sq').oninput = () => { clearTimeout(ST.timer); ST.timer = setTimeout(() => { ST.q = $('#sq').value.trim(); loadStudents(); }, 250); };
-    $('#sg').onchange = () => { ST.group_id = $('#sg').value ? +$('#sg').value : null; loadStudents(); };
     await loadStudents();
   }
 
+  // كروت مجموعات الصف (لما مش جوه مجموعة ومفيش بحث)
+  function groupCards() {
+    const gs = S.groups.groups.filter(g => g.grade_id === ST.grade_id), nog = +(S.groups.nogroup || {})[ST.grade_id] || 0;
+    if (!gs.length && !nog) return '<div class="surface empty">' + icon('groups') + '<div>لسه مفيش مجموعات للصف ده.</div>' +
+      (can('groups') ? '<a class="btn btn-ink" href="#groups">اعمل مجموعة</a>' : '') + '</div>';
+    return '<div class="gcards">' + gs.map(g => '<button class="gcard" data-act="openGroupStudents" data-id="' + g.id + '"><b>' + esc(g.name) + '</b>' +
+      '<span class="tiny">' + esc(g.schedule || 'من غير ميعاد') + '</span><span class="gnum"><b class="num">' + num(g.students) + '</b> طالب' + (g.capacity ? ' من ' + num(g.capacity) : '') + '</span>' +
+      (g.capacity ? '<span class="bar g" style="--w:' + Math.min(100, Math.round(g.students / g.capacity * 100)) + '%"></span>' : '') + '</button>').join('') +
+      (nog ? '<button class="gcard muted-card" data-act="openNoGroup"><b>من غير مجموعة</b><span class="tiny">طلاب محتاجين يتحطوا في مجموعة</span><span class="gnum"><b class="num">' + num(nog) + '</b> طالب</span></button>' : '') + '</div>';
+  }
+
   async function loadStudents(more) {
+    const inside = !!ST.group_id || ST.nog;
+    if (!inside && !ST.q) {   // الصفحة الرئيسية: المجموعات بس
+      $('#gcards').innerHTML = groupCards(); $('#scount').innerHTML = ''; $('#slist').innerHTML = ''; $('#smore').innerHTML = ''; $('#slist').hidden = true; return;
+    }
+    $('#gcards').innerHTML = ''; $('#slist').hidden = false;
     const off = more ? ST.rows.length : 0;
-    const r = await API.students({ q: ST.q, group_id: ST.group_id, offset: off, limit: 50 });
+    const r = await API.students({ q: ST.q, group_id: ST.group_id, grade_id: ST.nog ? ST.grade_id : null, no_group: ST.nog, offset: off, limit: 50 });
     ST.rows = more ? ST.rows.concat(r.rows) : r.rows; ST.total = r.total;
     if (!$('#slist')) return;
-    $('#scount').innerHTML = '<b>' + num(ST.total) + '</b> طالب' + (ST.q ? ' في البحث' : '');
+    $('#scount').innerHTML = '<b>' + num(ST.total) + '</b> طالب' + (ST.q ? ' في البحث' : '') +
+      (ST.group_id && !ST.q && ST.total ? ' · <a href="' + CFG.PRINT + '?group=' + ST.group_id + '" target="_blank" rel="noopener">' + 'اطبع كروت المجموعة</a>' : '');
     $('#slist').innerHTML = ST.rows.length ? ST.rows.map(s =>
       '<li class="tap" data-act="studentOpen" data-id="' + s.id + '"><span class="av ' + s.gender + '">' + initials(s.name) + '</span>' +
       '<div class="grow"><b>' + esc(s.name) + '</b><div class="tiny">' + s.code + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div>' +
       '<span class="tiny num" dir="ltr">' + esc(s.phone) + '</span></li>').join('')
-      : '<li class="empty">' + (ST.q ? 'مفيش طالب بالاسم أو الرقم ده.' : 'لسه مفيش طلاب.') + '</li>';
+      : '<li class="empty">' + (ST.q ? 'مفيش طالب بالاسم أو الرقم ده.' : 'لسه مفيش طلاب هنا. سجّل طالب أو استورد شيت المجموعة.') + '</li>';
     $('#smore').innerHTML = ST.rows.length < ST.total ? '<button class="btn btn-line btn-block" data-act="studentsMore" style="margin-top:var(--s3)">اعرض أكتر (' + num(ST.total - ST.rows.length) + ')</button>' : '';
   }
   actions.studentsMore = b => busy(b, () => loadStudents(true));
@@ -357,7 +389,7 @@ const App = (() => {
         if (a.dataset.act === 'card') cardView(s);
         if (a.dataset.act === 'studentArchive') {
           if (!confirm('تشيل «' + s.name + '» من القوايم؟')) return;
-          busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); S.groups = null; if ($('#slist')) loadStudents(); });
+          busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); if ($('#slist')) students(); else S.groups = null; });
         }
       };
     });
