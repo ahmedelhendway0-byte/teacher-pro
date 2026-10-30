@@ -104,6 +104,7 @@ const API = (() => {
     levelDetail: p => rpc('tp_level_detail', { ...t(), p }),
     reportDetail: (kind, from, to) => rpc('tp_report_detail', { ...t(), p_kind: kind, p_from: from, p_to: to }),
     moneySummary: () => rpc('tp_money_summary', t()),
+    staffDay: day => rpc('tp_staff_day', { ...t(), p_day: day || null }),
     sendCards: p => rpc('tp_send_cards', { ...t(), p: { ...p, link: new URL((CFG.ROOT || './') + (CFG.DEMO ? 'demo/family/' : 'family/'), location.href).href } }),
     messageCount: p => rpc('tp_message_count', { ...t(), p }),
     studentByCode: code => rpc('tp_student_by_code', { ...t(), p_code: String(code) }),

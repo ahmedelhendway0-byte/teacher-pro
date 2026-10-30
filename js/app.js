@@ -55,15 +55,18 @@ const App = (() => {
         '<div class="chips" id="gl">' + gradeChips() + '</div>' +
         '<div class="field" style="margin-top:var(--s4)"><label for="ng">صف تاني</label><div style="display:flex;gap:var(--s2)"><input class="inp" id="ng" placeholder="مثلاً: تالتة ثانوي أزهر"><button class="btn btn-line" data-act="addGrade">ضيف</button></div></div>';
       if (step === 3) body =
+        '<h1>مستوى الطلاب والرسايل</h1><p class="sub">اختار براحتك — تقدر تغيّرها بعدين من الإعدادات.</p><div id="autobox">' + autoHtml(d.levels, d.notify) + '</div>';
+      if (step === 4) body =
         '<h1>الباسورد بتاعك</h1><p class="sub">هتدخل بيه انت بس. خليه 6 حروف أو أرقام على الأقل.</p>' +
         fld('password', 'الباسورد', '', '', 'password', 'ltr') +
         fld('password2', 'اكتبه تاني', '', '', 'password', 'ltr');
-      root().innerHTML = '<div class="gate"><div class="gate-card">' +
-        '<div class="steps-bar">' + [1, 2, 3].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</div>' +
+      root().innerHTML = '<div class="gate"><div class="gate-card' + (step === 3 ? ' wide-card' : '') + '">' +
+        '<div class="steps-bar">' + [1, 2, 3, 4].map(i => '<i class="' + (i <= step ? 'on' : '') + '"></i>').join('') + '</div>' +
         body + '<p class="err" id="err"></p>' +
         '<div class="actions">' + (step > 1 ? '<button class="btn btn-line" data-act="back">رجوع</button>' : '') +
-        '<button class="btn btn-ink" data-act="next">' + (step < 3 ? 'التالي' : 'ابدأ السيستم') + '</button></div>' +
+        '<button class="btn btn-ink" data-act="next">' + (step < 4 ? 'التالي' : 'ابدأ السيستم') + '</button></div>' +
         '</div>' + credit() + '</div>';
+      if (step === 3) autoBind($('#autobox'));
       const f = $('.gate input'); if (f) f.focus();
     };
     const gradeChips = () => d.grades.concat(DEFAULT_GRADES.filter(g => !d.grades.includes(g)))
@@ -76,9 +79,10 @@ const App = (() => {
       const a = b.dataset.act;
       if (a === 'toggleGrade') { const g = b.dataset.g; d.grades = d.grades.includes(g) ? d.grades.filter(x => x !== g) : d.grades.concat(g); $('#gl').innerHTML = gradeChips(); }
       if (a === 'addGrade') { const v = $('#ng').value.trim(); if (v && !d.grades.includes(v)) d.grades.push(v); $('#ng').value = ''; $('#gl').innerHTML = gradeChips(); }
-      if (a === 'back') { read(); step--; draw(); }
+      if (a === 'back') { read(); if (step === 3) Object.assign(d, autoRead($('#autobox'))); step--; draw(); }
       if (a === 'next') {
         read();
+        if (step === 3) { Object.assign(d, autoRead($('#autobox'))); step = 4; return draw(); }
         if (step === 1) {
           if (!d.code) return err('اكتب كود التفعيل.');
           if (!d.teacher_name) return err('اكتب الاسم.');
@@ -92,6 +96,7 @@ const App = (() => {
           await API.setup({ code: d.code, teacher_name: d.teacher_name, phone: d.phone, grades: d.grades, password: d.password }).catch(x => {
             if (x.code === 'SETUP_CODE') { step = 1; draw(); err('كود التفعيل غلط.'); } throw x;
           });
+          if (d.levels) await API.saveSettings({ levels: d.levels, notify: d.notify }).catch(() => { });
           S.me = await API.me(); document.title = S.me.config.system_name; shell();
           toast('السيستم جاهز');
         });
@@ -99,6 +104,33 @@ const App = (() => {
     };
     root().onkeydown = e => { if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); (e.target.id === 'ng' ? $('[data-act=addGrade]') : $('[data-act=next]')).click(); } };
     draw();
+  }
+
+  // ───── حدود المستوى + الرسايل الأوتوماتيك (في الإعداد أول مرة وفي الإعدادات) ─────
+  const AUTO_KINDS = [['grade', 'درجة الكويز والامتحان', 'both', 'button'], ['grade_drop', 'درجته نزلت عن اللي قبلها', 'parent', 'button'],
+    ['grade_up', 'درجته طلعت عن اللي قبلها', 'both', 'button'], ['grade_low', 'درجته ضعيفة', 'parent', 'button'], ['absent', 'غاب عن الحصة', 'parent', 'button'],
+    ['hw_missing', 'ماعملش الواجب', 'parent', 'button'], ['balance_out', 'رصيده خلص', 'parent', 'auto']];
+  const MODES = [['auto', 'أوتوماتيك'], ['button', 'بزرار'], ['off', 'مقفول']], TOS = [['parent', 'ولي الأمر'], ['student', 'الطالب'], ['both', 'الاتنين']];
+  function autoHtml(lv, notify) {
+    lv = lv || {}; notify = notify || {};
+    return '<div class="auto-lv"><b>إمتى نقول على الطالب…</b><div class="lv-in">' +
+      '<label>ضعيف لو متوسطه أقل من <input class="inp num" type="number" min="10" max="90" data-lv="low" value="' + (lv.low || 50) + '">%</label>' +
+      '<label>من الممتازين لو متوسطه <input class="inp num" type="number" min="50" max="100" data-lv="top" value="' + (lv.top || 85) + '">% أو أكتر</label>' +
+      '<label>درجته نزلت أو طلعت لو فرقت <input class="inp num" type="number" min="5" max="50" data-lv="change" value="' + (lv.change || 10) + '">% عن اللي قبلها</label></div></div>' +
+      '<div class="auto-k"><b>الرسايل تتبعت إزاي؟</b><p class="tiny">أوتوماتيك: بتتبعت لوحدها · بزرار: بتظهر في التطبيق وتستنى حد يبعتها واتساب · مقفول: مفيش رسالة.</p>' +
+      AUTO_KINDS.map(([k, n, to, mode]) => { const c = notify[k] || {}, m = c.mode || mode, t = c.to || to;
+        return '<div class="ak-row" data-k="' + k + '"><span class="ak-n">' + n + '</span><div class="seg3">' + MODES.map(([v, x]) => '<button type="button" data-am="' + v + '" class="' + (m === v ? 'on' : '') + '">' + x + '</button>').join('') + '</div>' +
+          '<div class="seg3">' + TOS.map(([v, x]) => '<button type="button" data-at="' + v + '" class="' + (t === v ? 'on' : '') + '">' + x + '</button>').join('') + '</div></div>'; }).join('') + '</div>';
+  }
+  function autoBind(box) {
+    box.addEventListener('click', e => { const b = e.target.closest('[data-am],[data-at]'); if (!b) return;
+      $$(b.dataset.am ? '[data-am]' : '[data-at]', b.parentNode).forEach(x => x.classList.toggle('on', x === b)); });
+  }
+  function autoRead(box, cur) {
+    const levels = {}; $$('[data-lv]', box).forEach(i => { levels[i.dataset.lv] = +i.value; });
+    const notify = { ...(cur || {}) };
+    $$('.ak-row', box).forEach(r => { const k = r.dataset.k; notify[k] = { ...(notify[k] || {}), mode: $('[data-am].on', r).dataset.am, to: $('[data-at].on', r).dataset.at }; });
+    return { levels, notify };
   }
 
   function fld(name, label, hint, val, type = 'text', dir = '') {
@@ -199,15 +231,17 @@ const App = (() => {
   // الترتيب: النهارده (أرقام) ← مستوى الطلاب ← اختصارات ← اللي حصل (تحت)
   // مستوى الطلاب: قوايم جاهزة ومترتبة لوحدها — نفس تعريفات السيرفر (tp__seg_ok)
   // [المفتاح، اللون، العنوان، التعريف، القيمة جنب الاسم، الترتيب]
+  // الحدود من إعدادات المستر (بتيجي مع التفاصيل)
+  const LIM = { top: 85, low: 50, change: 10 };
   const LV = [
-    ['top', 'g', 'الأوائل', 'أعلى 10 في متوسط الدرجات', r => r.avg + '%', (a, c) => c.avg - a.avg],
-    ['down', 'r', 'درجاتهم بتقل', 'آخر كويز أقل من اللي قبله بـ 10% أو أكتر', r => 'من ' + r.prev + '% لـ ' + r.last + '%', (a, c) => (c.prev - c.last) - (a.prev - a.last)],
-    ['low', 'r', 'درجاتهم ضعيفة', 'متوسطهم أقل من 50%', r => r.avg + '%', (a, c) => a.avg - c.avg],
-    ['up', 'g', 'درجاتهم بتتحسن', 'آخر كويز أعلى من اللي قبله بـ 10% أو أكتر', r => 'من ' + r.prev + '% لـ ' + r.last + '%', (a, c) => (c.last - c.prev) - (a.last - a.prev)],
-    ['absent', 'a', 'غابوا آخر حصة', 'ماحضروش آخر حصة لمجموعتهم', r => 'حضر ' + r.att_month + ' الشهر ده', (a, c) => a.att_month - c.att_month],
-    ['no_balance', 'a', 'رصيدهم خلص', 'مفيش حصص في اشتراكهم', r => r.credits + ' حصص', (a, c) => a.credits - c.credits]];
-  const lvOk = (k, r) => k === 'top' ? r.avg != null : k === 'up' ? r.exams >= 2 && r.last - r.prev >= 10 : k === 'down' ? r.exams >= 2 && r.prev - r.last >= 10
-    : k === 'low' ? r.avg != null && r.avg < 50 : k === 'absent' ? r.absent : k === 'no_balance' ? r.credits <= 0 : false;
+    ['top', 'g', 'الأوائل', () => 'أعلى 10 في متوسط الدرجات', r => r.avg + '%', (a, c) => c.avg - a.avg],
+    ['down', 'r', 'درجاتهم بتقل', () => 'آخر كويز أقل من اللي قبله بـ ' + LIM.change + '% أو أكتر', r => 'من ' + r.prev + '% لـ ' + r.last + '%', (a, c) => (c.prev - c.last) - (a.prev - a.last)],
+    ['low', 'r', 'درجاتهم ضعيفة', () => 'متوسطهم أقل من ' + LIM.low + '%', r => r.avg + '%', (a, c) => a.avg - c.avg],
+    ['up', 'g', 'درجاتهم بتتحسن', () => 'آخر كويز أعلى من اللي قبله بـ ' + LIM.change + '% أو أكتر', r => 'من ' + r.prev + '% لـ ' + r.last + '%', (a, c) => (c.last - c.prev) - (a.last - a.prev)],
+    ['absent', 'a', 'غابوا آخر حصة', () => 'ماحضروش آخر حصة لمجموعتهم', r => 'حضر ' + r.att_month + ' الشهر ده', (a, c) => a.att_month - c.att_month],
+    ['no_balance', 'a', 'رصيدهم خلص', () => 'مفيش حصص في اشتراكهم', r => r.credits + ' حصص', (a, c) => a.credits - c.credits]];
+  const lvOk = (k, r) => k === 'top' ? r.avg != null : k === 'up' ? r.exams >= 2 && r.last - r.prev >= LIM.change : k === 'down' ? r.exams >= 2 && r.prev - r.last >= LIM.change
+    : k === 'low' ? r.avg != null && r.avg < LIM.low : k === 'absent' ? r.absent : k === 'no_balance' ? r.credits <= 0 : false;
   const lvList = () => LV.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2);
 
   async function home() {
@@ -243,19 +277,39 @@ const App = (() => {
       .filter(([r]) => ROUTES[r].show());
     h += '<section class="sec"><div class="quick">' + quick.map(([r, ic, n]) => '<a class="qk" href="#' + r + '">' + icon(ic) + '<span>' + n + '</span></a>').join('') + '</div></section>';
     $('#main').innerHTML = h + '<div id="feedbox"></div>' + credit();
-    // اللي حصل: آخر الصفحة
-    if (can('log')) {
-      const feed = await API.log(null, S.feedMin, 15).catch(() => null);
-      if (feed && $('#feedbox')) $('#feedbox').innerHTML = '<section class="sec"><div class="head"><h2>اللي حصل</h2><div class="chips">' +
-        '<button class="chip ' + (S.feedMin === 1 ? 'on' : '') + '" data-act="feedMin" data-v="1">الكل</button>' +
-        '<button class="chip ' + (S.feedMin === 2 ? 'on' : '') + '" data-act="feedMin" data-v="2">المهم بس</button></div></div>' + feedHtml(feed) + '</section>';
-    }
+    // شغل الفريق: كل واحد عمل إيه في اليوم (آخر الصفحة)
+    if (can('log')) staffDay(S.staffDay || today);
   }
+  async function staffDay(day) {
+    S.staffDay = day;
+    const r = await API.staffDay(day).catch(() => null); if (!r || !$('#feedbox')) return;
+    const isToday = day === new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
+    const facts = s => [[s.att, 'سجّل حضور', 'طالب'], [s.hw, 'سجّل الواجب لـ', 'طالب'], [s.cash, 'قبض كاش', 'ج'], [s.topups, 'أكّد شحن', 'طلب'],
+      [s.scores, 'سجّل درجات', 'طالب'], [s.wa, 'بعت واتساب', 'رسالة'], [s.expenses, 'سجّل مصروفات', 'ج']].filter(([n]) => +n > 0);
+    $('#feedbox').innerHTML = '<section class="sec"><div class="head"><div><h2>شغل الفريق</h2><div class="tiny">كل واحد عمل إيه ' + (isToday ? 'النهارده' : 'يوم ' + day) + '</div></div>' +
+      '<div class="head-btns"><input class="inp" type="date" id="sdday" value="' + day + '" aria-label="اليوم" style="max-width:170px"><button class="btn btn-ghost btn-sm" data-act="fullLog">كل اللي حصل</button></div></div>' +
+      '<div class="team-day">' + (r.staff.length ? r.staff.map(s => { const f = facts(s);
+        return '<div class="td-card"><div class="td-h"><span class="av">' + esc(String(s.name).replace(/^(أسيستنت|مستر)\s+/, '').charAt(0)) + '</span><div><b>' + esc(s.name) + '</b><span class="tiny">' + (s.role === 'teacher' ? 'المستر' : 'أسيستنت') + '</span></div></div>' +
+          (f.length ? '<ul class="td-facts">' + f.map(([n, t, u]) => '<li><span>' + t + '</span><b class="num">' + num(n) + ' <small>' + u + '</small></b></li>').join('') + '</ul>' : '<p class="tiny td-none">ماعملش حاجة في اليوم ده.</p>') +
+          (s.items.length ? '<details class="td-more"><summary>التفاصيل (' + s.items.length + ')</summary><ul class="feed">' + s.items.map(x => '<li><span class="lvl l' + x.imp + '"></span><div>' + esc(x.summary) + '</div><span class="t">' +
+            new Date(x.at).toLocaleTimeString('ar-EG-u-nu-latn', { hour: 'numeric', minute: '2-digit' }) + '</span></li>').join('') + '</ul></details>' : '') + '</div>'; }).join('')
+        : '<div class="surface empty">مفيش حد في الفريق لسه.</div>') + '</div></section>';
+    $('#sdday').onchange = e => staffDay(e.target.value || day);
+  }
+  // كل اللي حصل (السجل الكامل) في شاشة لوحدها
+  actions.fullLog = b => busy(b, async () => {
+    const draw = async box => { const feed = await API.log(null, S.feedMin, 100); $('#flog', box).innerHTML = feedHtml(feed);
+      $$('[data-fm]', box).forEach(c => c.classList.toggle('on', +c.dataset.fm === S.feedMin)); };
+    sheet('<h2>كل اللي حصل</h2><div class="chips" style="margin-bottom:var(--s3)"><button class="chip" data-fm="1">الكل</button><button class="chip" data-fm="2">المهم بس</button></div><div id="flog"></div>', box => {
+      draw(box); box.onclick = e => { const c = e.target.closest('[data-fm]'); if (c) { S.feedMin = +c.dataset.fm; draw(box); } };
+    });
+  });
   actions.lvGrade = b => { S.lvGrade = +b.dataset.id; home(); };
 
   // تفاصيل المستوى: «الصف كله» أو مجموعة ⇒ كروت جاهزة (الأوائل بالترتيب، بتقل، ضعيفة، بتتحسن، غابوا، رصيد خلص) + ترتيب كل الطلاب
   actions.lvOpen = b => busy(b, async () => {
     const gid = +b.dataset.g, d = await API.levelDetail({ grade_id: gid });
+    if (d.limits) Object.assign(LIM, d.limits);
     const groups = S.groups.groups.filter(x => x.grade_id === gid), gname = (S.lvData.find(x => x.grade_id === gid) || {}).sub || '';
     const gidOf = name => (groups.find(x => x.name === name) || {}).id;
     let grp = b.dataset.grp ? +b.dataset.grp : null, q = '';
@@ -277,7 +331,7 @@ const App = (() => {
       const title = grp ? (groups.find(x => x.id === grp) || {}).name : gname + ' — الصف كله';
       $('#lvb', box).innerHTML = '<div class="lvd-sum"><div><b class="num">' + num(rs.length) + '</b><span>طالب</span></div><div><b class="num">' + (avg != null ? avg + '%' : '—') + '</b><span>متوسط الدرجات</span></div>' +
         '<div><b class="num">' + att + '</b><span>متوسط حضور الطالب الشهر ده</span></div></div>' +
-        '<div class="lvd-grid">' + lvList().map(([k, cl, t, def, val, ord]) => card(k, cl, t, def, val, ((l) => k === 'top' ? l.slice(0, 10) : l)(rs.filter(r => lvOk(k, r)).sort(ord)), k === 'top')).join('') + '</div>' +
+        '<div class="lvd-grid">' + lvList().map(([k, cl, t, def, val, ord]) => card(k, cl, t, def(), val, ((l) => k === 'top' ? l.slice(0, 10) : l)(rs.filter(r => lvOk(k, r)).sort(ord)), k === 'top')).join('') + '</div>' +
         card('all', '', 'ترتيب كل الطلاب', 'كل ' + (grp ? 'المجموعة' : 'الصف') + ' مترتبين من أعلى متوسط لأقل متوسط', r => r.avg != null ? r.avg + '%' : 'لسه مالوش درجات',
           rs.slice().sort((a, c) => (c.avg ?? -1) - (a.avg ?? -1)), true);
       $('#lvt', box).textContent = 'مستوى ' + title;
@@ -736,6 +790,9 @@ const App = (() => {
       '<button class="btn btn-ink" type="submit">احفظ</button></form></section>' +
       (lvl('engage') >= 2 ? '<section class="feat"><label class="perm"><input type="checkbox" id="s_lb"' + (st.leaderboard !== false ? ' checked' : '') + '><span><b>الطالب يشوف ترتيبه وأوائل مجموعته</b>' +
         '<span class="tiny">لو قفلتها، الترتيب بيختفي من البوابة (المستر والأسيستنت بيشوفوه عادي).</span></span></label></section>' : '') +
+      '<section class="feat" id="autoset"><h3>مستوى الطلاب والرسايل الأوتوماتيك</h3>' + autoHtml(st.levels, st.notify) +
+      '<div class="actions" style="justify-content:flex-start"><button class="btn btn-ink" data-act="saveAuto">احفظ</button></div>' +
+      '<p class="tiny">نص كل رسالة بتعدّله من الرسايل ← الإشعارات الأوتوماتيك.</p></section>' +
       '<section><h2 class="grade-h">المميزات في باقتك</h2>' +
       '<p class="muted" style="margin-top:0">تقدر تشتغل بمستوى أقل من باقتك لو حابب. المقفول متاح في باقة أعلى.</p>';
     FEATURES.forEach(f => {
@@ -756,8 +813,11 @@ const App = (() => {
       e.preventDefault();
       busy($('#bf button'), async () => { S.me = await API.saveBrand({ name: $('#b_name').value }); toast('اتحفظ الاسم'); shell(); location.hash = '#settings'; });
     };
+    autoBind($('#autoset'));
+    S.notifyCur = st.notify;
     const lb = $('#s_lb'); if (lb) lb.onchange = async () => { await API.saveSettings({ leaderboard: lb.checked }).catch(e => toast(e.message, 'err')); toast(lb.checked ? 'الترتيب ظاهر للطلاب' : 'الترتيب مخفي عن الطلاب'); };
   }
+  actions.saveAuto = b => busy(b, async () => { await API.saveSettings(autoRead($('#autoset'), S.notifyCur)); toast('اتحفظ — هيتطبق من دلوقتي'); });
   actions.setLevel = async b => {
     if (b.classList.contains('on')) return;
     await busy(b, async () => { S.me = await API.savePrefs({ [b.dataset.k]: +b.dataset.v }); toast('اتغيّر'); settings(); });
