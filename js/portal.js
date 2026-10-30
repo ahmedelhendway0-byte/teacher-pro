@@ -124,7 +124,10 @@ const Portal = (() => {
     const [, sc] = await Promise.all([refreshMe(), call('tp_portal_scores')]);
     const LET = ['أ', 'ب', 'ج', 'د', 'هـ'];
     const ans = q => q.kind === 'mcq' ? (q.answer != null ? LET[+q.answer] + (q.choices[+q.answer] ? ') ' + q.choices[+q.answer] : '') : '') : (q.answer || '');
+    const withQ = sc.filter(x => x.wrong_q.length);
+    P.pdf = { sc: withQ, ans, LET };
     $('#main').innerHTML = '<h1 class="page-h">' + (isStudent() ? 'درجاتي' : 'الدرجات') + '</h1>' +
+      (withQ.length ? '<button class="btn btn-ink btn-block pdf-btn" data-p="pdf">' + icon('print') + 'نزّل ' + (isStudent() ? 'أخطائي' : 'الأسئلة الغلط') + ' بالإجابات PDF</button>' : '') +
       (P.me.mistakes.length ? '<div class="card"><b>' + (isStudent() ? 'أخطائي' : 'الأجزاء اللي محتاجة مراجعة') + '</b><div class="wrong">' + P.me.mistakes.map(w => '<span>' + esc(w) + '</span>').join('') + '</div>' +
         (isStudent() && lv('engage') >= 2 ? '<button class="btn btn-ink btn-sm mist-btn" data-p="mistakes">' + icon('bolt') + 'حل أسئلة عليها</button>' : '') + '</div>' : '') +
       (sc.length ? '<ul class="list">' + sc.map(x => { const pct = x.score / x.max;
@@ -135,8 +138,31 @@ const Portal = (() => {
             '<div class="wq"><b>سؤال ' + q.n + '</b>' + (q.text ? '<p>' + esc(q.text) + '</p>' : '') +
             (q.kind === 'mcq' && q.picked != null ? '<div class="was">جاوبت: ' + LET[+q.picked] + (q.choices[+q.picked] ? ') ' + esc(q.choices[+q.picked]) : '') + '</div>' : '') +
             (ans(q) ? '<div class="right-a">الصح: ' + esc(ans(q)) + '</div>' : '') + (q.explain ? '<div class="why">' + esc(q.explain) + '</div>' : '') + '</div>').join('') + '</details>' : '') +
-          (x.solution_url ? '<a class="btn btn-line btn-sm sol" href="' + esc(x.solution_url) + '" target="_blank" rel="noopener">' + icon('eye') + 'فيديو الحل</a>' : '') + '</li>'; }).join('') + '</ul>'
+          (x.solution_url ? '<a class="btn btn-line btn-sm sol" href="' + esc(x.solution_url) + '" target="_blank" rel="noopener">' + icon('eye') + 'فيديو الحل</a>' : '') +
+          (x.wrong_q.length ? '<button class="btn btn-ghost btn-sm" data-p="pdf" data-e="' + x.id + '">' + icon('print') + 'PDF للكويز ده</button>' : '') + '</li>'; }).join('') + '</ul>'
         : '<div class="card empty">' + icon('pen') + '<div>لسه مفيش درجات.</div></div>') + credit();
+  }
+
+  // ملف PDF بالأسئلة الغلط وإجاباتها والشرح — بنجهّز صفحة طباعة والمتصفح بيحفظها PDF (من غير مكتبات)
+  function mistakesPdf(eid) {
+    const { sc, ans, LET } = P.pdf, s = P.me.student, list = eid ? sc.filter(x => x.id === eid) : sc;
+    if (!list.length) return;
+    let box = $('#pdfArea'); if (!box) { box = document.createElement('div'); box.id = 'pdfArea'; document.body.appendChild(box); }
+    box.innerHTML = '<div class="pdf-h"><b>' + esc(P.me.config.system_name || '') + '</b><h1>' + (eid ? 'أخطاء ' + esc(list[0].title) : 'أخطائي في الكويزات والامتحانات') + '</h1>' +
+      '<div>' + esc(s.name) + ' · ' + s.code + ' · ' + esc(s.group || '') + ' · ' + new Date().toLocaleDateString('ar-EG-u-nu-latn') + '</div></div>' +
+      list.map(x => '<section class="pdf-ex"><h2>' + esc(x.title) + ' <small>' + (+x.score) + ' من ' + x.max + '</small></h2>' + x.wrong_q.map(q =>
+        '<div class="pdf-q"><b>سؤال ' + q.n + '</b>' + (q.text ? '<p>' + esc(q.text) + '</p>' : '') +
+        (q.kind === 'mcq' && (q.choices || []).some(Boolean) ? '<ol class="pdf-ch">' + q.choices.map((c, k) => c ? '<li class="' + (k === +q.answer ? 'ok' : k === +q.picked ? 'no' : '') + '">' + LET[k] + ') ' + esc(c) + '</li>' : '').join('') + '</ol>' : '') +
+        (q.kind === 'mcq' && q.picked != null ? '<div class="was">جاوبت: ' + LET[+q.picked] + '</div>' : '') +
+        (ans(q) ? '<div class="right">الإجابة الصح: ' + esc(ans(q)) + '</div>' : '') + (q.explain ? '<div class="why">الشرح: ' + esc(q.explain) + '</div>' : '') + '</div>').join('') +
+        (x.solution_url ? '<div class="pdf-sol">فيديو الحل: ' + esc(x.solution_url) + '</div>' : '') + '</section>').join('') +
+      '<div class="pdf-f">POWERED BY HINDAWY</div>';
+    const t = document.title; document.title = (eid ? 'أخطاء ' + list[0].title : 'أخطائي') + ' - ' + s.name;
+    document.body.classList.add('printing');
+    // على أندرويد الطباعة مابتستناش، فبنرجّع الصفحة بعد ما الطباعة تخلص
+    window.addEventListener('afterprint', () => { document.body.classList.remove('printing'); document.title = t; }, { once: true });
+    setTimeout(() => window.print(), 100);
+    toast('اختار «حفظ كـ PDF» من شاشة الطباعة');
   }
 
   // ───── التمرين: الوحدات + أخطائي + التحديات ─────
@@ -284,6 +310,7 @@ const Portal = (() => {
       toast(r.correct ? 'صح! +' + r.points + ' نقطة' : 'غلط · +' + r.points + ' نقط على المحاولة', r.correct ? 'ok' : 'err');
       $('#dq').outerHTML = dailyCard(await call('tp_portal_daily'));
     });
+    if (a === 'pdf') return mistakesPdf(b.dataset.e ? +b.dataset.e : null);
     if (a === 'mistakes') { const qs = await call('tp_portal_practice', { p: { mistakes: true } }); return quiz(qs, 'أخطائي'); }
     if (a === 'unit') { const qs = await call('tp_portal_practice', { p: { unit: b.dataset.u } }); return quiz(qs, b.dataset.u); }
     if (a === 'lesson') { const qs = await call('tp_portal_practice', { p: { lesson: b.dataset.l } }); return quiz(qs, b.dataset.l); }

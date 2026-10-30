@@ -106,3 +106,21 @@
 .post-card .post-h { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 .post-card .post-h .tiny { margin-inline-start: auto; }
 .post-card p { margin: 0; white-space: pre-line; line-height: 1.8; }
+
+/* PDF الأخطاء: صفحة طباعة بس */
+.pdf-btn { margin-bottom: var(--s3); }
+#pdfArea { display: none; }
+@media print {
+  body.printing > *:not(#pdfArea) { display: none !important; }
+  body.printing #pdfArea { display: block; color: #000; font-size: 13px; line-height: 1.8; }
+  .pdf-h { border-bottom: 2px solid #14284B; padding-bottom: 8px; margin-bottom: 12px; }
+  .pdf-h h1 { margin: 4px 0; font-size: 20px; }
+  .pdf-ex { margin-bottom: 14px; } .pdf-ex h2 { font-size: 16px; background: #EEF2F7; padding: 4px 8px; border-radius: 6px; } .pdf-ex h2 small { font-weight: 400; }
+  .pdf-q { border: 1px solid #ccc; border-radius: 8px; padding: 8px 10px; margin: 8px 0; break-inside: avoid; }
+  .pdf-q p { margin: 4px 0; }
+  .pdf-ch { list-style: none; padding: 0; margin: 4px 0; } .pdf-ch li.ok { font-weight: 700; color: #1E7A46; } .pdf-ch li.no { color: #B42318; text-decoration: line-through; }
+  .pdf-q .was { color: #B42318; } .pdf-q .right { color: #1E7A46; font-weight: 700; } .pdf-q .why { color: #333; }
+  .pdf-sol { font-size: 12px; color: #333; direction: ltr; text-align: right; }
+  .pdf-f { text-align: center; font-size: 10px; letter-spacing: 2px; color: #777; margin-top: 16px; }
+  @page { margin: 14mm; }
+}

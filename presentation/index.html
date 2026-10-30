@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#14284B">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>سيستم المستر — إزاي هيريّحك</title>
-<link rel="stylesheet" href="../css/tokens.css?v=0.10.0">
-<link rel="stylesheet" href="pres.css?v=0.10.0">
+<link rel="stylesheet" href="../css/tokens.css?v=0.10.1">
+<link rel="stylesheet" href="pres.css?v=0.10.1">
 </head>
 <body>
 
@@ -15,362 +15,184 @@
   <div class="wrap hero-in">
     <div>
       <p class="kicker">لمستر عنده مئات الطلاب في اليوم</p>
-      <h1>الحضور والفلوس والدرجات… <span class="hl">من موبايل الأسيستنت</span>، والطالب وولي الأمر عارفين كل حاجة من موبايلهم</h1>
-      <p class="lead">العرض ده بيشرحلك كل جزء: المشكلة اللي انت عارفها، وإحنا بنحلها إزاي، وتشوفها <b>بتحصل قدامك على الموبايل</b> خطوة خطوة — من غير ما تجرّب حاجة بإيدك.</p>
-      <div class="cta"><a class="btn btn-lg cta-1" href="#first">ابدأ العرض</a></div>
-    </div>
-    <div class="ph hero-ph" aria-hidden="true" data-loop>
-      <div class="scr">
-        <div class="st"><div class="m-top"><b>تسجيل الحضور</b><span>السبت 4 العصر · 132/180</span></div><div class="m-scan"><span class="sq"></span><b>امسح QR</b></div><div class="m-hint">الطالب بيوري الكارت…</div></div>
-        <div class="st"><div class="m-top"><b>تسجيل الحضور</b><span>133/180</span></div><div class="m-card ok"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551 · السبت 4 العصر</small></div></div><div class="m-ok">✓ اتخصمت حصة · فاضل <mark>7</mark></div><div class="m-hw"><span class="y tap">✓ عمل الواجب</span><span>✕ ماعملش</span></div></div>
-      </div>
+      <h1>الحضور والفلوس والدرجات <span class="hl">من موبايل الأسيستنت</span> — وولي الأمر بيوصله كل حاجة على واتساب</h1>
+      <p class="lead">5 دقايق وتشوف السيستم بيشتغل قدامك خطوة خطوة.</p>
+      <div class="cta"><a class="btn btn-lg cta-1" href="#first">ابدأ</a></div>
     </div>
   </div>
 </header>
 
 <nav class="pnav" aria-label="أجزاء العرض">
-  <a href="#first">أول ما تفتح</a><a href="#door">الحضور</a><a href="#pay">الفلوس</a><a href="#money">الحسابات</a><a href="#grades">الكويزات</a><a href="#levels">مستوى الطلاب</a><a href="#study">المذاكرة</a><a href="#parents">أولياء الأمور</a><a href="#team">الفريق</a><a href="#own">كل حاجة معاك</a><a href="#apps">4 تطبيقات</a><a href="#soon">جاي قريب</a><a href="#start">نبدأ إزاي</a>
+  <a href="#first">أول ما تفتح</a><a href="#door">الحضور</a><a href="#pay">الفلوس</a><a href="#grades">الكويزات</a><a href="#levels">المستوى</a><a href="#wa">واتساب</a><a href="#more">والكمان</a>
 </nav>
 
 <main>
 
-<!-- أول ما تفتح -->
 <section id="first" class="sec first">
   <div class="wrap">
-    <p class="num-k">أول ما تفتح السيستم</p>
-    <h2>كل طلابك وفلوسهم ومستواهم — قدامك في مكان واحد</h2>
+    <h2>أول ما تفتح: كل طلابك وفلوسهم ومستواهم في مكان واحد</h2>
     <div class="first-grid">
-      <div class="fg"><span>👥</span><b>كل بيانات طلابك</b><p>كل مجموعة لوحدها: الكود، الموبايلات، الرصيد، المتوسط، الحضور — في قايمة أو جدول، ومن غير ما تفتح إكسل.</p></div>
-      <div class="fg"><span>💰</span><b>كل فلوسك</b><p>الإيراد والكاش والتحويلات والمصروفات والصافي، ورصيد كل طالب في محفظته — وكل رقم بيفتح تفاصيله.</p></div>
-      <div class="fg"><span>🏆</span><b>الأوائل بالترتيب</b><p>في كل مجموعة وفي الصف كله: الأول والتاني والتالت… بمتوسط درجاتهم في كل الكويزات.</p></div>
-      <div class="fg"><span>📈</span><b>مين بيتحسن ومين بيقل</b><p>جنب اسم كل طالب علامة: ▲ بيتحسن، ▼ بيقل، ⚠ ضعيف، غاب، رصيده خلص.</p></div>
-    </div>
-    <div class="how-calc"><b>بنحسبها إزاي؟</b>
-      <ul>
-        <li><b>الأوائل:</b> بنرتب الطلاب بمتوسط كل درجاتهم في الكويزات والامتحانات.</li>
-        <li><b>ممتاز / ضعيف:</b> اللي متوسطه عدّى حد انت بتحدده (مثلاً 85%)، واللي تحت حد تاني (مثلاً 50%).</li>
-        <li><b>بيتحسن / بيقل:</b> آخر كويز مقارنة بمتوسط آخر 3 قبله — لو فرق 10% أو أكتر (والرقم ده كمان انت بتحدده).</li>
-      </ul>
+      <div class="fg"><span>👥</span><b>كل بيانات طلابك</b><p>كل مجموعة لوحدها: الكود، الموبايلات، الرصيد، المتوسط، الحضور.</p></div>
+      <div class="fg"><span>💰</span><b>كل فلوسك</b><p>الإيراد والمصروفات والصافي، ورصيد كل طالب — وكل رقم بيفتح تفاصيله.</p></div>
+      <div class="fg"><span>🏆</span><b>الأوائل بالترتيب</b><p>في كل مجموعة وفي الصف كله، بمتوسط كل الكويزات.</p></div>
+      <div class="fg"><span>📈</span><b>مين بيتحسن ومين بيقل</b><p>جنب كل اسم: ▲ بيتحسن، ▼ بيقل، ⚠ ضعيف، غاب، رصيده خلص.</p></div>
     </div>
   </div>
 </section>
 
 <!-- 1 الحضور -->
 <section id="door" class="sec">
-  <div class="wrap">
-    <p class="num-k">1 · الحضور</p>
-    <h2>الطابور اللي على الباب كل حصة</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>500 طالب في اليوم. الأسيستنت بتدوّر على اسم كل واحد في الكشف أو الإكسل، وتشوف دفع ولا لأ، وتاخد الفلوس وترجّع الفكة، وتكتب. ونص الطلاب واقفين مستنيين، والكشف بيتلخبط.</p></div>
-      <div class="sol"><b>الحل</b><p>أي أسيستنت معاها صلاحية الحضور تفتح السيستم على موبايلها — <b>مفيش جهاز على الباب</b>. السيستم بيفتح لوحده على المجموعة اللي ميعادها دلوقتي، والطالب يوري الـ QR (كارته أو موبايله) ⇒ صوت ولون ⇒ اللي بعده.</p></div>
-    </div>
-    <div class="two">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">1 · الحضور</p>
+      <h2>من غير طابور ولا كشف</h2>
+      <p class="ps1"><s>500 طالب، والأسيستنت بتدوّر في الكشف وتلم فلوس وفكة.</s><br>الطالب يوري الـ QR ⇒ صوت ولون ⇒ اللي بعده. <b>3 ثواني بدل 20.</b></p>
       <ul class="feat-list">
-        <li><b>أخضر:</b> «اتخصمت حصة · فاضل 4» — الطالب دافع مقدم، ومفيش فلوس بتتمسك في إيد.</li>
-        <li><b>أحمر:</b> «مفيش رصيد» ⇒ زرار «دفع كاش 100 ج» يتسجل في ثانية، أو مايدخلش.</li>
-        <li><b>أصفر:</b> «اتسجل قبل كده» — مفيش طالب بيتخصم مرتين لو اتمسح مرتين.</li>
-        <li><b>الواجب:</b> الطالب يوري الكشكول ⇒ «عمل / ماعملش». ولو أكّد من موبايله إنه عمله، بيظهر للأسيستنت.</li>
-        <li><b>طالب من مجموعة تانية</b> بيدخل عادي وبيظهر جنبه تنبيه.</li>
-        <li><b>آخر الحصة:</b> «قفل الحصة» ⇒ اللي ماجاش يتسجل غايب ويتبعت لولي أمره.</li>
-        <li><b>ولو الـ QR مش معاه:</b> الكود أو أول حرفين من اسمه.</li>
-        <li><b>ماعملش الواجب؟</b> انت تختار: يدخل عادي، أو <b>يطلع</b> — ولو طلع حضوره مابيتسجلش والحصة بتفضل في محفظته (أو الكاش يرجعله)، وولي أمره يوصله.</li>
-        <li><b>دلوقتي بالكود والـ QR</b> من موبايل الأسيستنت. <b>والخطة الجاية:</b> كارت NFC يتقرّب، أو سكانر/جهاز ثابت على الباب — مش لازم موبايل.</li>
+        <li>الحصة بتتخصم من اشتراكه لوحدها، ولو رصيده خلص: كاش بدوسة أو مايدخلش.</li>
+        <li><b>ماعملش الواجب؟</b> يدخل أو <b>يطلع</b> (والحصة بتفضل في محفظته) — انت تختار.</li>
+        <li>دلوقتي بالكود والـ QR، و<b>الجاي:</b> كارت NFC أو سكانر ثابت على الباب.</li>
       </ul>
-      <figure class="show">
-        <div class="ph" data-who="موبايل الأسيستنت">
-          <div class="scr">
-            <div class="st" data-cap="الأسيستنت بتفتح «تسجيل الحضور» — السيستم فتح لوحده على مجموعة دلوقتي"><div class="m-top"><b>تسجيل الحضور</b><span>السبت 4 العصر · 132/180</span></div><div class="m-scan big"><span class="sq"></span><b>امسح QR</b></div><div class="m-list"><div>آخر حاجة: <b>ريم خالد</b> ✓</div><div>قبلها: <b>عمر هشام</b> ✓</div></div></div>
-            <div class="st" data-cap="الطالب بيوري الـ QR من الكارت أو من موبايله"><div class="m-cam"><div class="m-qrcard"><span class="qr"></span><div><b>يوسف محمود</b><small>2551</small></div></div><span class="m-line"></span></div><div class="m-hint">بيقرا الكود…</div></div>
-            <div class="st" data-cap="في ثانية: اتسجل حضوره واتخصمت حصة من اشتراكه"><div class="m-top"><b>تسجيل الحضور</b><span>133/180</span></div><div class="m-card ok"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551 · السبت 4 العصر</small></div></div><div class="m-ok">✓ اتخصمت حصة · فاضل <mark>7</mark></div><div class="m-hw"><span>✓ عمل الواجب</span><span>✕ ماعملش</span></div></div>
-            <div class="st" data-cap="بيوري الكشكول ⇒ دوسة واحدة على «عمل الواجب»، واللي بعده"><div class="m-top"><b>تسجيل الحضور</b><span>133/180</span></div><div class="m-card ok"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551</small></div></div><div class="m-ok">✓ اتخصمت حصة · فاضل <mark>7</mark></div><div class="m-hw"><span class="y tap">✓ عمل الواجب</span><span>✕ ماعملش</span></div></div>
-            <div class="st" data-cap="ماعملش الواجب؟ «يطلع» ⇒ حضوره مابيتسجلش والحصة بتفضل في محفظته"><div class="m-top"><b>تسجيل الحضور</b><span>134/180</span></div><div class="m-card"><span class="av">ع</span><div><b>عمر هشام</b><small>2577 · السبت 4 العصر</small></div></div><div class="m-hw three"><span>✓ عمل</span><span>ماعملش · يدخل</span><span class="o tap">ماعملش · يطلع</span></div><div class="m-bad">عمر مادخلش · الحصة رجعت لمحفظته (فاضل 6)</div></div>
-            <div class="st" data-cap="لو رصيده خلص: يدفع كاش بدوسة، أو مايدخلش — مفيش «هدفع بعدين»"><div class="m-top"><b>تسجيل الحضور</b><span>134/180</span></div><div class="m-card bad"><span class="av">م</span><div><b>مازن علي</b><small>2610 · السبت 4 العصر</small></div></div><div class="m-bad">✕ مفيش رصيد</div><div class="m-btn tap">دفع كاش 100 ج</div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
     </div>
-    <div class="save"><b>بيوفّر إيه بجد؟</b> لو الطالب كان بياخد على الباب حوالي 20 ثانية (يدوّر على الاسم + الفلوس + الكتابة)، بالـ QR بياخد 3–4 ثواني. مع 500 طالب في اليوم ده تقريباً <b>ساعتين شغل أسيستنت كل يوم</b>، وطابور أقصر بكتير. الرقم بيختلف حسب السنتر — ده تقدير مش وعد.</div>
+    <figure class="show">
+      <div class="ph" data-who="موبايل الأسيستنت">
+        <div class="scr">
+          <div class="st" data-cap="الطالب بيوري الـ QR من الكارت أو موبايله"><div class="m-cam"><div class="m-qrcard"><span class="qr"></span><div><b>يوسف محمود</b><small>2551</small></div></div><span class="m-line"></span></div></div>
+          <div class="st" data-cap="في ثانية: اتسجل حضوره واتخصمت حصة"><div class="m-top"><b>تسجيل الحضور</b><span>133/180</span></div><div class="m-card ok"><span class="av">ي</span><div><b>يوسف محمود</b><small>2551 · السبت 4 العصر</small></div></div><div class="m-ok">✓ اتخصمت حصة · فاضل <mark>7</mark></div><div class="m-hw"><span class="y tap">✓ عمل الواجب</span><span>✕ ماعملش</span></div></div>
+          <div class="st" data-cap="ماعملش الواجب؟ «يطلع» ⇒ الحصة بتفضل في محفظته"><div class="m-top"><b>تسجيل الحضور</b><span>134/180</span></div><div class="m-card"><span class="av">ع</span><div><b>عمر هشام</b><small>2577</small></div></div><div class="m-hw three"><span>✓ عمل</span><span>ماعملش · يدخل</span><span class="o tap">ماعملش · يطلع</span></div><div class="m-bad">عمر مادخلش · الحصة رجعت لمحفظته</div></div>
+          <div class="st" data-cap="رصيده خلص: كاش بدوسة أو مايدخلش"><div class="m-card bad"><span class="av">م</span><div><b>مازن علي</b><small>2610</small></div></div><div class="m-bad">✕ مفيش رصيد</div><div class="m-btn tap">دفع كاش 100 ج</div></div>
+        </div>
+      </div>
+      <figcaption class="cap"></figcaption>
+    </figure>
   </div>
 </section>
 
 <!-- 2 الفلوس -->
 <section id="pay" class="sec alt">
-  <div class="wrap">
-    <p class="num-k">2 · الفلوس</p>
-    <h2>الفكة، والمتأخرين، و«هدفع الحصة الجاية»</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>كل حصة فلوس بتتجمع كاش على الباب، وفكة، وطلاب بيأجلوا، ومفيش حد عارف بالظبط مين دفع لحد إمتى، والحساب آخر الشهر بياخد وقت.</p></div>
-      <div class="sol"><b>الحل: اشتراك مقدم بعدد حصص</b><p>الطالب أو ولي الأمر يختار «4 حصص» من موبايله ⇒ السيستم يقوله «حوّل 400 ج بالظبط على الرقم ده». مفيش مبلغ بيتكتب بالإيد ولا فكة. وكل حصة بتتخصم لوحدها على الباب.</p></div>
-    </div>
-    <div class="two">
-      <div>
-        <ul class="feat-list">
-          <li><b>ولي الأمر</b> يشوف رصيد ابنه ويشحنله من موبايله، ويوصله إشعار لما يفضل حصة واحدة.</li>
-          <li><b>الأسيستنت اللي ماسكة الفلوس</b> بيوصلها الطلب ومعاه <b>صورة إيصال التحويل</b> والمبلغ والرقم والوقت — تقارن بالمحفظة وتدوس «وصل · اشحن». المستر مش محتاج يعمل حاجة.</li>
-          <li><b>التأكيد الأوتوماتيك (لو حبيت):</b> موبايل عليه خط الاستلام بيبعت رسايل فودافون كاش/البنك للسيستم، والسيستم بيطابق ويشحن لوحده — حتى لو الطالب حوّل وقفل النت قبل ما يبعت طلب.</li>
-          <li><b>الكاش لسه موجود</b> للي عايز يدفع على الباب — وبيتسجل.</li>
-          <li>المذكرات والامتحانات بسعر ثابت بتتشري مع الحصص.</li>
-        </ul>
-        <div class="shield"><b>محدش يقدر يزوّد رصيده من غير ما يدفع</b><p>الرصيد مابيتغيرش غير من السيرفر. جرّبنا أكتر من طريقة تحايل: تعديل المبلغ من المتصفح، رسالة مزيفة من رقم عادي، رسالة مزيفة باسم فودافون كاش، إعادة نفس الرسالة، الموافقة على نفس الطلب مرتين في نفس اللحظة، وتخمين الرقم السري — <b>كلهم اترفضوا</b>.</p></div>
-      </div>
-      <figure class="show">
-        <div class="ph" data-who="موبايل ولي الأمر ← موبايل الأسيستنت">
-          <div class="scr">
-            <div class="st" data-cap="ولي الأمر بيوصله: «فاضل ليوسف حصة واحدة»"><div class="m-notif">🔔 فاضل ليوسف حصة واحدة في الاشتراك. اشحن من البوابة.</div><div class="m-bal"><span>فاضل ليوسف</span><b>1</b><small>حصة</small></div><div class="m-btn">اشحن</div></div>
-            <div class="st" data-cap="بيختار 4 حصص — والسيستم بيحسب المبلغ لوحده"><div class="m-top"><b>اشحن ليوسف</b></div><div class="m-step"><span>−</span><b>4<small>حصص</small></b><span class="tap">+</span></div><div class="m-pay">حوّل <b>400 ج</b> بالظبط<br>على فودافون كاش <span dir="ltr">010 1234 5678</span></div></div>
-            <div class="st" data-cap="بيحوّل ويرفع صورة الإيصال"><div class="m-top"><b>اشحن ليوسف</b></div><div class="m-receipt"><div class="rc-h">Vodafone Cash</div><div>تم تحويل <b>400 ج</b></div><small>إلى 01012345678 · 10:14 ص</small></div><div class="m-btn tap">ابعت الطلب</div></div>
-            <div class="st" data-cap="الأسيستنت بيوصلها الطلب ومعاه صورة الإيصال — تقارن وتدوس «وصل»"><div class="m-top"><b>طلبات الشحن</b><span class="cnt">1</span></div><div class="m-req"><div class="rq-h"><b>يوسف محمود</b><b class="amt">400 ج</b></div><small>4 حصص · فودافون كاش · من 0101… · 10:14</small><div class="m-receipt sm"><div class="rc-h">Vodafone Cash</div><div>تم تحويل 400 ج</div></div><div class="rq-act"><span class="r">رفض</span><span class="g tap">✓ وصل · اشحن</span></div></div></div>
-            <div class="st" data-cap="اتشحن ⇒ ولي الأمر بيوصله إشعار، ويوسف يدخل الحصة الجاية على طول"><div class="m-notif ok">✅ اتأكد الشحن بتاع يوسف، ورصيده بقى 5 حصص.</div><div class="m-bal"><span>فاضل ليوسف</span><b>5</b><small>حصص</small></div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
-    </div>
-    <div class="save"><b>بيوفّر إيه بجد؟</b> فلوس الشهر بتبقى متحصّلة مقدم بدل ما تتلم حصة بحصة، والأسيستنت مابتلمسش فلوس غير للي عايز يدفع كاش. وأي حد ماعندوش رصيد بيبان على الباب قبل ما يدخل — فمفيش «هدفع بعدين» بيضيع.</div>
-  </div>
-</section>
-
-<!-- 3 الحسابات -->
-<section id="money" class="sec">
-  <div class="wrap">
-    <p class="num-k">3 · الحسابات</p>
-    <h2>آخر الشهر مش محتاج حد يقعد يحسب</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>كشوف ودفاتر وإكسل، ومش واضح الأسيستنت دي قبضت كام، والمصاريف متسجلة فين، والصافي كام.</p></div>
-      <div class="sol"><b>الحل</b><p>كل حركة فلوس متسجلة باسم اللي عملها ووقتها، والتقارير بتطلع لوحدها: النهارده، الأسبوع، الشهر، أو أي فترة.</p></div>
-    </div>
-    <div class="two">
-      <ul class="feat-list">
-        <li><b>الإيراد</b> و<b>المصروفات</b> و<b>الصافي</b> — وكل رقم <b>بتدوس عليه يفتح تفاصيله</b>: جه منين، من أنهي مجموعة، وكل حركة باسم الطالب.</li>
-        <li><b>مصروفات بتتكرر لوحدها:</b> الإيجار كل شهر، المرتبات، البوفيه كل أسبوع — تتسجل مرة وتتحسب في ميعادها.</li>
-        <li><b>فلوس الاشتراك أمانة</b> للطالب لحد ما يحضر — في تقرير لوحده ومش بتتحسب إيراد قبل وقتها.</li>
-        <li><b>شغل الفريق:</b> كل أسيستنت عملت إيه النهارده — سجّلت حضور كام، قبضت كام، أكّدت كام شحن، سجّلت كام درجة.</li>
-        <li><b>الملفات:</b> إكسل لكل الطلاب ببياناتهم، والحضور، والدرجات، والحسابات، والمصروفات — وكروت كل الطلاب جاهزة للطباعة.</li>
-      </ul>
-      <figure class="show">
-        <div class="ph" data-who="موبايل المستر">
-          <div class="scr">
-            <div class="st" data-cap="التقارير بتطلع لوحدها — النهارده أو الشهر أو أي فترة"><div class="m-top"><b>التقارير</b><span>آخر 30 يوم</span></div><div class="m-tiles"><div><span>الإيراد</span><b>592,380 ج</b></div><div><span>المصروفات</span><b>15,850 ج</b></div><div class="g"><span>الصافي</span><b>576,530 ج</b></div><div><span>أمانات الطلاب</span><b>588,590 ج</b></div></div></div>
-            <div class="st" data-cap="بيدوس على «الإيراد» ⇒ يشوف جه منين"><div class="m-top"><b>تفاصيل الإيراد</b></div><div class="m-bars"><div><span>حصص من الاشتراك</span><i style="--w:100%"></i><b>414,800</b></div><div><span>حصص كاش على الباب</span><i style="--w:43%"></i><b>177,660</b></div><div><span>السبت 4 العصر</span><i style="--w:62%"></i><b>63,300</b></div><div><span>الأحد 6 المغرب</span><i style="--w:60%"></i><b>62,700</b></div></div></div>
-            <div class="st" data-cap="و«شغل الفريق»: كل أسيستنت عملت إيه النهارده"><div class="m-top"><b>شغل الفريق</b><span>النهارده</span></div><div class="m-staff"><b>أسيستنت سارة</b><div><span>سجّلت حضور</span><b>212 طالب</b></div><div><span>قبضت كاش</span><b>3,400 ج</b></div></div><div class="m-staff"><b>أسيستنت منى</b><div><span>أكّدت شحن</span><b>18 طلب</b></div><div><span>سجّلت درجات</span><b>150 طالب</b></div></div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
-
-<!-- 4 الكويزات -->
-<section id="grades" class="sec alt">
-  <div class="wrap">
-    <p class="num-k">4 · الكويزات والامتحانات</p>
-    <h2>الطالب يعرف غلط في إيه، والصح إيه، وليه</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>الكويز بيتصحح وبتتكتب الدرجة، والطالب مابيعرفش غلط في أنهي سؤال ولا الصح كان إيه، وولي الأمر مايعرفش الدرجة غير لما يسأل.</p></div>
-      <div class="sol"><b>الحل</b><p>المستر بيدّي <b>نموذج الإجابة</b> مرة واحدة. الأسيستنت وهي بتصحح بتدوس بس على أرقام الأسئلة اللي الطالب غلط فيها ⇒ الدرجة بتتحسب لوحدها ⇒ الطالب بيشوف الصح والشرح، وولي الأمر بيوصله إشعار.</p></div>
-    </div>
-    <div class="two">
-      <ul class="feat-list">
-        <li><b>كويز أو امتحان:</b> عدد الأسئلة + الإجابة الصح لكل سؤال (فقاعة أ/ب/ج/د أو مقالي) + <b>الشرح</b> لو حابب. والنموذج اختياري — من غيره بتتكتب الدرجة بس.</li>
-        <li><b>التصحيح:</b> «حدد الغلط» ⇒ أرقام الأسئلة ⇒ الدرجة لوحدها ⇒ «الطالب اللي بعده». أو الدرجات كلها من شيت إكسل.</li>
-        <li><b>الطالب بيشوف</b> كل سؤال غلط فيه: هو جاوب إيه، والصح، والشرح، وفيديو الحل — و<b>ترتيبه من كام</b>.</li>
-        <li><b>رسايل لوحدها:</b> رسالة الدرجة، ورسالة «درجته نزلت عن اللي قبلها»، و«درجته طلعت»، و«درجته ضعيفة» — المستر بيحدد كل واحدة أوتوماتيك ولا لأ.</li>
-        <li><b>إحصائية الكويز:</b> السؤال ده 74% غلطوا فيه — تعرف تشرح إيه تاني. وبوست الأوائل جاهز للفيسبوك.</li>
-      </ul>
-      <figure class="show">
-        <div class="ph" data-who="الأسيستنت بتصحح ← الطالب بيشوف">
-          <div class="scr">
-            <div class="st" data-cap="المستر بيدّي نموذج الإجابة مرة واحدة"><div class="m-top"><b>نموذج الإجابة</b><span>10 أسئلة</span></div><div class="m-key"><div><i>1</i><s>أ</s><s class="on">ب</s><s>ج</s><s>د</s></div><div><i>2</i><s class="on">أ</s><s>ب</s><s>ج</s><s>د</s></div><div><i>3</i><s>أ</s><s>ب</s><s>ج</s><s class="on">د</s></div><div><i>4</i><s>أ</s><s>ب</s><s class="on tap">ج</s><s>د</s></div></div><div class="m-hint">+ «الشرح» لكل سؤال لو حابب</div></div>
-            <div class="st" data-cap="الأسيستنت بتدوس «حدد الغلط» جنب الطالب"><div class="m-top"><b>كويز التيار الكهربي</b></div><div class="m-grade"><div class="g-h"><b>يوسف محمود</b><span class="g-btn tap">حدد الغلط</span><span class="g-sc">—</span></div></div><div class="m-grade dim"><div class="g-h"><b>ريم خالد</b><span class="g-sc">18</span></div></div></div>
-            <div class="st" data-cap="بتدوس على الأسئلة الغلط ⇒ الدرجة اتحسبت لوحدها والصح ظهر من النموذج"><div class="m-top"><b>كويز التيار الكهربي</b></div><div class="m-grade open"><div class="g-h"><b>يوسف محمود</b><span class="g-sc">16</span></div><div class="g-chips"><s>1</s><s>2</s><s class="bad">3</s><s>4</s><s class="bad tap">5</s><s>6</s><s>7</s></div><div class="g-w"><b>س3</b> الصح: <mark>د</mark></div><div class="g-w"><b>س5</b> الصح: <mark>أ</mark></div></div></div>
-            <div class="st" data-cap="يوسف بيشوف على موبايله: درجته، وترتيبه، والصح والشرح"><div class="m-top"><b>درجاتي</b></div><div class="m-score"><b>16<small>/20</small></b><div>كويز التيار الكهربي<small>ترتيبك 31 من 150 · متوسط الكل 13.7</small></div></div><div class="m-wq"><b>سؤال 3</b><div class="was">جاوبت: ب</div><div class="right">الصح: د</div><small>لأن المقاومات على التوالي التيار فيها واحد…</small></div><div class="m-btn line">▶ فيديو الحل</div></div>
-            <div class="st" data-cap="ولو درجته نزلت عن اللي قبلها، ولي الأمر بيوصله تنبيه لوحده"><div class="m-notif">⚠️ تنبيه: درجة يوسف نزلت — كويز التيار الكهربي 16 من 20 (80%) — كان متوسطه 95%. محتاج يراجع ويركز الفترة الجاية.</div><div class="m-notif">📝 درجة يوسف في كويز التيار الكهربي: 16 من 20</div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
-
-<!-- 5 مستوى الطلاب -->
-<section id="levels" class="sec">
-  <div class="wrap">
-    <p class="num-k">5 · مستوى الطلاب</p>
-    <h2>مين محتاج متابعة في كل مجموعة — قدامك على الرئيسية</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>مع 2000 طالب مستحيل تعرف مين درجاته بدأت تنزل، ومين بيغيب، ومين بيتحسن — لحد ما يبان في الامتحان.</p></div>
-      <div class="sol"><b>الحل</b><p>السيستم بيرتبهملك لوحده لكل مجموعة وللصف كله: الأوائل بالترتيب، واللي درجاتهم بتقل، والضعاف، واللي بيتحسنوا، واللي غابوا، واللي رصيدهم خلص — والمستر بيحدد «ضعيف» تحت كام %.</p></div>
-    </div>
-    <div class="two">
-      <ul class="feat-list">
-        <li><b>كارت لكل مجموعة</b> و«الصف كله»، فيه عدد كل فئة.</li>
-        <li><b>الأوائل 1، 2، 3…</b> ومتوسط كل واحد، واللي درجته نزلت «من 90% لـ 60%».</li>
-        <li><b>ابعتلهم رسالة</b> بضغطة: للفئة دي في المجموعة، أو في الصف كله.</li>
-        <li>دوس على أي اسم ⇒ <b>ملف الطالب كامل</b>: درجاته وترتيبه في كل كويز، وحضوره، وواجبه، ورصيده، وزرار رسالة ليه هو بس.</li>
-      </ul>
-      <figure class="show">
-        <div class="ph" data-who="الرئيسية عند المستر">
-          <div class="scr">
-            <div class="st" data-cap="على الرئيسية: كارت لكل مجموعة فيه مين محتاج متابعة"><div class="m-top"><b>مستوى الطلاب</b><span>تالتة ثانوي</span></div><div class="m-lv"><b>السبت 4 العصر</b><small>200 طالب · متوسط 68%</small><div><i class="r"></i>درجاتهم بتقل<b>19</b></div><div><i class="r"></i>درجاتهم ضعيفة<b>33</b></div><div><i class="g"></i>درجاتهم بتتحسن<b>22</b></div><div><i class="a"></i>غابوا آخر حصة<b>23</b></div></div></div>
-            <div class="st" data-cap="بيفتح المجموعة ⇒ الأوائل بالترتيب"><div class="m-top"><b>الأوائل</b><span>السبت 4 العصر</span></div><ol class="m-rank"><li><i>1</i>آدم حسن<b>100%</b></li><li><i>2</i>آية نبيل<b>98%</b></li><li><i>3</i>أحمد عادل<b>97%</b></li><li><i>4</i>بلال جمال<b>95%</b></li><li><i>5</i>سلمى صلاح<b>94%</b></li></ol></div>
-            <div class="st" data-cap="واللي درجاتهم بتقل — وزرار رسالة ليهم كلهم"><div class="m-top"><b>درجاتهم بتقل</b><span>19</span></div><ol class="m-rank plain"><li>أنس جمال<b>من 90% لـ 60%</b></li><li>محمد وليد<b>من 90% لـ 60%</b></li><li>آية وليد<b>من 70% لـ 40%</b></li></ol><div class="m-btn tap">ابعتلهم رسالة</div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
-
-<!-- 6 المذاكرة -->
-<section id="study" class="sec alt">
-  <div class="wrap">
-    <p class="num-k">6 · المذاكرة برة الحصة</p>
-    <h2>الطالب بيذاكر لوحده… عشان يكسب</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>الطالب بيخرج من الحصة ومش بيفتح الكتاب غير قبل الامتحان، ومحدش عارف مين محتاج يراجع إيه.</p></div>
-      <div class="sol"><b>الحل</b><p>بنك أسئلة متقسم وحدات ودروس (ولكل مجموعة أسئلتها لو حبيت)، وسؤال كل يوم، ونقط وترتيب وتحديات — وكله مربوط بأخطاء الطالب في الكويزات.</p></div>
-    </div>
-    <div class="two">
-      <ul class="feat-list">
-        <li><b>«حل على درس النهارده»:</b> المستر بيحدد الدرس الحالي، والطالب يحل عليه.</li>
-        <li><b>«أخطائي»:</b> أسئلة على نفس الأجزاء اللي غلط فيها في الكويز.</li>
-        <li><b>سؤال اليوم:</b> المستر يحط سؤال مميز ليوم معين، أو بيتختار لوحده من الدرس الحالي.</li>
-        <li><b>ترتيب المجموعة</b> (المستر يقدر يقفله)، و<b>مسابقات</b> مجموعة ضد مجموعة، و<b>تحدي</b> 5 أسئلة بين زميلين.</li>
-        <li><b>ملخص الشهر:</b> كروت متحركة زي Spotify — حضر كام، عمل الواجب كام مرة، متوسطه، ترتيبه.</li>
-        <li><b>الأسئلة مابتتسربش:</b> الإجابة الصح مابتوصلش لموبايل الطالب غير بعد ما يجاوب.</li>
-      </ul>
-      <figure class="show">
-        <div class="ph" data-who="موبايل الطالب">
-          <div class="scr">
-            <div class="st" data-cap="سؤال اليوم أول ما يفتح"><div class="m-top"><b>أهلاً يوسف</b><span>🔥 5 أيام</span></div><div class="m-q"><b>⚡ سؤال اليوم</b><p>مقاومتين 6 أوم على التوازي، المقاومة المكافئة =</p><div class="opts"><span>12 أوم</span><span>3 أوم</span><span>6 أوم</span><span>2 أوم</span></div></div></div>
-            <div class="st" data-cap="جاوب صح ⇒ 20 نقطة، وترتيبه في المجموعة بيعلى"><div class="m-top"><b>أهلاً يوسف</b><span>🔥 6 أيام</span></div><div class="m-q"><b>⚡ سؤال اليوم</b><p>مقاومتين 6 أوم على التوازي، المقاومة المكافئة =</p><div class="opts"><span>12 أوم</span><span class="right tap">3 أوم</span><span>6 أوم</span><span>2 أوم</span></div><small>صح! خدت 20 نقطة.</small></div><div class="m-rankcard"><span>ترتيبك في المجموعة</span><b>#3</b></div></div>
-            <div class="st" data-cap="وآخر الشهر: ملخص شهره في كروت متحركة"><div class="m-wrap"><small>شهر أكتوبر</small><b>12</b><span>حصة حضرتها</span><div class="w2">متوسطك <b>88%</b> · الترتيب <b>#3</b></div></div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
-
-<!-- 7 أولياء الأمور -->
-<section id="parents" class="sec">
-  <div class="wrap">
-    <p class="num-k">7 · أولياء الأمور والرسايل</p>
-    <h2>ولي الأمر عارف من غير ما يتصل</h2>
-    <div class="ps">
-      <div class="prob"><b>المشكلة</b><p>تليفونات طول اليوم: ابني جه؟ درجته كام؟ فاضله كام حصة؟ والرسايل بتتبعت واحد واحد.</p></div>
-      <div class="sol"><b>الحل</b><p>كل حاجة بتحصل بتوصل لوحدها في البوابة: غاب، ماعملش الواجب، درجة الكويز، درجته نزلت، فاضل حصة، الرصيد خلص، الشحن اتأكد. والواتساب برسالة جاهزة بضغطة.</p></div>
-    </div>
-    <div class="two">
-      <ul class="feat-list">
-        <li>لكل نوع رسالة: <b>أوتوماتيك / بزرار / مقفول</b>، ولمين (الطالب / ولي الأمر / الاتنين) — المستر بيحددها أول ما نسجّله ويغيّرها في أي وقت.</li>
-        <li><b>رسالة لفئة:</b> للأوائل بس، أو اللي درجاتهم بتقل، أو اللي غابوا، في مجموعة أو صف أو الكل.</li>
-        <li><b>بوست ثابت</b> بيظهر أول حاجة في صفحة الطالب (مواعيد، تنبيهات، تهنئة) غير الرسايل العادية.</li>
-        <li><b>الكارت والدخول</b> بيوصل لكل طالب: الكود والرقم السري ولينك البوابة.</li>
-        <li>الواتساب: <b>«ابعت الكل ورا بعض»</b> — بيفتح الرسالة اللي بعدها لوحده. (الإرسال الأوتوماتيك الكامل محتاج رقم واتساب بيزنس — بنربطه لو حبيت.)</li>
-      </ul>
-      <figure class="show">
-        <div class="ph" data-who="موبايل ولي الأمر">
-          <div class="scr">
-            <div class="st" data-cap="أول ما يفتح: بوست المستر الثابت فوق"><div class="m-top"><b>أهلاً بولي أمر يوسف</b></div><div class="m-post">📌 <b>مستر محمد</b><p>مراجعة الباب الأول يوم الجمعة الجاية في كل المجموعات. هاتوا الكشكول.</p></div><div class="m-bal"><span>فاضل ليوسف</span><b>5</b><small>حصص</small></div></div>
-            <div class="st" data-cap="وكل حاجة بتحصل بتوصله لوحدها"><div class="m-top"><b>الإشعارات</b></div><div class="m-notif">✅ يوسف حضر حصة السبت 4 العصر</div><div class="m-notif">📝 درجة يوسف في كويز التيار الكهربي: 16 من 20 · الترتيب 31 من 150</div><div class="m-notif">⚠️ يوسف ماعملش واجب حصة النهارده</div></div>
-            <div class="st" data-cap="والأسيستنت تبعتها واتساب بضغطة — أو «ابعت الكل ورا بعض»"><div class="m-top"><b>طابور الواتساب</b><span class="cnt">42</span></div><div class="m-wa"><b>يوسف محمود</b><small>درجة يوسف في كويز التيار…</small><span class="wa tap">واتساب ولي الأمر</span></div><div class="m-wa"><b>ريم خالد</b><small>ريم غابت النهارده…</small><span class="wa">واتساب ولي الأمر</span></div><div class="m-btn green">ابعت الكل (42) ورا بعض</div></div>
-          </div>
-        </div>
-        <figcaption class="cap"></figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
-
-<!-- 8 الفريق -->
-<section id="team" class="sec alt">
-  <div class="wrap">
-    <p class="num-k">8 · الفريق والأمان</p>
-    <h2>انت شايف كل حاجة، وكل أسيستنت بتعمل اللي انت سامحلها بيه</h2>
-    <div class="grid3">
-      <div class="tile"><b>لكل أسيستنت شغلها</b><p>واحدة على الحضور، وواحدة بتأكد الدفع، وواحدة بتسجل الدرجات — المستر مش محتاج يعمل حاجة بإيده.</p></div>
-      <div class="tile"><b>صلاحيات «النهارده بس»</b><p>تدي أسيستنت تسجيل الحضور أو الدرجات النهارده بس، أو دايماً، أو تقفلها في أي وقت.</p></div>
-      <div class="tile"><b>شغل الفريق</b><p>كل أسيستنت عملت إيه في اليوم: حضور، كاش، شحن، درجات، واتساب — بالاسم والوقت.</p></div>
-      <div class="tile"><b>لينكك لوحدك</b><p>المستر ليه لينك دخول، والأسيستنتس ليهم لينك تاني. محدش يدخل بحسابك من لينكهم.</p></div>
-      <div class="tile"><b>طلابك من الإكسل</b><p>شيت كل مجموعة بيدخل مرة واحدة (Excel أو Google Sheets)، والأكواد القديمة بتفضل زي ما هي.</p></div>
-      <div class="tile"><b>بياناتك متأمّنة وخفيف</b><p>كل جدول مقفول، الباسوردات متشفّرة، والطالب مايشوفش غير بياناته. وبيفتح من أي موبايل من غير تطبيق.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- كل حاجة ملكك -->
-<section id="own" class="sec">
-  <div class="wrap">
-    <p class="num-k">9 · كل حاجة معاك</p>
-    <h2>حساباتك، وبيانات طلابك، وفلوسك — كلها عندك ومتأمّنة</h2>
-    <div class="grid3">
-      <div class="tile"><b>الفلوس بكل تفاصيلها</b><p>كل جنيه: جه منين (اشتراك، كاش، تحويل)، مين قبضه، وإمتى — وراح فين (مصروفات). ورصيد كل طالب ومحفظته قدامك.</p></div>
-      <div class="tile"><b>بيانات طلابك ملكك</b><p>الأسامي والأرقام والدرجات والحضور — تنزّلها إكسل في أي وقت، ومحدش غيرك يقدر يمسحها أو ياخدها.</p></div>
-      <div class="tile"><b>كل دور ليه حدوده</b><p>انت اللي بتدي كل أسيستنت صلاحياتها: الحضور، الفلوس، الدرجات، الرسايل… والطالب وولي الأمر مابيشوفوش غير بياناتهم.</p></div>
-      <div class="tile"><b>متأمّن من السيرفر</b><p>محدش يقدر يغيّر رصيد ولا درجة من برة السيستم، والباسوردات متشفّرة، ومحاولات الدخول الغلط بتتقفل، وكل حاجة متسجلة باسم اللي عملها.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- 4 تطبيقات بهويتك -->
-<section id="apps" class="sec alt">
-  <div class="wrap">
-    <p class="num-k">10 · 4 تطبيقات باسمك</p>
-    <h2>تطبيق لكل واحد — بلوجو وهوية معمولين ليك على قدك</h2>
-    <div class="apps">
-      <div class="app"><span class="ai t">م</span><b>تطبيق المستر</b><small>كل حاجة: التقارير، الفلوس، المستوى، الفريق</small></div>
-      <div class="app"><span class="ai a">أ</span><b>تطبيق الأسيستنت</b><small>الحضور، تأكيد الدفع، الدرجات — حسب صلاحيتها</small></div>
-      <div class="app"><span class="ai s">ط</span><b>تطبيق الطالب</b><small>الكارت، الرصيد، الدرجات، التمرين، الترتيب</small></div>
-      <div class="app"><span class="ai p">و</span><b>تطبيق ولي الأمر</b><small>الحضور، الدرجات، الرصيد والشحن، الإشعارات</small></div>
-    </div>
-    <div class="brand">
-      <div><b>هويتك البصرية</b><p>بنعملك <b>لوجو وألوان وأيقونة</b> لكل تطبيق باسمك — أو بناخد اللوجو والألوان اللي عندك ونظبطها على السيستم بالظبط. الطالب يحط أيقونتك على موبايله وتفتح زي أي تطبيق، من غير متجر.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="sec">
   <div class="wrap two">
     <div>
-      <p class="num-k">الكارت</p>
-      <h2>كارت لكل طالب بالـ QR والكود</h2>
-      <p>كل طالب ليه كود وQR بيتطبعوا على كارت (10 كروت في الورقة)، وبيوصله نفس الكارت على موبايله لو نسي الكارت. وبعدين لو حبيت، نفس الكارت ممكن يبقى كارت <b>NFC</b> يتقري بالتقريب — ده اختيار إضافي، مش لازم عشان تبدأ.</p>
+      <p class="num-k">2 · الفلوس</p>
+      <h2>اشتراك مقدم — مفيش «هدفع بعدين»</h2>
+      <p class="ps1"><s>فلوس بتتلم كل حصة، وفكة، ومحدش عارف مين دفع لحد إمتى.</s><br>ولي الأمر يختار «4 حصص» ⇒ يحوّل المبلغ بالظبط ⇒ يتشحن.</p>
+      <ul class="feat-list">
+        <li>الطلب بيوصل للأسيستنت <b>بصورة الإيصال</b> وتأكد بدوسة — المستر مش محتاج يعمل حاجة.</li>
+        <li><b>أو أوتوماتيك:</b> رسالة فودافون كاش بتتطابق وتشحن لوحدها.</li>
+        <li><b>محدش يزوّد رصيده من غير ما يدفع</b> — جرّبنا كل طرق التحايل واترفضت.</li>
+      </ul>
     </div>
-    <div class="idcard"><div class="c-top">مستر محمد <span>تالتة ثانوي</span></div><div class="c-body"><span class="qr"></span><div><b>يوسف محمود</b><em>2551</em><small>السبت 4 العصر</small></div></div><div class="c-foot">POWERED BY HINDAWY</div></div>
+    <figure class="show">
+      <div class="ph" data-who="ولي الأمر ← الأسيستنت">
+        <div class="scr">
+          <div class="st" data-cap="ولي الأمر بيختار 4 حصص، والمبلغ بيتحسب لوحده"><div class="m-notif">🔔 فاضل ليوسف حصة واحدة.</div><div class="m-step"><span>−</span><b>4<small>حصص</small></b><span class="tap">+</span></div><div class="m-pay">حوّل <b>400 ج</b> بالظبط على فودافون كاش</div></div>
+          <div class="st" data-cap="الأسيستنت بيوصلها الطلب بصورة الإيصال — تدوس «وصل»"><div class="m-req"><div class="rq-h"><b>يوسف محمود</b><b class="amt">400 ج</b></div><small>4 حصص · فودافون كاش · 10:14</small><div class="m-receipt sm"><div class="rc-h">Vodafone Cash</div><div>تم تحويل 400 ج</div></div><div class="rq-act"><span class="r">رفض</span><span class="g tap">✓ وصل · اشحن</span></div></div></div>
+          <div class="st" data-cap="اتشحن ⇒ ولي الأمر بيوصله على واتساب"><div class="m-notif ok">✅ اتأكد الشحن بتاع يوسف، ورصيده بقى 5 حصص.</div><div class="m-bal"><span>فاضل ليوسف</span><b>5</b><small>حصص</small></div></div>
+        </div>
+      </div>
+      <figcaption class="cap"></figcaption>
+    </figure>
   </div>
 </section>
 
-<section id="soon" class="sec">
-  <div class="wrap">
-    <p class="num-k">جاي قريب إن شاء الله</p>
-    <h2>اللي بنشتغل عليه للفترة الجاية</h2>
-    <div class="soon">
-      <div><span class="tag-soon">قريباً</span><br><b>التصحيح الأوتوماتيك</b><p>تصوّر ورقة إجابة الطالب بالموبايل، والسيستم يصححها لوحده من نموذج الإجابة ويطلّع الدرجة والأسئلة الغلط — من غير ما الأسيستنت تدوس على حاجة.</p></div>
-      <div><span class="tag-soon">قريباً</span><br><b>واتساب أوتوماتيك بالكامل</b><p>الرسايل تتبعت لوحدها من رقم واتساب بيزنس باسمك، من غير ما حد يدوس «ابعت».</p></div>
-      <div><span class="tag-soon">قريباً</span><br><b>شيت إكسل بيتحدّث لوحده</b><p>كل البيانات تتحفظ على Google Sheets أول بأول، من غير ما حد ينزّل ملف.</p></div>
-      <div><span class="tag-soon">قريباً</span><br><b>بوست الفيسبوك أوتوماتيك</b><p>أوائل الأسبوع والشهر يتنشروا على صفحتك لوحدهم.</p></div>
+<!-- 3 الكويزات -->
+<section id="grades" class="sec">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">3 · الكويزات</p>
+      <h2>الطالب يعرف غلط في إيه، والصح إيه، وليه</h2>
+      <p class="ps1"><s>الدرجة بتتكتب والطالب مايعرفش غلط فين.</s><br>الأسيستنت بتدوس على أرقام الأسئلة الغلط ⇒ الدرجة لوحدها ⇒ الطالب يشوف الصح والشرح.</p>
+      <ul class="feat-list">
+        <li>نموذج الإجابة بيتكتب مرة واحدة (اختياري)، والتصحيح دوسة.</li>
+        <li>الطالب بيشوف ترتيبه، ويقدر <b>ينزّل كل أخطائه بالإجابات PDF</b> يذاكر منها.</li>
+        <li>ولي الأمر: رسالة الدرجة، و<b>«درجته نزلت عن اللي قبلها»</b> لوحدها.</li>
+      </ul>
     </div>
+    <figure class="show">
+      <div class="ph" data-who="الأسيستنت ← الطالب">
+        <div class="scr">
+          <div class="st" data-cap="الأسيستنت بتدوس على الأسئلة الغلط ⇒ الدرجة اتحسبت"><div class="m-grade open"><div class="g-h"><b>يوسف محمود</b><span class="g-sc">16</span></div><div class="g-chips"><s>1</s><s>2</s><s class="bad">3</s><s>4</s><s class="bad tap">5</s><s>6</s></div><div class="g-w"><b>س3</b> الصح: <mark>د</mark></div><div class="g-w"><b>س5</b> الصح: <mark>أ</mark></div></div></div>
+          <div class="st" data-cap="يوسف بيشوف الصح والشرح وترتيبه — وينزّلهم PDF"><div class="m-score"><b>16<small>/20</small></b><div>كويز التيار<small>ترتيبك 31 من 150</small></div></div><div class="m-wq"><b>سؤال 3</b><div class="was">جاوبت: ب</div><div class="right">الصح: د</div><small>لأن التيار في التوالي واحد…</small></div><div class="m-btn line tap">⬇ نزّل أخطائي PDF</div></div>
+          <div class="st" data-cap="وولي الأمر بيوصله تنبيه لو درجته نزلت"><div class="m-notif">⚠️ درجة يوسف نزلت — 16 من 20 (80%) — كان متوسطه 95%.</div></div>
+        </div>
+      </div>
+      <figcaption class="cap"></figcaption>
+    </figure>
   </div>
 </section>
 
-<section id="start" class="sec alt">
+<!-- 4 المستوى -->
+<section id="levels" class="sec alt">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">4 · مستوى الطلاب</p>
+      <h2>مين محتاج متابعة — قبل الامتحان</h2>
+      <p class="ps1">في كل مجموعة: الأوائل بالترتيب، واللي درجاتهم بتقل، والضعاف، واللي بيتحسنوا، والغايبين.</p>
+      <ul class="feat-list">
+        <li><b>الأوائل:</b> بمتوسط كل الكويزات. <b>بيقل/بيتحسن:</b> آخر كويز مقارنة باللي قبله.</li>
+        <li>«ضعيف» تحت كام %؟ <b>انت اللي بتحدد.</b></li>
+        <li>«ابعتلهم رسالة» بدوسة — للفئة دي بس.</li>
+      </ul>
+    </div>
+    <figure class="show">
+      <div class="ph" data-who="موبايل المستر">
+        <div class="scr">
+          <div class="st" data-cap="كل مجموعة: مين محتاج متابعة"><div class="m-lv"><b>السبت 4 العصر</b><small>200 طالب · متوسط 68%</small><div><i class="r"></i>درجاتهم بتقل<b>19</b></div><div><i class="r"></i>ضعاف<b>33</b></div><div><i class="g"></i>بيتحسنوا<b>22</b></div><div><i class="a"></i>غابوا<b>23</b></div></div></div>
+          <div class="st" data-cap="الأوائل بالترتيب"><ol class="m-rank"><li><i>1</i>آدم حسن<b>100%</b></li><li><i>2</i>آية نبيل<b>98%</b></li><li><i>3</i>أحمد عادل<b>97%</b></li><li><i>4</i>بلال جمال<b>95%</b></li></ol></div>
+          <div class="st" data-cap="واللي درجاتهم بتقل — ورسالة ليهم بدوسة"><ol class="m-rank plain"><li>أنس جمال<b>من 90% لـ 60%</b></li><li>آية وليد<b>من 70% لـ 40%</b></li></ol><div class="m-btn tap">ابعتلهم رسالة</div></div>
+        </div>
+      </div>
+      <figcaption class="cap"></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 5 واتساب -->
+<section id="wa" class="sec wa-sec">
+  <div class="wrap two">
+    <div>
+      <p class="num-k">5 · واتساب Business API</p>
+      <h2>أولياء الأمور كلهم على واتساب — فكل حاجة بتوصلهم هناك لوحدها</h2>
+      <p class="ps1"><s>تليفونات طول اليوم: ابني جه؟ درجته كام؟ فاضله كام حصة؟ ورسايل بتتبعت واحد واحد.</s></p>
+      <ul class="feat-list">
+        <li><b>من رقم واتساب رسمي باسمك</b> (Business API) — مش رقم شخصي يتقفل.</li>
+        <li><b>بتتبعت لوحدها:</b> حضر/غاب، ماعملش الواجب، الدرجة والترتيب، درجته نزلت، الرصيد خلص، الشحن اتأكد.</li>
+        <li><b>انت تختار</b> كل نوع: أوتوماتيك أو بزرار أو مقفول، ولمين (الطالب، ولي الأمر، الاتنين).</li>
+        <li>رسالة لكل المجموعة أو لفئة (الأوائل، الغايبين…) في ثانية.</li>
+      </ul>
+      <p class="tiny">لحد ما الرقم الرسمي يتربط: الرسايل بتظهر في التطبيق، وبتتبعت واتساب بزرار.</p>
+    </div>
+    <figure class="show">
+      <div class="ph wa-ph" data-who="واتساب ولي الأمر">
+        <div class="scr">
+          <div class="st" data-cap="ولي الأمر بيوصله على واتساب من رقمك الرسمي"><div class="wa-h"><span class="wa-av">م</span><div><b>مستر محمد</b><small>حساب أعمال ✓</small></div></div><div class="wa-msg">✅ يوسف حضر حصة السبت 4 العصر وعمل الواجب.</div><div class="wa-msg">📝 درجة يوسف في كويز التيار: 16 من 20 · الترتيب 31 من 150</div></div>
+          <div class="st" data-cap="والتنبيهات المهمة بتوصله لوحدها"><div class="wa-h"><span class="wa-av">م</span><div><b>مستر محمد</b><small>حساب أعمال ✓</small></div></div><div class="wa-msg">⚠️ درجة يوسف نزلت عن اللي قبلها — محتاج يركز.</div><div class="wa-msg">🔔 رصيد يوسف خلص. اشحن من التطبيق عشان مايقفش على الباب.</div></div>
+        </div>
+      </div>
+      <figcaption class="cap"></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- والكمان -->
+<section id="more" class="sec alt">
   <div class="wrap">
-    <p class="num-k">نبدأ إزاي</p>
-    <h2>إحنا اللي بنجهّز، وانت تبدأ تشتغل</h2>
-    <ol class="steps-big">
-      <li><b>نجهّز السيستم باسمك</b><span>اسمك ومجموعاتك ومواعيدها وأسعارها، وإمتى الطالب يبقى «ضعيف»، وأنهي رسايل تتبعت لوحدها.</span></li>
-      <li><b>ندخّل طلابك</b><span>من شيت كل مجموعة اللي عندك — مرة واحدة.</span></li>
-      <li><b>الكروت</b><span>ملف جاهز للطباعة، ونفس الكارت بيوصل لكل طالب على موبايله.</span></li>
-      <li><b>نعلّم الأسيستنتس</b><span>تسجيل الحضور والتصحيح وتأكيد الدفع — كل واحدة شغلها في 5 دقايق.</span></li>
-      <li><b>نربط الدفع</b><span>أرقام الاستلام، وموبايل التأكيد الأوتوماتيك لو حبيت، وبنجربه معاك بتحويلات حقيقية قبل ما نعتمد عليه.</span></li>
-    </ol>
-    <div class="cta" style="margin-top:var(--s5)"><a class="btn btn-lg btn-ink" href="../start/">املا اللي محتاجينه منك (10 دقايق)</a><a class="btn btn-lg btn-wa" href="https://wa.me/201118606692?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20HINDAWY%D8%8C%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%B3%D9%8A%D8%B3%D8%AA%D9%85%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B1" target="_blank" rel="noopener">كلّمنا على واتساب نجهّزهولك</a><a class="btn btn-lg btn-line" href="../demo/teacher/">ولو حابب تجرّب بإيدك</a></div>
+    <h2>والكمان</h2>
+    <div class="grid3">
+      <div class="tile"><b>💰 الحسابات</b><p>الإيراد والمصروفات (والمتكررة زي الإيجار) والصافي، وكل جنيه جه منين وراح فين.</p></div>
+      <div class="tile"><b>👩‍💼 الفريق</b><p>كل أسيستنت شغلها وصلاحياتها (حتى «النهارده بس»)، وشايف كل واحدة عملت إيه.</p></div>
+      <div class="tile"><b>🔒 كل حاجة ملكك</b><p>بيانات طلابك وفلوسك عندك ومتأمّنة، وتنزّلها إكسل في أي وقت.</p></div>
+      <div class="tile"><b>📱 4 تطبيقات بهويتك</b><p>المستر، الأسيستنت، الطالب، ولي الأمر — بلوجو وألوان معمولين ليك.</p></div>
+      <div class="tile"><b>📚 المذاكرة</b><p>بنك أسئلة بالدروس، سؤال اليوم، ترتيب وتحديات، وملخص الشهر للطالب.</p></div>
+      <div class="tile"><b>📥 طلابك من الإكسل</b><p>شيت كل مجموعة بيدخل مرة واحدة، وكل طالب ياخد كارته على موبايله.</p></div>
+    </div>
+    <p class="soon-line"><b>جاي قريب إن شاء الله:</b> التصحيح الأوتوماتيك بتصوير ورقة الإجابة · شيت إكسل بيتحدّث لوحده · بوست الأوائل على فيسبوك لوحده.</p>
+  </div>
+</section>
+
+<section class="sec end">
+  <div class="wrap">
+    <h2>إحنا بنجهّز كل حاجة باسمك، وانت تبدأ تشتغل</h2>
+    <a class="btn btn-lg btn-wa" href="https://wa.me/201118606692?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20HINDAWY%D8%8C%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%B3%D9%8A%D8%B3%D8%AA%D9%85%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B1" target="_blank" rel="noopener">كلّمنا على واتساب</a>
+    <p class="tiny"><a href="../demo/teacher/">ولو حابب تجرّب بإيدك</a></p>
   </div>
 </section>
 </main>
@@ -378,12 +200,11 @@
 <footer class="byline">
   <small>POWERED BY</small>
   <a class="hw" href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener"><strong>HINDAWY</strong></a>
-  <em>Take it easy. We’ve got the rest.</em>
   <span class="hw-btns"><a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">اعرف أكتر</a><a href="https://ahmedelhendway0-byte.github.io/portfolio/#team" target="_blank" rel="noopener">اعرف أكتر عن المؤسسين</a></span>
 </footer>
 <a class="wa-bar" href="https://wa.me/201118606692?text=%D8%A3%D9%87%D9%84%D8%A7%D9%8B%20HINDAWY%D8%8C%20%D8%B9%D8%A7%D9%8A%D8%B2%20%D8%A3%D8%A8%D8%AF%D8%A3%20%D8%B3%D9%8A%D8%B3%D8%AA%D9%85%20%D8%A7%D9%84%D9%85%D8%B3%D8%AA%D8%B1" target="_blank" rel="noopener">
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12z"/></svg>
   <span><b>كلّمنا على واتساب</b><small>ونبدألك السيستم باسمك</small></span></a>
-<script src="pres.js?v=0.10.0"></script>
+<script src="pres.js?v=0.10.1"></script>
 </body>
 </html>
