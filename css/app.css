@@ -612,3 +612,6 @@ button.lv-card:hover { border-color: var(--ink); }
 .gv-table .tbl thead th, .fv .tbl thead th { position: sticky; top: 0; background: var(--paper); z-index: 1; }
 .gv-table .bds { display: block; margin: 2px 0 0; }
 .fview .head h2 { margin: 0; }
+@media (max-width: 560px) { .ak-row { grid-template-columns: 1fr; } .seg3 { flex-wrap: wrap; } .seg3 button { white-space: normal; flex: 1 1 auto; } .hw-pol button { flex: 1 1 100%; } }
+@media (max-width: 560px) { .ak-row { grid-template-columns: minmax(0, 1fr); } .ak-row .seg3, .auto-k, .auto-lv, #autoset { min-width: 0; max-width: 100%; } .seg3 button { min-width: 0; padding: 6px 6px; } }
+#main, .sheet-box, .msg-prev, .feed { overflow-wrap: anywhere; }

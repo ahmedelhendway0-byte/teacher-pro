@@ -124,3 +124,4 @@
   .pdf-f { text-align: center; font-size: 10px; letter-spacing: 2px; color: #777; margin-top: 16px; }
   @page { margin: 14mm; }
 }
+.pshell main, .main { min-width: 0; overflow-wrap: anywhere; }
