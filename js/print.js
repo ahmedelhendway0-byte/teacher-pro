@@ -1,4 +1,4 @@
-// طباعة كروت الطلاب: طالب واحد (?student=) أو مجموعة كاملة (?group=) — مقاس كارت البنك 8.6 × 5.4 سم، 10 في الورقة A4
+// طباعة كروت الطلاب: طالب واحد (?student=) أو مجموعة كاملة (?group=) أو الكل (?all=1) — مقاس كارت البنك 8.6 × 5.4 سم، 10 في الورقة A4
 (async () => {
   const { esc, $ } = U;
   const q = new URLSearchParams(location.search);
@@ -7,14 +7,16 @@
     const me = await API.me();
     let rows = [], title = 'كروت الطلاب';
     if (q.get('student')) { rows = [await API.student(+q.get('student'))]; title = 'كارت ' + rows[0].name; }
-    else if (q.get('group')) {
-      const gid = +q.get('group');
+    else if (q.get('group') || q.get('all')) {
+      const gid = q.get('group') ? +q.get('group') : null;
       for (let off = 0; ; off += 100) {
         const r = await API.students({ group_id: gid, offset: off, limit: 100 });
         rows = rows.concat(r.rows);
         if (rows.length >= r.total || !r.rows.length) break;
       }
-      title = 'كروت ' + (rows[0] ? rows[0].group : 'المجموعة');
+      // كل الطلاب: مترتبين بالمجموعة عشان كل مجموعة تتقص لوحدها
+      if (!gid) rows.sort((a, b) => String(a.group || '').localeCompare(String(b.group || ''), 'ar') || a.name.localeCompare(b.name, 'ar'));
+      title = gid ? 'كروت ' + (rows[0] ? rows[0].group : 'المجموعة') : 'كروت كل الطلاب';
     }
     document.title = title;
     $('#ptitle').textContent = title;

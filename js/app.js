@@ -220,7 +220,8 @@ const App = (() => {
       const segs = SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2);
       h += '<section class="sec"><div class="head"><div><h2>مستوى الطلاب</h2><div class="tiny">دوس على أي رقم تشوف الأسامي</div></div><div class="seg seg-by">' +
         [['grade', 'كل صف لوحده'], ['group', 'كل مجموعة لوحدها']].map(([v, n]) => '<button type="button" data-act="segBy" data-v="' + v + '" class="' + (S.segBy === v ? 'on' : '') + '">' + n + '</button>').join('') + '</div></div>' +
-        (seg.length ? seg.map((x, i) => '<div class="lvl-sec" data-si="' + i + '"><div class="lvl-h"><b>' + esc(x.name) + '</b><span class="tiny">' + esc(x.sub) + ' · ' + num(x.segs.total) + ' طالب</span></div>' +
+        (seg.length ? seg.map((x, i) => '<div class="lvl-sec" data-si="' + i + '"><button class="lvl-h plain-btn" data-act="levelOpen" data-si="' + i + '"><b>' + esc(x.name) + '</b><span class="tiny">' + esc(x.sub) + ' · ' + num(x.segs.total) + ' طالب</span>' +
+          '<span class="more-t">كل التفاصيل ' + icon('chev', 'sm') + '</span></button>' +
           '<div class="lvl-chips">' + segs.map(([k, n, why, cl]) => '<button class="lvl-c ' + cl + '" data-act="segOpen" data-si="' + i + '" data-seg="' + k + '" title="' + why + '"' + (x.segs[k].count ? '' : ' disabled') + '>' +
             '<b class="num">' + num(x.segs[k].count) + '</b><span>' + n + '</span></button>').join('') + '</div><div class="lvl-names"></div></div>').join('')
           : '<div class="surface empty">لسه مفيش طلاب.</div>') +
@@ -240,6 +241,33 @@ const App = (() => {
     }
   }
   actions.segBy = b => { S.segBy = b.dataset.v; home(); };
+  // تفاصيل صف/مجموعة: كل طلابها بمتوسطهم وآخر درجة واتجاههم وحضورهم ورصيدهم + آخر الكويزات
+  actions.levelOpen = b => busy(b, async () => {
+    const x = S.segData[+b.dataset.si], scope = x.kind === 'grade' ? { grade_id: x.id } : { group_id: x.id };
+    const d = await API.levelDetail(scope);
+    let sort = 'avg';
+    const trend = r => r.exams >= 2 && r.last != null && r.prev != null ? (r.last - r.prev >= 10 ? '<span class="up">▲ ' + (r.last - r.prev) + '</span>' : r.prev - r.last >= 10 ? '<span class="down">▼ ' + (r.prev - r.last) + '</span>' : '<span class="tiny">ثابت</span>') : '';
+    const SORT = { avg: ['الأعلى', (a, b) => (b.avg ?? -1) - (a.avg ?? -1)], low: ['الأقل', (a, b) => (a.avg ?? 999) - (b.avg ?? 999)],
+      up: ['بيزيد', (a, b) => ((b.last ?? 0) - (b.prev ?? b.last ?? 0)) - ((a.last ?? 0) - (a.prev ?? a.last ?? 0))], down: ['بيقل', (a, b) => ((a.last ?? 0) - (a.prev ?? a.last ?? 0)) - ((b.last ?? 0) - (b.prev ?? b.last ?? 0))],
+      absent: ['غابوا', (a, b) => (b.absent - a.absent) || a.name.localeCompare(b.name, 'ar')], name: ['بالاسم', (a, b) => a.name.localeCompare(b.name, 'ar')] };
+    const rows = () => d.rows.slice().sort(SORT[sort][1]).map(r => '<tr><td><button class="plain-btn name-btn" data-sid="' + r.id + '">' + esc(r.name) + '</button>' + (x.kind === 'grade' && r.group ? '<div class="tiny">' + esc(r.group) + '</div>' : '') + '</td>' +
+      '<td class="num">' + (r.avg != null ? r.avg + '%' : '—') + '</td><td class="num">' + (r.last != null ? r.last + '%' : '—') + '</td><td>' + trend(r) + '</td>' +
+      '<td class="num">' + r.att_month + (r.absent ? ' <span class="tag bad">غاب آخر حصة</span>' : '') + '</td>' + (lvl('pay') >= 2 ? '<td class="num' + (r.credits <= 0 ? ' low-t' : '') + '">' + r.credits + '</td>' : '') + '</tr>').join('');
+    const sm = d.summary;
+    sheet('<div class="lvl-detail"><h2>' + esc(x.name) + ' <span class="tiny">' + esc(x.sub) + ' · ' + num(sm.total) + ' طالب</span></h2>' +
+      '<div class="lvl-chips">' + SEGS.filter(([k]) => k !== 'no_balance' || lvl('pay') >= 2).map(([k, n, why, cl]) => '<div class="lvl-c ' + cl + '"><b class="num">' + num(sm[k].count) + '</b><span>' + n + '</span></div>').join('') + '</div>' +
+      (d.exams.length ? '<h3 class="mini-h">آخر الكويزات والامتحانات</h3>' + d.exams.map(e => '<div class="bar-row"><span>' + esc(e.title) + ' <span class="tiny">' + e.day + '</span></span><span class="bar g" style="--w:' + Math.round(e.avg / e.max * 100) + '%"></span><b class="num">' + e.avg + '/' + e.max + '</b></div>').join('') : '') +
+      '<div class="head" style="margin-top:var(--s4)"><h3 class="mini-h" style="margin:0">الطلاب</h3><div class="chips" id="lsort">' + Object.entries(SORT).map(([k, [n]]) => '<button class="chip' + (k === sort ? ' on' : '') + '" data-sort="' + k + '">' + n + '</button>').join('') + '</div></div>' +
+      '<div class="table-wrap"><table class="tbl"><thead><tr><th>الطالب</th><th>المتوسط</th><th>آخر درجة</th><th>الاتجاه</th><th>حضور الشهر</th>' + (lvl('pay') >= 2 ? '<th>رصيده</th>' : '') + '</tr></thead><tbody id="lrows">' + rows() + '</tbody></table></div>' +
+      (can('messages') ? '<div class="actions"><button class="btn btn-ink" data-lmsg="1">' + icon('send') + 'ابعت رسالة لل' + (x.kind === 'grade' ? 'صف' : 'مجموعة') + '</button></div>' : '') + '</div>', box => {
+      box.classList.add('wide');
+      box.onclick = e => {
+        const s = e.target.closest('[data-sort]'); if (s) { sort = s.dataset.sort; $$('[data-sort]', box).forEach(c => c.classList.toggle('on', c === s)); $('#lrows', box).innerHTML = rows(); return; }
+        const n = e.target.closest('[data-sid]'); if (n) return openStudent(+n.dataset.sid);
+        if (e.target.closest('[data-lmsg]')) { close(); window.MSG_PRESET = { seg: '', target: x.kind, id: x.id }; location.hash = '#messages'; }
+      };
+    });
+  });
   // فتح أسامي فئة في صف/مجموعة (ونفس الزرار يقفلها)
   actions.segOpen = b => {
     const box = b.closest('.lvl-sec'), out = $('.lvl-names', box), x = S.segData[+b.dataset.si], k = b.dataset.seg, d = x.segs[k];
@@ -388,7 +416,8 @@ const App = (() => {
     ST.rows = more ? ST.rows.concat(r.rows) : r.rows; ST.total = r.total;
     if (!$('#slist')) return;
     $('#scount').innerHTML = '<b>' + num(ST.total) + '</b> طالب' + (ST.q ? ' في البحث' : '') +
-      (ST.group_id && !ST.q && ST.total ? ' · <a href="' + CFG.PRINT + '?group=' + ST.group_id + '" target="_blank" rel="noopener">' + 'اطبع كروت المجموعة</a>' : '');
+      (ST.group_id && !ST.q && ST.total ? ' · <a href="' + CFG.PRINT + '?group=' + ST.group_id + '" target="_blank" rel="noopener">' + 'اطبع كروت المجموعة</a>' +
+        (can('students') ? ' · <button class="linkish" data-act="groupCards" data-id="' + ST.group_id + '" data-name="' + esc((S.groups.groups.find(g => g.id === ST.group_id) || {}).name || '') + '">ابعت الكروت لكل طالب</button>' : '') : '');
     $('#slist').innerHTML = ST.rows.length ? ST.rows.map(s =>
       '<li class="tap" data-act="studentOpen" data-id="' + s.id + '"><span class="av ' + s.gender + '">' + initials(s.name) + '</span>' +
       '<div class="grow"><b>' + esc(s.name) + '</b><div class="tiny">' + s.code + ' · ' + esc(s.group || 'من غير مجموعة') + '</div></div>' +
@@ -441,6 +470,9 @@ const App = (() => {
       '<div><b class="num">' + (hwAll ? Math.round(at.hw_yes / hwAll * 100) + '%' : '—') + '</b><span>عمل الواجب</span></div>' +
       '<div><b class="num">' + (avg != null ? avg + '%' : '—') + '</b><span>متوسط الدرجات</span></div>' +
       '<div><b class="num">#' + s.rank_xp + '</b><span>ترتيبه في التفاعل</span></div></div>' +
+      '<div class="row-btns pquick">' + (can('messages') ? '<button class="btn btn-ink btn-sm" data-act="msgOne">' + icon('send') + 'ابعتله رسالة</button>' : '') +
+        '<a class="btn btn-green btn-sm" target="_blank" rel="noopener" href="https://wa.me/2' + esc(String(s.parent_phone).replace(/\D/g, '')) + '">' + icon('wa') + 'واتساب ولي الأمر</a>' +
+        (can('students') ? '<button class="btn btn-line btn-sm" data-act="cardOne">' + icon('qr') + 'ابعتله الكارت والدخول</button>' : '') + '</div>' +
       '<div id="pt">' + tabsH() + body() + '</div>' +
       (can('students') ? '<div class="actions"><button class="btn btn-red" data-act="studentArchive">' + icon('archive') + 'شيله من القوايم</button>' +
         '<button class="btn btn-ink" data-act="studentEdit">' + icon('pen') + 'عدّل البيانات</button></div>' : ''), box => {
@@ -451,6 +483,8 @@ const App = (() => {
         if (a.dataset.act === 'buy') buyForm(s);
         if (a.dataset.act === 'ledger') ledgerView(s);
         if (a.dataset.act === 'card') cardView(s);
+        if (a.dataset.act === 'msgOne') msgOne(s);
+        if (a.dataset.act === 'cardOne') sendCardsForm({ target: 'student', id: s.id }, s.name);
         if (a.dataset.act === 'studentArchive') {
           if (!confirm('تشيل «' + s.name + '» من القوايم؟')) return;
           busy(a, async () => { await API.archiveStudent(s.id); close(); toast('اتشال من القوايم'); if ($('#slist')) students(); else S.groups = null; });
@@ -458,6 +492,44 @@ const App = (() => {
       };
     });
   }
+
+  // رسالة لطالب واحد: بتظهر في تطبيقه، ومعاها واتساب لو عايز
+  function msgOne(s) {
+    let to = 'both';
+    sheet('<h2>رسالة لـ «' + esc(s.name) + '»</h2><div class="field"><span class="lbl">لمين؟</span><div class="seg" id="mo_w">' +
+      [['both', 'الطالب وولي الأمر'], ['parent', 'ولي الأمر'], ['student', 'الطالب']].map(([v, n], i) => '<button type="button" data-mw="' + v + '" class="' + (i ? '' : 'on') + '">' + n + '</button>').join('') + '</div></div>' +
+      '<div class="field"><label for="mo_b">الرسالة</label><textarea class="inp" id="mo_b" rows="4" placeholder="مثلاً: مستواك في آخر كويز نزل، تعالى بدري الحصة الجاية نراجع سوا."></textarea></div>' +
+      '<div class="actions"><button class="btn btn-line" data-mo="app">في التطبيق بس</button><button class="btn btn-green" data-mo="wa">' + icon('wa') + 'التطبيق + واتساب</button></div>', box => {
+      box.onclick = e => {
+        const w = e.target.closest('[data-mw]'); if (w) { to = w.dataset.mw; $$('[data-mw]', box).forEach(x => x.classList.toggle('on', x === w)); return; }
+        const b = e.target.closest('[data-mo]'); if (!b) return;
+        const body = $('#mo_b', box).value.trim(); if (!body) return toast('اكتب الرسالة', 'err');
+        busy(b, async () => {
+          await API.sendMessage({ target: 'student', id: s.id, to, body, wa: b.dataset.mo === 'wa' }); close();
+          if (b.dataset.mo === 'wa') {   // نفتح واتساب على طول بالرسالة لأول رقم
+            const ph = to === 'student' ? s.phone : s.parent_phone;
+            window.open('https://wa.me/2' + String(ph).replace(/\D/g, '') + '?text=' + encodeURIComponent(body), '_blank', 'noopener');
+          }
+          toast('اتبعتت — ظاهرة في تطبيقه');
+        });
+      };
+    });
+  }
+
+  // كروت الدخول: رسالة فيها الكود والرقم السري ولينك البوابة (والكارت بالـ QR جوه «حسابي»)
+  function sendCardsForm(scope, label) {
+    let to = 'both';
+    sheet('<h2>ابعت الكارت والدخول — ' + esc(label) + '</h2><p class="muted" style="margin-top:0">كل طالب هيوصله: الكود، الرقم السري، ولينك البوابة. ولما يدخل يلاقي الكارت (QR) في «حسابي» يوريه وهو داخل الحصة.</p>' +
+      '<div class="field"><span class="lbl">لمين؟</span><div class="seg">' + [['both', 'الطالب وولي الأمر'], ['parent', 'ولي الأمر'], ['student', 'الطالب']].map(([v, n], i) => '<button type="button" data-mw="' + v + '" class="' + (i ? '' : 'on') + '">' + n + '</button>').join('') + '</div></div>' +
+      '<p class="tiny">بيظهر في تطبيقهم وبينزل في طابور الواتساب (تبعته بزرار أو «ابعت الكل ورا بعض»).</p>' +
+      '<div class="actions"><button class="btn btn-ink" data-go="1">' + icon('send') + 'ابعت</button></div>', box => {
+      box.onclick = e => {
+        const w = e.target.closest('[data-mw]'); if (w) { to = w.dataset.mw; $$('[data-mw]', box).forEach(x => x.classList.toggle('on', x === w)); return; }
+        const b = e.target.closest('[data-go]'); if (b) busy(b, async () => { const r = await API.sendCards({ ...scope, to }); close(); toast('اتبعت لـ ' + num(r.sent) + ' طالب'); });
+      };
+    });
+  }
+  actions.groupCards = b => sendCardsForm({ target: 'group', id: +b.dataset.id }, b.dataset.name);
 
   // كارت الطالب: QR + الكود + طباعة + (اختياري) نكتب نفس الكود على كارت NFC ⇒ نفس الكارت يتقري بالكاميرا أو بالتقريب
   function cardView(s) {

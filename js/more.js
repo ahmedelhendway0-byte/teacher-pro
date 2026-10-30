@@ -13,15 +13,23 @@ const Screens = (() => {
   const M = { tab: 'pending' };
   async function money(ctx) {
     if (ctx.lvl('pay') < 2) { main().innerHTML = '<div class="head"><h1>الفلوس</h1></div>' + lockBox('الشحن من البوابة والاشتراك بالحصص مش في باقتك. الكاش على الباب شغال عادي.') + credit(); return; }
-    const t = [['pending', 'طلبات الشحن'], ['sms', 'تحويلات وصلت'], ['approved', 'اتأكدت'], ['rejected', 'اترفضت']].concat(ctx.isTeacher() ? [['setup', 'الإعدادات']] : []);
-    let h = '<div class="head"><h1>الفلوس</h1></div>' + tabs(t, M.tab, 'mtab');
+    const ms = await API.moneySummary().catch(() => null);
+    const badge = n => n ? ' <span class="cnt">' + num(n) + '</span>' : '';
+    const t = [['pending', 'طلبات الشحن' + badge(ms && ms.pending)], ['sms', 'تحويلات وصلت' + badge(ms && ms.sms)], ['approved', 'اتأكدت'], ['rejected', 'اترفضت']].concat(ctx.isTeacher() ? [['setup', 'الإعدادات']] : []);
+    let h = '<div class="head"><h1>الفلوس</h1></div>' +
+      (ms ? '<div class="mstats">' +
+        '<button class="mst' + (ms.pending ? ' warn' : '') + '" data-mtab="pending"><span>طلبات مستنية تأكيد</span><b class="num">' + num(ms.pending) + '</b><small>' + num(ms.pending_amount) + ' ج</small></button>' +
+        '<button class="mst' + (ms.sms ? ' warn' : '') + '" data-mtab="sms"><span>تحويلات وصلت محتاجة ربط</span><b class="num">' + num(ms.sms) + '</b><small>آخر 14 يوم</small></button>' +
+        '<div class="mst"><span>دخل النهارده</span><b class="num">' + num(ms.today_in) + ' ج</b><small>كاش ' + num(ms.today_cash) + ' · تحويل ' + num(ms.today_transfer) + (ms.today_auto ? ' · ' + ms.today_auto + ' أوتوماتيك' : '') + '</small></div>' +
+        '<div class="mst"><span>أمانات الطلاب</span><b class="num">' + num(ms.held) + ' ج</b><small>' + num(ms.no_balance) + ' طالب رصيدهم خلص</small></div></div>' : '') +
+      tabs(t, M.tab, 'mtab');
     if (M.tab === 'setup') h += await moneySetup(ctx);
     else if (M.tab === 'sms') {
       // رسايل المحفظة اللي وصلت ومااتربطتش أوتوماتيك (الطالب حوّل من غير ما يبعت طلب، أو الرسالة محتاجة مراجعة)
       const rows = await API.smsUnmatched();
       h += '<p class="muted" style="margin-top:0">تحويلات وصلت لموبايل الاستلام وماتشحنتش لوحدها. اربطها بالطالب بضغطة (لو المبلغ عدد حصص بالظبط).</p>' +
         (!rows.length ? '<div class="surface empty">' + icon('check') + '<div>مفيش تحويلات مستنية.</div></div>' :
-        '<ul class="list">' + rows.map(r => '<li class="col"><div class="row-top"><div class="grow"><b class="num">' + num(r.amount) + ' ج</b> <span class="tiny">' + esc(r.sender) + (r.from_phone ? ' · من <span dir="ltr">' + esc(r.from_phone) + '</span>' : '') + ' · ' + dt(r.at) + '</span></div></div>' +
+        '<ul class="list tcards-sms">' + rows.map(r => '<li class="col"><div class="row-top"><div class="grow"><b class="num">' + num(r.amount) + ' ج</b> <span class="tiny">' + esc(r.sender) + (r.from_phone ? ' · من <span dir="ltr">' + esc(r.from_phone) + '</span>' : '') + ' · ' + dt(r.at) + '</span></div></div>' +
           (r.suspicious ? '<div class="tag warn-tag">' + esc(r.suspicious) + '</div>' : '') + '<div class="msg-prev">' + esc(r.body) + '</div>' +
           '<div class="row-btns">' + (r.students || []).map(s => '<button class="btn btn-green btn-sm" data-m="smsapply" data-sms="' + r.id + '" data-id="' + s.id + '">' + icon('check') + 'اشحن لـ ' + esc(s.name.split(' ').slice(0, 2).join(' ')) + '</button>').join('') +
           '<button class="btn btn-line btn-sm" data-m="smspick" data-sms="' + r.id + '">طالب تاني بالكود</button>' +
@@ -29,15 +37,18 @@ const Screens = (() => {
     } else {
       const rows = await API.topups(M.tab);
       h += !rows.length ? '<div class="surface empty">' + icon('check') + '<div>' + (M.tab === 'pending' ? 'مفيش طلبات مستنية.' : 'مفيش حاجة هنا.') + '</div></div>'
-        : '<ul class="list">' + rows.map(r => '<li class="col"><div class="row-top"><button class="plain-btn grow" data-m="student" data-id="' + r.student_id + '"><div><b>' + esc(r.name) + '</b>' +
-          '<div class="tiny">' + r.code + ' · ' + esc(r.group_name || '') + ' · من ' + (r.by_role === 'parent' ? 'ولي الأمر' : 'الطالب') + '</div></div></button>' +
-          '<div class="amount">' + num(r.amount) + ' ج</div></div>' +
-          '<div class="tiny">' + (r.sessions ? r.sessions + ' حصص' : '') + (r.products.length ? (r.sessions ? ' + ' : '') + r.products.map(p => esc(p.name)).join('، ') : '') +
-          ' · ' + (r.method === 'vodafone' ? 'فودافون كاش' : 'انستاباي') + ' من <span class="num" dir="ltr">' + esc(r.sender) + '</span> · ' + dt(r.sent_at) + '</div>' +
-          (M.tab === 'pending' ? '<div class="row-btns">' + (r.has_receipt ? '<button class="btn btn-line btn-sm" data-m="receipt" data-id="' + r.id + '">' + icon('receipt') + 'الإيصال</button>' : '<span class="tiny">من غير إيصال</span>') +
-            '<button class="btn btn-red btn-sm" data-m="reject" data-id="' + r.id + '">رفض</button><button class="btn btn-green btn-sm" data-m="approve" data-id="' + r.id + '">' + icon('check') + 'وصل · اشحن</button></div>'
-            : '<div class="tiny">' + (r.auto ? '<span class="tag ok">اتأكد أوتوماتيك</span> ' : '') + (r.reviewed_name ? esc(r.reviewed_name) + ' · ' : '') + (r.reviewed_at ? dt(r.reviewed_at) : '') + (r.note ? ' · ' + esc(r.note) : '') + '</div>') +
-          '</li>').join('') + '</ul>';
+        : (M.tab === 'pending' ? '<p class="muted" style="margin-top:0">قبل ما تدوس «وصل»: افتح المحفظة واتأكد إن المبلغ ده وصل من الرقم ده في الوقت ده.</p>' : '') +
+          '<div class="tcards">' + rows.map(r => '<div class="tcard ' + M.tab + '">' +
+          '<div class="tc-top"><button class="plain-btn grow" data-m="student" data-id="' + r.student_id + '"><b>' + esc(r.name) + '</b>' +
+          '<span class="tiny">' + r.code + ' · ' + esc(r.group_name || '') + ' · طلبه ' + (r.by_role === 'parent' ? 'ولي الأمر' : 'الطالب') + '</span></button>' +
+          '<div class="tc-amt"><b class="num">' + num(r.amount) + '</b><small>جنيه</small></div></div>' +
+          '<dl class="tc-dl"><div><dt>اشترى</dt><dd>' + (r.sessions ? r.sessions + ' حصص' : '') + (r.products.length ? (r.sessions ? ' + ' : '') + r.products.map(p => esc(p.name)).join('، ') : '') + '</dd></div>' +
+          '<div><dt>حوّل على</dt><dd>' + (r.method === 'vodafone' ? 'فودافون كاش' : 'انستاباي') + '</dd></div>' +
+          '<div><dt>من رقم</dt><dd class="num" dir="ltr">' + esc(r.sender) + '</dd></div><div><dt>الوقت</dt><dd>' + dt(r.sent_at) + '</dd></div></dl>' +
+          (M.tab === 'pending' ? '<div class="tc-act">' + (r.has_receipt ? '<button class="btn btn-line btn-sm" data-m="receipt" data-id="' + r.id + '">' + icon('receipt') + 'الإيصال</button>' : '<span class="tiny">من غير إيصال</span>') +
+            '<button class="btn btn-red btn-sm" data-m="reject" data-id="' + r.id + '">رفض</button><button class="btn btn-green" data-m="approve" data-id="' + r.id + '">' + icon('check') + 'وصل · اشحن</button></div>'
+            : '<div class="tc-foot">' + (r.auto ? '<span class="tag ok">اتأكد أوتوماتيك</span> ' : '') + (r.reviewed_name ? esc(r.reviewed_name) + ' · ' : '') + (r.reviewed_at ? dt(r.reviewed_at) : '') + (r.note ? ' · ' + esc(r.note) : '') + '</div>') +
+          '</div>').join('') + '</div>';
     }
     main().innerHTML = h + credit();
     main().onclick = async e => {
@@ -154,6 +165,28 @@ const Screens = (() => {
     toast('اتنزل ' + rows.length + ' سطر');
   }
 
+  // تفاصيل رقم من التقارير: توزيعه (بالنوع/المجموعة) + كل الحركات (الاسم بيفتح ملف الطالب)
+  async function reportDetail(ctx, kind, f, t) {
+    const d = await API.reportDetail(kind, f, t);
+    const T = { revenue: 'تفاصيل الإيراد', cash: 'تفاصيل دخل الخزنة كاش', transfer: 'تفاصيل التحويلات', expenses: 'تفاصيل المصروفات', net: 'الصافي = الإيراد − المصروفات', held: 'أمانات الطلاب (حصص مدفوعة لسه ماتخصمتش)' };
+    const bars = (rows, title, cls) => { if (!rows || !rows.length) return ''; const mx = Math.max(1, ...rows.map(r => Math.abs(+r.total)));
+      return '<h3 class="mini-h">' + title + '</h3>' + rows.map(r => '<div class="bar-row"><span>' + esc(r.label) + (r.n != null ? ' <span class="tiny">(' + num(r.n) + (kind === 'held' ? ' حصة' : ' مرة') + ')</span>' : '') + '</span>' +
+        '<span class="bar ' + (cls || '') + '" style="--w:' + Math.round(Math.abs(r.total) / mx * 100) + '%"></span><b class="num">' + num(r.total) + ' ج</b></div>').join(''); };
+    const sum = rs => (rs || []).reduce((a, r) => a + +r.total, 0);
+    let h = '<h2>' + T[kind] + '</h2><p class="tiny" style="margin-top:-6px">' + (kind === 'held' ? 'دلوقتي' : f + ' ← ' + t) + '</p>';
+    if (kind === 'net') {
+      h += '<div class="net-eq"><div><span class="muted">الإيراد</span><b class="num">' + num(sum(d.in)) + ' ج</b></div><span>−</span><div><span class="muted">المصروفات</span><b class="num">' + num(sum(d.out)) + ' ج</b></div><span>=</span>' +
+        '<div class="ok"><span class="muted">الصافي</span><b class="num">' + num(sum(d.in) - sum(d.out)) + ' ج</b></div></div>' + bars(d.in, 'الإيراد جه منين', 'g') + bars(d.out, 'المصروفات راحت فين', 'r');
+    } else {
+      h += bars(d.by, kind === 'expenses' ? 'بالبند' : 'بالنوع', kind === 'expenses' ? 'r' : 'g') + bars(d.by_group, 'بالمجموعة', 'g') +
+        (d.rows && d.rows.length ? '<h3 class="mini-h">' + (kind === 'held' ? 'الطلاب' : 'كل الحركات') + ' (' + num(d.rows.length) + (d.rows.length >= 300 ? '+' : '') + ')</h3><div class="table-wrap"><table class="tbl"><tbody>' +
+          d.rows.map(r => '<tr><td class="tiny">' + (r.at ? dt(r.at) : r.day || '') + '</td><td>' + (r.sid ? '<button class="plain-btn name-btn" data-act="studentOpen" data-id="' + r.sid + '">' + esc(r.name) + '</button>' : esc(r.label)) + '</td>' +
+            '<td class="tiny">' + (r.sid ? esc(r.label || '') : esc(r.note || '')) + (r.sessions ? ' · ' + r.sessions + ' حصة' : '') + (r.repeat && r.repeat !== 'once' ? ' · ' + REP[r.repeat] : '') + '</td>' +
+            '<td class="num">' + num(r.total) + ' ج</td><td class="tiny">' + esc(r.by || '') + '</td></tr>').join('') + '</tbody></table></div>' : '<div class="empty">مفيش حركات في الفترة دي.</div>');
+    }
+    sheet('<div class="rdetail">' + h + '</div>', box => { box.closest('.sheet-box').classList.add('wide'); box.onclick = e => { const b = e.target.closest('[data-act=studentOpen]'); if (b) ctx.openStudent(+b.dataset.id); }; });
+  }
+
   // ═════════ التقارير ═════════
   const R = { range: 'today', from: null, to: null };
   const iso = d => d.toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
@@ -171,16 +204,21 @@ const Screens = (() => {
     const maxDay = Math.max(1, ...r.days.map(d => d.present));
     let h = '<div class="head"><h1>التقارير</h1></div>' + tabs([['today', 'النهارده'], ['week', 'آخر 7 أيام'], ['month', 'آخر 30 يوم'], ['custom', 'فترة']], R.range, 'rr') +
       (R.range === 'custom' ? '<div class="inline-form" style="margin-bottom:var(--s3)"><input class="inp" type="date" id="rf" value="' + f + '"><input class="inp" type="date" id="rt" value="' + t + '"><button class="btn btn-line" data-rgo="1">اعرض</button></div>' : '') +
-      '<div class="stats"><div class="stat"><span class="muted">الإيراد</span><b>' + num(m.revenue) + ' ج</b><span class="tiny">حصص اتخصمت + كاش + منتجات</span></div>' +
-      '<div class="stat"><span class="muted">دخل الخزنة كاش</span><b>' + num(m.cash_in) + ' ج</b><span class="tiny">حصص ' + num(m.door_cash) + ' · اشتراكات ' + num(m.subs_cash) + '</span></div>' +
-      '<div class="stat"><span class="muted">تحويلات</span><b>' + num(m.transfer_in) + ' ج</b><span class="tiny">' + num(r.topups.approved) + ' طلب (' + num(r.topups.auto) + ' أوتوماتيك)</span></div>' +
-      '<div class="stat"><span class="muted">المصروفات</span><b>' + num(r.expenses) + ' ج</b><span class="tiny">' + (r.expenses_by_cat[0] ? 'أكبر بند: ' + esc(r.expenses_by_cat[0].category) : 'مفيش') + '</span></div>' +
-      '<div class="stat net"><span class="muted">الصافي</span><b>' + num(r.net) + ' ج</b><span class="tiny">الإيراد − المصروفات</span></div>' +
-      '<div class="stat"><span class="muted">أمانات الطلاب دلوقتي</span><b>' + num(r.held) + ' ج</b><span class="tiny">' + num(r.held_sessions) + ' حصة لسه ماتخصمتش</span></div></div>' +
-      '<section class="sec"><h2>نزّل إكسل للفترة دي</h2><div class="row-btns" style="justify-content:flex-start">' +
-      [['students', 'الطلاب كلهم'], ['attendance', 'الحضور'], ['scores', 'الدرجات'], ['money', 'الحسابات'], ['expenses', 'المصروفات']].map(([k, n]) =>
-        '<button class="btn btn-line btn-sm" data-xp="' + k + '">' + icon('print') + n + '</button>').join('') + '</div>' +
-      '<p class="tiny">بيتفتح في Excel أو Google Sheets، وفيه كل بيانات الطالب بالكود. ' + 'ملف «الطلاب» بيبقى كامل مش للفترة بس.</p></section>' +
+      // كل رقم بيفتح تفاصيله
+      '<div class="stats rstats">' +
+      [['revenue', 'الإيراد', num(m.revenue) + ' ج', 'حصص اتخصمت + كاش + منتجات', ''],
+       ['cash', 'دخل الخزنة كاش', num(m.cash_in) + ' ج', 'حصص ' + num(m.door_cash) + ' · اشتراكات ' + num(m.subs_cash), ''],
+       ['transfer', 'تحويلات', num(m.transfer_in) + ' ج', num(r.topups.approved) + ' طلب (' + num(r.topups.auto) + ' أوتوماتيك)', ''],
+       ['expenses', 'المصروفات', num(r.expenses) + ' ج', r.expenses_by_cat[0] ? 'أكبر بند: ' + esc(r.expenses_by_cat[0].category) : 'مفيش', ''],
+       ['net', 'الصافي', num(r.net) + ' ج', 'الإيراد − المصروفات', ' net'],
+       ['held', 'أمانات الطلاب دلوقتي', num(r.held) + ' ج', num(r.held_sessions) + ' حصة لسه ماتخصمتش', '']]
+        .map(([k, n, v, sub, cl]) => '<button class="stat' + cl + '" data-rd="' + k + '"><span class="muted">' + n + '</span><b>' + v + '</b><span class="tiny">' + sub + '</span><span class="more-t">التفاصيل ' + icon('chev', 'sm') + '</span></button>').join('') + '</div>' +
+      '<section class="sec"><h2>الملفات</h2><div class="files">' +
+      [['students', 'كل الطلاب وبياناتهم', 'الكود والرقم السري والموبايلات والرصيد والمتوسط'], ['attendance', 'الحضور', 'للفترة دي'], ['scores', 'الدرجات', 'للفترة دي'],
+       ['money', 'الحسابات', 'كل حركة فلوس للفترة دي'], ['expenses', 'المصروفات', 'للفترة دي بالمتكرر']].map(([k, n, s]) =>
+        '<button class="file-b" data-xp="' + k + '">' + icon('sheet') + '<div><b>' + n + '</b><span class="tiny">' + s + '</span></div></button>').join('') +
+      '<a class="file-b" href="' + CFG.PRINT + '?all=1" target="_blank" rel="noopener">' + icon('print') + '<div><b>كروت كل الطلاب</b><span class="tiny">للطباعة (10 في الورقة)</span></div></a></div>' +
+      '<p class="tiny">ملفات Excel بتتفتح في Excel أو Google Sheets بالعربي. كروت كل مجموعة لوحدها من صفحة المجموعة في «الطلاب».</p></section>' +
       '<section class="sec"><h2>الحضور · ' + num(a.total) + '</h2><div class="surface split">' +
       '<div><h3 class="mini-h">طريقة الدخول</h3>' + [['nfc', 'كارت NFC'], ['qr', 'QR'], ['search', 'يدوي']].map(([k, n]) => '<div class="bar-row"><span>' + n + '</span>' + bar(a[k], a.total) + '<b class="num">' + num(a[k]) + '</b></div>').join('') + '</div>' +
       '<div><h3 class="mini-h">طريقة الدفع</h3>' + [['wallet', 'من الاشتراك'], ['cash', 'كاش على الباب']].map(([k, n]) => '<div class="bar-row"><span>' + n + '</span>' + bar(a[k], a.total, k === 'cash' ? 'a' : 'g') + '<b class="num">' + num(a[k]) + '</b></div>').join('') +
@@ -195,6 +233,7 @@ const Screens = (() => {
       const b = e.target.closest('[data-rr]'); if (b) { R.range = b.dataset.rr; return reports(ctx); }
       if (e.target.closest('[data-rgo]')) { R.from = $('#rf').value; R.to = $('#rt').value; return reports(ctx); }
       const x = e.target.closest('[data-xp]'); if (x) return busy(x, () => exportCsv(x.dataset.xp, f, t, x.dataset.xp + '_' + f + '_' + t));
+      const rd = e.target.closest('[data-rd]'); if (rd) return busy(rd, () => reportDetail(ctx, rd.dataset.rd, f, t));
     };
   }
 
