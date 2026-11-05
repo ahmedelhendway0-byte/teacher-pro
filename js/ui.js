@@ -43,9 +43,7 @@ const U = (() => {
   }
 
   const credit = () =>
-    '<footer class="credit">POWERED BY <a href="' + CFG.PORTFOLIO + '" target="_blank" rel="noopener">HINDAWY</a>' +
-    '<div class="credit-btns"><a class="btn btn-line btn-sm" href="' + CFG.PORTFOLIO + '" target="_blank" rel="noopener">اعرف أكتر</a>' +
-    '<a class="btn btn-line btn-sm" href="' + CFG.PORTFOLIO + '#team" target="_blank" rel="noopener">اعرف أكتر عن المؤسسين</a></div></footer>';
+    '<footer class="credit"><div class="hd-by">POWERED BY <a href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">HINDAWY</a></div><a class="hd-know" href="https://ahmedelhendway0-byte.github.io/portfolio/" target="_blank" rel="noopener">Know HINDAWY →</a></footer>';
 
   const ago = iso => {
     const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
